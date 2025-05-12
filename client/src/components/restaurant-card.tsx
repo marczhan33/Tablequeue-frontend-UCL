@@ -1,4 +1,5 @@
 import { type Restaurant } from "@shared/schema";
+import { Link } from "wouter";
 import WaitTimeBadge from "@/components/wait-time-badge";
 
 interface RestaurantCardProps {
@@ -45,14 +46,22 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
   
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
-      <img 
-        src={getImageUrl(restaurant.cuisine, restaurant.id)} 
-        alt={`${restaurant.name} interior`} 
-        className="w-full h-48 object-cover" 
-      />
+      <Link href={`/restaurant/${restaurant.id}`}>
+        <a className="block cursor-pointer">
+          <img 
+            src={getImageUrl(restaurant.cuisine, restaurant.id)} 
+            alt={`${restaurant.name} interior`} 
+            className="w-full h-48 object-cover" 
+          />
+        </a>
+      </Link>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-heading font-bold text-xl">{restaurant.name}</h3>
+          <Link href={`/restaurant/${restaurant.id}`}>
+            <a className="block hover:text-primary transition-colors">
+              <h3 className="font-heading font-bold text-xl">{restaurant.name}</h3>
+            </a>
+          </Link>
           <WaitTimeBadge status={restaurant.currentWaitStatus as any} />
         </div>
         <p className="text-gray-600 text-sm mb-3">
@@ -77,27 +86,39 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
           <div className="text-sm">
             <span className="font-semibold">Wait time:</span> {getWaitTimeText(restaurant)}
           </div>
-          <button 
-            className="text-secondary hover:text-primary transition-colors duration-200"
-            onClick={() => {
-              // In a real app, would open directions in Google Maps
-              window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.address)}`, '_blank');
-            }}
-          >
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              viewBox="0 0 24 24" 
-              fill="currentColor" 
-              className="w-5 h-5 inline mr-1"
+          
+          <div className="flex space-x-2">
+            <Link href={`/restaurant/${restaurant.id}`}>
+              <a className="text-secondary hover:text-primary transition-colors duration-200">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
+                  <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
+                </svg>
+                Details
+              </a>
+            </Link>
+
+            <button 
+              className="text-secondary hover:text-primary transition-colors duration-200"
+              onClick={() => {
+                window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(restaurant.address)}`, '_blank');
+              }}
             >
-              <path 
-                fillRule="evenodd" 
-                d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" 
-                clipRule="evenodd" 
-              />
-            </svg>
-            Directions
-          </button>
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                viewBox="0 0 24 24" 
+                fill="currentColor" 
+                className="w-5 h-5 inline mr-1"
+              >
+                <path 
+                  fillRule="evenodd" 
+                  d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" 
+                  clipRule="evenodd" 
+                />
+              </svg>
+              Map
+            </button>
+          </div>
         </div>
       </div>
     </div>

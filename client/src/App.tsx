@@ -1,4 +1,4 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation, Link } from "wouter";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -7,14 +7,15 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import CustomerView from "@/pages/customer-view";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
+import RestaurantDetails from "@/pages/restaurant-details";
 import HowItWorks from "@/pages/how-it-works";
 import NotFound from "@/pages/not-found";
-import { useState } from "react";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={CustomerView} />
+      <Route path="/restaurant/:id" component={RestaurantDetails} />
       <Route path="/restaurant-dashboard" component={RestaurantDashboard} />
       <Route path="/how-it-works" component={HowItWorks} />
       <Route component={NotFound} />
@@ -23,8 +24,20 @@ function Router() {
 }
 
 function App() {
-  // Simple state to track active tab - normally would use a more robust solution
-  const [activeTab, setActiveTab] = useState("customer-view");
+  const [location] = useLocation();
+  
+  // Function to determine if a route is active
+  const isActive = (path: string) => {
+    // Special case for the restaurant details page
+    if (path === '/' && location.startsWith('/restaurant/')) {
+      return false;
+    }
+    // For other pages, exact match or startsWith for the base route
+    return location === path || (path !== '/' && location.startsWith(path));
+  };
+  
+  // Don't show navigation tabs on restaurant details page
+  const showNavTabs = !location.startsWith('/restaurant/');
   
   return (
     <QueryClientProvider client={queryClient}>
@@ -33,62 +46,47 @@ function App() {
           <Header />
           
           {/* Navigation Tabs */}
-          <div className="bg-white border-b border-gray-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex space-x-8 overflow-x-auto py-2 text-sm">
-                <a 
-                  href="/" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveTab("customer-view");
-                    window.history.pushState({}, "", "/");
-                  }}
-                  className={`whitespace-nowrap px-3 py-2 font-medium ${
-                    activeTab === "customer-view" 
-                      ? "text-primary border-b-2 border-primary" 
-                      : "text-gray-500 hover:text-primary"
-                  }`}
-                >
-                  Customer View
-                </a>
-                <a 
-                  href="/restaurant-dashboard" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveTab("restaurant-dashboard");
-                    window.history.pushState({}, "", "/restaurant-dashboard");
-                  }}
-                  className={`whitespace-nowrap px-3 py-2 font-medium ${
-                    activeTab === "restaurant-dashboard" 
-                      ? "text-primary border-b-2 border-primary" 
-                      : "text-gray-500 hover:text-primary"
-                  }`}
-                >
-                  Restaurant Dashboard
-                </a>
-                <a 
-                  href="/how-it-works" 
-                  onClick={(e) => {
-                    e.preventDefault();
-                    setActiveTab("how-it-works");
-                    window.history.pushState({}, "", "/how-it-works");
-                  }}
-                  className={`whitespace-nowrap px-3 py-2 font-medium ${
-                    activeTab === "how-it-works" 
-                      ? "text-primary border-b-2 border-primary" 
-                      : "text-gray-500 hover:text-primary"
-                  }`}
-                >
-                  How It Works
-                </a>
+          {showNavTabs && (
+            <div className="bg-white border-b border-gray-200">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="flex space-x-8 overflow-x-auto py-2 text-sm">
+                  <Link
+                    href="/"
+                    className={`whitespace-nowrap px-3 py-2 font-medium ${
+                      isActive('/') 
+                        ? "text-primary border-b-2 border-primary" 
+                        : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    Customer View
+                  </Link>
+                  <Link
+                    href="/restaurant-dashboard"
+                    className={`whitespace-nowrap px-3 py-2 font-medium ${
+                      isActive('/restaurant-dashboard') 
+                        ? "text-primary border-b-2 border-primary" 
+                        : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    Restaurant Dashboard
+                  </Link>
+                  <Link
+                    href="/how-it-works"
+                    className={`whitespace-nowrap px-3 py-2 font-medium ${
+                      isActive('/how-it-works') 
+                        ? "text-primary border-b-2 border-primary" 
+                        : "text-gray-500 hover:text-primary"
+                    }`}
+                  >
+                    How It Works
+                  </Link>
+                </div>
               </div>
             </div>
-          </div>
+          )}
           
           <main className="flex-grow py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-            {activeTab === "customer-view" && <CustomerView />}
-            {activeTab === "restaurant-dashboard" && <RestaurantDashboard />}
-            {activeTab === "how-it-works" && <HowItWorks />}
+            <Router />
           </main>
           
           <Footer />
