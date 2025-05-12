@@ -1,0 +1,171 @@
+import express, { type Express, Request, Response } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { insertUserSchema, insertRestaurantSchema, waitStatusEnum } from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // API Routes - all prefixed with /api
+  const apiRouter = express.Router();
+  
+  // GET all restaurants
+  apiRouter.get("/restaurants", async (req: Request, res: Response) => {
+    try {
+      const restaurants = await storage.getRestaurants();
+      return res.json(restaurants);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+      return res.status(500).json({ message: "Error fetching restaurants" });
+    }
+  });
+  
+  // GET single restaurant by ID
+  apiRouter.get("/restaurants/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      return res.json(restaurant);
+    } catch (error) {
+      console.error("Error fetching restaurant:", error);
+      return res.status(500).json({ message: "Error fetching restaurant" });
+    }
+  });
+  
+  // Search restaurants
+  apiRouter.get("/restaurants/search", async (req: Request, res: Response) => {
+    try {
+      const query = req.query.q as string || "";
+      const restaurants = await storage.searchRestaurants(query);
+      return res.json(restaurants);
+    } catch (error) {
+      console.error("Error searching restaurants:", error);
+      return res.status(500).json({ message: "Error searching restaurants" });
+    }
+  });
+  
+  // Create a new restaurant
+  apiRouter.post("/restaurants", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertRestaurantSchema.parse(req.body);
+      const newRestaurant = await storage.createRestaurant(validatedData);
+      return res.status(201).json(newRestaurant);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Error creating restaurant:", error);
+      return res.status(500).json({ message: "Error creating restaurant" });
+    }
+  });
+  
+  // Update restaurant information
+  apiRouter.patch("/restaurants/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const updatedRestaurant = await storage.updateRestaurant(id, req.body);
+      return res.json(updatedRestaurant);
+    } catch (error) {
+      console.error("Error updating restaurant:", error);
+      return res.status(500).json({ message: "Error updating restaurant" });
+    }
+  });
+  
+  // Update restaurant wait time status
+  apiRouter.post("/restaurants/:id/wait-time", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const waitStatusSchema = z.object({
+        status: waitStatusEnum,
+        customTime: z.number().min(0).optional()
+      });
+      
+      const { status, customTime } = waitStatusSchema.parse(req.body);
+      
+      const updatedRestaurant = await storage.updateWaitTime(id, status, customTime);
+      return res.json(updatedRestaurant);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Error updating wait time:", error);
+      return res.status(500).json({ message: "Error updating wait time" });
+    }
+  });
+  
+  // User routes - authentication would be added in a real app
+  apiRouter.post("/users", async (req: Request, res: Response) => {
+    try {
+      const validatedData = insertUserSchema.parse(req.body);
+      const newUser = await storage.createUser(validatedData);
+      // Remove password from response
+      const { password, ...userWithoutPassword } = newUser;
+      return res.status(201).json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Error creating user:", error);
+      return res.status(500).json({ message: "Error creating user" });
+    }
+  });
+  
+  // Get restaurants by owner
+  apiRouter.get("/users/:userId/restaurants", async (req: Request, res: Response) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const restaurants = await storage.getRestaurantsByOwnerId(userId);
+      return res.json(restaurants);
+    } catch (error) {
+      console.error("Error fetching restaurants by owner:", error);
+      return res.status(500).json({ message: "Error fetching restaurants by owner" });
+    }
+  });
+  
+  // Register all routes with /api prefix
+  app.use("/api", apiRouter);
+  
+  const httpServer = createServer(app);
+  return httpServer;
+}

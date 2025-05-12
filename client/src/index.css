@@ -1,0 +1,126 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Nunito+Sans:wght@300;400;600;700&display=swap');
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 209 61% 16%;
+  --muted: 60 4.8% 95.9%;
+  --muted-foreground: 25 5.3% 44.7%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 209 61% 16%;
+  --card: 0 0% 100%;
+  --card-foreground: 209 61% 16%;
+  --border: 20 5.9% 90%;
+  --input: 20 5.9% 90%;
+  --primary: 354 80% 56%;  /* #E63946 */
+  --primary-foreground: 211 100% 99%;
+  --secondary: 203 39% 44%;  /* #457B9D */
+  --secondary-foreground: 210 40% 98%;
+  --accent: 187 50% 77%;  /* #A8DADC */
+  --accent-foreground: 209 61% 16%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 60 9.1% 97.8%;
+  --ring: 209 61% 16%;
+  --radius: 0.5rem;
+  
+  /* Status colors */
+  --status-available: 122 39% 49%;  /* #4CAF50 */
+  --status-short: 36 100% 50%;  /* #FF9800 */
+  --status-long: 4 90% 58%;  /* #F44336 */
+  
+  /* Chart colors */
+  --chart-1: 354 80% 56%;
+  --chart-2: 203 39% 44%;
+  --chart-3: 187 50% 77%;
+  --chart-4: 209 61% 16%;
+  --chart-5: 60 4.8% 95.9%;
+  
+  /* Sidebar (dark background) */
+  --sidebar-background: 209 61% 16%;  /* #1D3557 */
+  --sidebar-foreground: 97 38% 93%;  /* #F1FAEE */
+  --sidebar-primary: 354 80% 56%;  /* #E63946 */
+  --sidebar-primary-foreground: 97 38% 93%;  /* #F1FAEE */
+  --sidebar-accent: 187 50% 77%;  /* #A8DADC */
+  --sidebar-accent-foreground: 209 61% 16%;  /* #1D3557 */
+  --sidebar-border: 203 39% 44%;  /* #457B9D */
+  --sidebar-ring: 187 50% 77%;  /* #A8DADC */
+}
+
+.dark {
+  --background: 209 61% 16%;  /* #1D3557 */
+  --foreground: 97 38% 93%;  /* #F1FAEE */
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --popover: 209 61% 16%;  /* #1D3557 */
+  --popover-foreground: 97 38% 93%;  /* #F1FAEE */
+  --card: 209 61% 16%;  /* #1D3557 */
+  --card-foreground: 97 38% 93%;  /* #F1FAEE */
+  --border: 203 39% 44%;  /* #457B9D */
+  --input: 203 39% 44%;  /* #457B9D */
+  --primary: 354 80% 56%;  /* #E63946 */
+  --primary-foreground: 97 38% 93%;  /* #F1FAEE */
+  --secondary: 203 39% 44%;  /* #457B9D */
+  --secondary-foreground: 97 38% 93%;  /* #F1FAEE */
+  --accent: 187 50% 77%;  /* #A8DADC */
+  --accent-foreground: 209 61% 16%;  /* #1D3557 */
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 97 38% 93%;  /* #F1FAEE */
+  --ring: 240 4.9% 83.9%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    font-family: 'Nunito Sans', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+.font-heading {
+  font-family: 'Playfair Display', serif;
+}
+
+.font-body {
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+/* Status colors utility classes */
+.text-status-available {
+  color: hsl(var(--status-available));
+}
+
+.bg-status-available {
+  background-color: hsl(var(--status-available));
+}
+
+.text-status-short {
+  color: hsl(var(--status-short));
+}
+
+.bg-status-short {
+  background-color: hsl(var(--status-short));
+}
+
+.text-status-long {
+  color: hsl(var(--status-long));
+}
+
+.bg-status-long {
+  background-color: hsl(var(--status-long));
+}
+
+/* Map container styles */
+.map-container {
+  height: 250px;
+  background-color: #eee;
+}
