@@ -18,7 +18,7 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
     // Add this restaurant's wait time data
     window.waitTimeData[restaurant.name] = {
       status: restaurant.currentWaitStatus as WaitStatus,
-      minutes: restaurant.customWaitTime
+      minutes: typeof restaurant.customWaitTime === 'number' ? restaurant.customWaitTime : undefined
     };
     
     // Cleanup when component unmounts
