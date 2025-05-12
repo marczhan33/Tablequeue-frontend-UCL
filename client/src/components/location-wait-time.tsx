@@ -1,4 +1,5 @@
 import { type Restaurant, type WaitStatus } from "@shared/schema";
+import { useEffect } from "react";
 import WaitTimeBadge from "./wait-time-badge";
 import GoogleMap from "./ui/google-map";
 
@@ -7,6 +8,27 @@ interface LocationWaitTimeProps {
 }
 
 const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
+  // Set wait time data for Google Maps
+  useEffect(() => {
+    // Initialize or update the global waitTimeData object
+    if (!window.waitTimeData) {
+      window.waitTimeData = {};
+    }
+    
+    // Add this restaurant's wait time data
+    window.waitTimeData[restaurant.name] = {
+      status: restaurant.currentWaitStatus as WaitStatus,
+      minutes: restaurant.customWaitTime
+    };
+    
+    // Cleanup when component unmounts
+    return () => {
+      if (window.waitTimeData) {
+        delete window.waitTimeData[restaurant.name];
+      }
+    };
+  }, [restaurant.name, restaurant.currentWaitStatus, restaurant.customWaitTime]);
+
   // Get formatted wait time text
   const getWaitTimeText = (restaurant: Restaurant) => {
     switch (restaurant.currentWaitStatus) {

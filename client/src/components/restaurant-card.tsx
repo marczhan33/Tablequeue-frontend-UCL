@@ -47,20 +47,16 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
   return (
     <div className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200">
       <Link href={`/restaurant/${restaurant.id}`}>
-        <a className="block cursor-pointer">
-          <img 
-            src={getImageUrl(restaurant.cuisine, restaurant.id)} 
-            alt={`${restaurant.name} interior`} 
-            className="w-full h-48 object-cover" 
-          />
-        </a>
+        <img 
+          src={getImageUrl(restaurant.cuisine, restaurant.id)} 
+          alt={`${restaurant.name} interior`} 
+          className="w-full h-48 object-cover cursor-pointer" 
+        />
       </Link>
       <div className="p-4">
         <div className="flex justify-between items-start mb-2">
           <Link href={`/restaurant/${restaurant.id}`}>
-            <a className="block hover:text-primary transition-colors">
-              <h3 className="font-heading font-bold text-xl">{restaurant.name}</h3>
-            </a>
+            <h3 className="font-heading font-bold text-xl cursor-pointer hover:text-primary transition-colors">{restaurant.name}</h3>
           </Link>
           <WaitTimeBadge status={restaurant.currentWaitStatus as any} />
         </div>
@@ -89,13 +85,13 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
           
           <div className="flex space-x-2">
             <Link href={`/restaurant/${restaurant.id}`}>
-              <a className="text-secondary hover:text-primary transition-colors duration-200">
+              <div className="text-secondary hover:text-primary transition-colors duration-200 cursor-pointer">
                 <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
                   <path d="M10 12a2 2 0 100-4 2 2 0 000 4z" />
                   <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd" />
                 </svg>
                 Details
-              </a>
+              </div>
             </Link>
 
             <button 
