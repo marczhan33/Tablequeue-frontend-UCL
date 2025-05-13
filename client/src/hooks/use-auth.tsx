@@ -15,6 +15,7 @@ interface User {
   role: string;
   phone: string | null;
   createdAt: string | null;
+  isVerified: boolean;
 }
 
 // Login data type

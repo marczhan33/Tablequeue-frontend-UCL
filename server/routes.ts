@@ -40,6 +40,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes - all prefixed with /api
   const apiRouter = express.Router();
   
+  // Resend verification email endpoint
+  apiRouter.post("/resend-verification", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized - Please log in" });
+      }
+      
+      const userId = req.user.id;
+      const user = await storage.getUser(userId);
+      
+      if (!user) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      if (user.isVerified) {
+        return res.status(400).json({ error: "Email is already verified" });
+      }
+      
+      // Generate new verification token
+      const { generateVerificationToken, sendVerificationEmail } = await import('./email-service');
+      const { token, expires } = generateVerificationToken();
+      
+      // Update user with new token
+      await storage.updateUserVerification(userId, false, token, expires);
+      
+      if (process.env.SENDGRID_API_KEY) {
+        // Send verification email
+        const result = await sendVerificationEmail(user.email, token, user.username);
+        
+        if (result) {
+          res.status(200).json({ success: true, message: "Verification email sent" });
+        } else {
+          res.status(500).json({ error: "Failed to send verification email" });
+        }
+      } else {
+        // If SendGrid is not configured, return a notice
+        res.status(200).json({ 
+          success: true, 
+          message: "Email verification is disabled in development mode" 
+        });
+      }
+    } catch (error) {
+      console.error("Resend verification error:", error);
+      res.status(500).json({ error: "Failed to resend verification email" });
+    }
+  });
+  
   // Test email endpoint
   apiRouter.post("/test-email", async (req: Request, res: Response) => {
     try {

@@ -19,7 +19,12 @@ export interface IStorage {
     verificationToken?: string;
     verificationExpires?: Date;
   }): Promise<User>;
-  updateUserVerification(id: number, isVerified: boolean): Promise<User | undefined>;
+  updateUserVerification(
+    id: number, 
+    isVerified: boolean, 
+    verificationToken?: string | null,
+    verificationExpires?: Date | null
+  ): Promise<User | undefined>;
   
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;
@@ -311,19 +316,30 @@ export class MemStorage implements IStorage {
     return user;
   }
   
-  async updateUserVerification(id: number, isVerified: boolean): Promise<User | undefined> {
+  async updateUserVerification(
+    id: number, 
+    isVerified: boolean,
+    verificationToken?: string | null,
+    verificationExpires?: Date | null
+  ): Promise<User | undefined> {
     const user = this.users.get(id);
     
     if (!user) {
       return undefined;
     }
     
+    // If setting to verified, clear the token and expiration
+    if (isVerified) {
+      verificationToken = null;
+      verificationExpires = null;
+    }
+    
     // Update verification status
     const updatedUser = { 
       ...user, 
       isVerified,
-      verificationToken: null, 
-      verificationExpires: null 
+      verificationToken: verificationToken !== undefined ? verificationToken : user.verificationToken, 
+      verificationExpires: verificationExpires !== undefined ? verificationExpires : user.verificationExpires 
     };
     
     this.users.set(id, updatedUser);
