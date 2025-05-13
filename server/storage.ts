@@ -635,7 +635,14 @@ export class MemStorage implements IStorage {
         },
         features: ["Outdoor Seating", "Full Bar", "Takeout", "Delivery"],
         rating: "4.7",
-        reviewCount: 324
+        reviewCount: 324,
+        createdAt: new Date(),
+        qrCodeId: qrCode1,
+        tableCapacity: 25,
+        avgSeatingTime: 45,
+        hasFoodDelivery: ["UberEats", "DoorDash"],
+        hasReservationSystem: "OpenTable",
+        reservationUrl: "https://www.opentable.com/r/the-italian-place-san-francisco"
       },
       {
         userId: restaurantOwner.id,
@@ -660,7 +667,14 @@ export class MemStorage implements IStorage {
         },
         features: ["Kid Friendly", "Full Bar", "Takeout"],
         rating: "4.2",
-        reviewCount: 187
+        reviewCount: 187,
+        createdAt: new Date(),
+        qrCodeId: qrCode2,
+        tableCapacity: 20,
+        avgSeatingTime: 30,
+        hasFoodDelivery: ["UberEats", "GrubHub"],
+        hasReservationSystem: null,
+        reservationUrl: null
       },
       {
         userId: restaurantOwner.id,
@@ -685,7 +699,14 @@ export class MemStorage implements IStorage {
         },
         features: ["Omakase", "Full Bar", "Reservations Recommended"],
         rating: "4.9",
-        reviewCount: 512
+        reviewCount: 512,
+        createdAt: new Date(),
+        qrCodeId: qrCode3,
+        tableCapacity: 30,
+        avgSeatingTime: 60,
+        hasFoodDelivery: ["GrubHub"],
+        hasReservationSystem: "Resy",
+        reservationUrl: "https://resy.com/sushi-master-san-francisco"
       },
       {
         userId: restaurantOwner.id,
@@ -710,7 +731,14 @@ export class MemStorage implements IStorage {
         },
         features: ["Outdoor Seating", "Full Bar", "Dinner", "Waterfront"],
         rating: "4.8",
-        reviewCount: 746
+        reviewCount: 746,
+        createdAt: new Date(),
+        qrCodeId: qrCode4,
+        tableCapacity: 40,
+        avgSeatingTime: 50,
+        hasFoodDelivery: ["UberEats", "DoorDash", "GrubHub"],
+        hasReservationSystem: "OpenTable",
+        reservationUrl: "https://www.opentable.com/r/harbor-seafood-san-francisco"
       }
     ];
     
