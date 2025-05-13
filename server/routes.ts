@@ -403,6 +403,134 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Remote waitlist endpoints
+  apiRouter.post("/restaurants/:id/remote-waitlist", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Validate the remote waitlist data against the schema
+      try {
+        remoteWaitlistFormSchema.parse(req.body);
+      } catch (validationError) {
+        return res.status(400).json({ 
+          message: "Invalid waitlist data", 
+          errors: validationError instanceof z.ZodError ? validationError.errors : undefined
+        });
+      }
+      
+      // Convert expected arrival time to Date
+      const expectedArrivalTime = new Date(req.body.expectedArrivalTime);
+      
+      // Create remote waitlist entry
+      const entry = await storage.createRemoteWaitlistEntry({
+        ...req.body,
+        restaurantId: id,
+        isRemote: true,
+        expectedArrivalTime
+      });
+      
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating remote waitlist entry:", error);
+      res.status(500).json({ message: "Error adding to remote waitlist" });
+    }
+  });
+  
+  // Endpoint to confirm remote arrival - customer confirms they're on their way
+  apiRouter.post("/restaurants/:id/remote-waitlist/:entryId/confirm", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const entryId = parseInt(req.params.entryId);
+      
+      if (isNaN(restaurantId) || isNaN(entryId)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Get the waitlist entry
+      const entry = await storage.getWaitlistEntry(entryId);
+      if (!entry) {
+        return res.status(404).json({ message: "Waitlist entry not found" });
+      }
+      
+      if (entry.restaurantId !== restaurantId) {
+        return res.status(400).json({ message: "Entry does not belong to this restaurant" });
+      }
+      
+      if (entry.status !== 'remote_pending') {
+        return res.status(400).json({ message: "Cannot confirm entry that is not pending" });
+      }
+      
+      // Use expected arrival time from request or default to 30 minutes from now
+      const expectedArrivalTime = req.body.expectedArrivalTime ? 
+        new Date(req.body.expectedArrivalTime) : 
+        new Date(Date.now() + 30 * 60000);
+      
+      // Update the entry to confirmed status
+      const updated = await storage.updateWaitlistEntry(entryId, {
+        status: 'remote_confirmed',
+        expectedArrivalTime
+      });
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error confirming remote waitlist entry:", error);
+      res.status(500).json({ message: "Error confirming waitlist entry" });
+    }
+  });
+  
+  // Endpoint for customers to check in when they arrive at the restaurant
+  apiRouter.post("/restaurants/:id/remote-waitlist/checkin", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const { confirmationCode } = req.body;
+      if (!confirmationCode) {
+        return res.status(400).json({ message: "Confirmation code is required" });
+      }
+      
+      // Validate the confirmation code
+      const entry = await storage.getWaitlistEntryByConfirmationCode(confirmationCode);
+      
+      if (!entry) {
+        return res.status(404).json({ message: "Invalid confirmation code" });
+      }
+      
+      if (entry.restaurantId !== restaurantId) {
+        return res.status(400).json({ message: "Confirmation code does not match this restaurant" });
+      }
+      
+      if (entry.status !== 'remote_pending' && entry.status !== 'remote_confirmed') {
+        return res.status(400).json({ message: "Cannot check in - incorrect entry status" });
+      }
+      
+      // Mark the customer as arrived (change status to waiting and set arrivedAt timestamp)
+      const updated = await storage.confirmRemoteArrival(confirmationCode);
+      
+      res.json(updated);
+    } catch (error) {
+      console.error("Error checking in remote waitlist entry:", error);
+      res.status(500).json({ message: "Error checking in" });
+    }
+  });
+  
   apiRouter.patch("/restaurants/:id/waitlist/:entryId", async (req: Request, res: Response) => {
     try {
       const restaurantId = parseInt(req.params.id);

@@ -295,6 +295,7 @@ export class MemStorage implements IStorage {
     this.tableTypes = new Map();
     this.waitlistEntries = new Map();
     this.restaurantQrCodes = new Map();
+    this.confirmationCodes = new Map();
     this.dailyAnalyticsData = new Map();
     this.hourlyAnalyticsData = new Map();
     this.tableAnalyticsData = new Map();
