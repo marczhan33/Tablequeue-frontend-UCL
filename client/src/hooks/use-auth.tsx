@@ -1,166 +1,140 @@
-import { createContext, ReactNode, useContext } from "react";
+import { createContext, ReactNode, useContext, useEffect, useState } from "react";
 import {
   useQuery,
   useMutation,
   UseMutationResult,
 } from "@tanstack/react-query";
-import { apiRequest, queryClient } from "../lib/queryClient";
+import { User as SelectUser, InsertUser } from "@shared/schema";
+import { getQueryFn, apiRequest, queryClient } from "../lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  signInWithGoogle, 
+  signOut as firebaseSignOut, 
+  onAuthChange,
+  getCurrentUser
+} from "@/lib/firebase";
 
-// User type definition
-interface User {
-  id: number;
-  username: string;
-  email: string;
-  role: string;
-  phone: string | null;
-  createdAt: string | null;
-  isVerified: boolean;
-}
-
-// Login data type
-interface LoginData {
-  username: string;
-  password: string;
-}
-
-// Registration data type
-interface RegisterData {
-  username: string;
-  password: string;
-  email: string;
-  role?: string;
-  phone?: string;
-}
-
-// Auth context type
 type AuthContextType = {
-  user: User | null;
+  user: SelectUser | null;
+  firebaseUser: any | null;
   isLoading: boolean;
   error: Error | null;
-  loginMutation: UseMutationResult<User, Error, LoginData>;
+  loginWithGoogle: () => Promise<void>;
   logoutMutation: UseMutationResult<void, Error, void>;
-  registerMutation: UseMutationResult<User, Error, RegisterData>;
+  registerMutation: UseMutationResult<SelectUser, Error, InsertUser>;
 };
 
-// Create the auth context
+type LoginData = Pick<InsertUser, "username" | "password">;
+
 export const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
-  
-  // Fetch the current user if authenticated
+  const [firebaseUser, setFirebaseUser] = useState<any | null>(null);
+
+  // Listen for Firebase auth state changes
+  useEffect(() => {
+    const unsubscribe = onAuthChange((user) => {
+      setFirebaseUser(user);
+      
+      // If a user signs in via Firebase, we need to sync with our backend
+      if (user) {
+        syncUserWithBackend(user);
+      } else {
+        // If firebase user logs out, clear our backend user too
+        queryClient.setQueryData(["/api/user"], null);
+      }
+    });
+    
+    // Check for current user on page load (for redirect flow)
+    const currentUser = getCurrentUser();
+    if (currentUser) {
+      setFirebaseUser(currentUser);
+      syncUserWithBackend(currentUser);
+    }
+
+    return () => unsubscribe();
+  }, []);
+
+  // Function to sync Firebase user with our backend
+  const syncUserWithBackend = async (firebaseUser: any) => {
+    try {
+      const idToken = await firebaseUser.getIdToken();
+      const res = await apiRequest({ 
+        method: "POST", 
+        url: "/api/auth/google", 
+        body: { idToken } 
+      });
+      const backendUser = await res.json();
+      queryClient.setQueryData(["/api/user"], backendUser);
+    } catch (error) {
+      console.error("Error syncing user with backend:", error);
+      toast({
+        title: "Authentication Error",
+        description: "There was a problem connecting to the server.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Get the user from our backend
   const {
     data: user,
     error,
     isLoading,
-  } = useQuery<User | null, Error>({
+  } = useQuery<SelectUser | undefined, Error>({
     queryKey: ["/api/user"],
-    queryFn: async ({ queryKey }) => {
-      try {
-        const url = queryKey[0] as string;
-        const res = await fetch(url, { credentials: 'include' });
-        
-        if (res.status === 401) {
-          return null;
-        }
-        
-        if (!res.ok) {
-          throw new Error(`Error ${res.status}: ${res.statusText}`);
-        }
-        
-        return await res.json();
-      } catch (error) {
-        console.error("Auth query error:", error);
-        return null;
-      }
-    }
+    queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  // Login mutation
-  const loginMutation = useMutation({
-    mutationFn: async (credentials: LoginData) => {
-      const res = await fetch("/api/login", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-        credentials: 'include'
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Login failed' }));
-        throw new Error(errorData.error || 'Invalid username or password');
-      }
-      
-      return await res.json();
-    },
-    onSuccess: (user: User) => {
-      queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Login successful",
-        description: `Welcome back, ${user.username}!`,
-      });
-    },
-    onError: (error: Error) => {
+  // Login with Google
+  const loginWithGoogle = async () => {
+    try {
+      await signInWithGoogle();
+      // User state will be updated by the auth state listener
+    } catch (error: any) {
+      console.error("Google login error:", error);
       toast({
         title: "Login failed",
-        description: error.message || "Invalid username or password",
+        description: error.message || "Could not sign in with Google",
         variant: "destructive",
       });
-    },
-  });
+    }
+  };
 
-  // Registration mutation
+  // Register new user
   const registerMutation = useMutation({
-    mutationFn: async (credentials: RegisterData) => {
-      const res = await fetch("/api/register", {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
-        credentials: 'include'
+    mutationFn: async (credentials: InsertUser) => {
+      const res = await apiRequest({ 
+        method: "POST", 
+        url: "/api/register", 
+        body: credentials 
       });
-      
-      if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: 'Registration failed' }));
-        throw new Error(errorData.error || 'Registration failed. Please try again.');
-      }
-      
       return await res.json();
     },
-    onSuccess: (user: User) => {
+    onSuccess: (user: SelectUser) => {
       queryClient.setQueryData(["/api/user"], user);
-      toast({
-        title: "Registration successful",
-        description: `Welcome, ${user.username}!`,
-      });
     },
     onError: (error: Error) => {
       toast({
         title: "Registration failed",
-        description: error.message || "Registration failed. Please try again.",
+        description: error.message,
         variant: "destructive",
       });
     },
   });
 
-  // Logout mutation
+  // Logout
   const logoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await fetch("/api/logout", { 
-        method: 'POST',
-        credentials: 'include'
+      await apiRequest({ 
+        method: "POST", 
+        url: "/api/logout"
       });
-      
-      if (!res.ok) {
-        throw new Error("Logout failed");
-      }
+      await firebaseSignOut(); // Also sign out from Firebase
     },
     onSuccess: () => {
       queryClient.setQueryData(["/api/user"], null);
-      toast({
-        title: "Logged out",
-        description: "You have been successfully logged out.",
-      });
     },
     onError: (error: Error) => {
       toast({
@@ -175,9 +149,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     <AuthContext.Provider
       value={{
         user: user ?? null,
+        firebaseUser,
         isLoading,
         error,
-        loginMutation,
+        loginWithGoogle,
         logoutMutation,
         registerMutation,
       }}
@@ -187,7 +162,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// Custom hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (!context) {

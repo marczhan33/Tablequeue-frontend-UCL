@@ -12,6 +12,7 @@ import {
 } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
+import { setupGoogleAuth } from "./auth-routes";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -38,6 +39,7 @@ async function isRestaurantOwner(userId: number, restaurantId: number): Promise<
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
+  setupGoogleAuth(app);
   
   // API Routes - all prefixed with /api
   const apiRouter = express.Router();
