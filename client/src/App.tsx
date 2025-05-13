@@ -15,6 +15,8 @@ import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import RestaurantDetails from "@/pages/restaurant-details";
 import HowItWorks from "@/pages/how-it-works";
 import WaitlistPage from "@/pages/waitlist";
+import RemoteWaitlistPage from "@/pages/remote-waitlist";
+import WaitlistStatusPage from "@/pages/waitlist-status";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
@@ -77,6 +79,12 @@ function Router() {
       </Route>
       <Route path="/waitlist/:qrCodeId">
         <WaitlistPage />
+      </Route>
+      <Route path="/restaurants/:id/remote-waitlist">
+        <RemoteWaitlistPage />
+      </Route>
+      <Route path="/restaurants/:restaurantId/waitlist-status/:entryId">
+        <WaitlistStatusPage />
       </Route>
       <Route path="/auth">
         <AuthPage />

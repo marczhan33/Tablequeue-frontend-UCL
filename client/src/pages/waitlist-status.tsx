@@ -64,14 +64,14 @@ export default function WaitlistStatusPage() {
   };
   
   // Get status badge color
-  const getStatusBadgeVariant = (status: string) => {
+  const getStatusBadgeVariant = (status: string): "default" | "destructive" | "secondary" | "outline" => {
     switch (status) {
       case 'waiting':
         return 'default';
       case 'notified':
-        return 'warning';
+        return 'secondary'; // Use secondary instead of warning which isn't in our variant types
       case 'seated':
-        return 'success';
+        return 'default'; // Use default instead of success
       case 'cancelled':
         return 'destructive';
       case 'remote_pending':
