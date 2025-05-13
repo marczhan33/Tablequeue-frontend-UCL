@@ -42,63 +42,75 @@ function App() {
     return location === path || (path !== '/' && location.startsWith(path));
   };
   
-  // Don't show navigation tabs on restaurant details page
-  const showNavTabs = !location.startsWith('/restaurant/');
+  // Don't show navigation tabs on authentication or restaurant details pages
+  const showNavTabs = !location.startsWith('/restaurant/') && location !== '/auth';
   
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div className="min-h-screen flex flex-col bg-light text-dark">
-          <Header />
-          
-          {/* Navigation Tabs */}
-          {showNavTabs && (
-            <div className="bg-white border-b border-gray-200">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex space-x-8 overflow-x-auto py-2 text-sm">
-                  <Link
-                    href="/"
-                    className={`whitespace-nowrap px-3 py-2 font-medium ${
-                      isActive('/') 
-                        ? "text-primary border-b-2 border-primary" 
-                        : "text-gray-500 hover:text-primary"
-                    }`}
-                  >
-                    Customer View
-                  </Link>
-                  <Link
-                    href="/restaurant-dashboard"
-                    className={`whitespace-nowrap px-3 py-2 font-medium ${
-                      isActive('/restaurant-dashboard') 
-                        ? "text-primary border-b-2 border-primary" 
-                        : "text-gray-500 hover:text-primary"
-                    }`}
-                  >
-                    Restaurant Dashboard
-                  </Link>
-                  <Link
-                    href="/how-it-works"
-                    className={`whitespace-nowrap px-3 py-2 font-medium ${
-                      isActive('/how-it-works') 
-                        ? "text-primary border-b-2 border-primary" 
-                        : "text-gray-500 hover:text-primary"
-                    }`}
-                  >
-                    How It Works
-                  </Link>
+      <AuthProvider>
+        <TooltipProvider>
+          <div className="min-h-screen flex flex-col bg-light text-dark">
+            <Header />
+            
+            {/* Navigation Tabs */}
+            {showNavTabs && (
+              <div className="bg-white border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                  <div className="flex space-x-8 overflow-x-auto py-2 text-sm">
+                    <Link
+                      href="/"
+                      className={`whitespace-nowrap px-3 py-2 font-medium ${
+                        isActive('/') 
+                          ? "text-primary border-b-2 border-primary" 
+                          : "text-gray-500 hover:text-primary"
+                      }`}
+                    >
+                      Customer View
+                    </Link>
+                    <Link
+                      href="/restaurant-dashboard"
+                      className={`whitespace-nowrap px-3 py-2 font-medium ${
+                        isActive('/restaurant-dashboard') 
+                          ? "text-primary border-b-2 border-primary" 
+                          : "text-gray-500 hover:text-primary"
+                      }`}
+                    >
+                      Restaurant Dashboard
+                    </Link>
+                    <Link
+                      href="/how-it-works"
+                      className={`whitespace-nowrap px-3 py-2 font-medium ${
+                        isActive('/how-it-works') 
+                          ? "text-primary border-b-2 border-primary" 
+                          : "text-gray-500 hover:text-primary"
+                      }`}
+                    >
+                      How It Works
+                    </Link>
+                    <Link
+                      href="/auth"
+                      className={`whitespace-nowrap px-3 py-2 font-medium ${
+                        isActive('/auth') 
+                          ? "text-primary border-b-2 border-primary" 
+                          : "text-gray-500 hover:text-primary"
+                      }`}
+                    >
+                      Login / Register
+                    </Link>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          
-          <main className="flex-grow py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-            <Router />
-          </main>
-          
-          <Footer />
-          <Toaster />
-        </div>
-      </TooltipProvider>
+            )}
+            
+            <main className="flex-grow py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+              <Router />
+            </main>
+            
+            <Footer />
+            <Toaster />
+          </div>
+        </TooltipProvider>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
