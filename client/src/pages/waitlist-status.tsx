@@ -257,33 +257,14 @@ export default function WaitlistStatusPage() {
             >
               Restaurant Details
             </Button>
-            <Button
-              className="flex-1"
-              onClick={() => {
-                // Directly construct a super simple Google Maps URL
-                const query = encodeURIComponent(`${restaurant.name}, ${restaurant.address}`);
-                const mapsUrl = `https://www.google.com/maps?q=${query}`;
-                console.log("Opening maps URL:", mapsUrl);
-                
-                try {
-                  // Try to open in a new tab
-                  const newWindow = window.open(mapsUrl, '_blank');
-                  
-                  // Check if popup was blocked or failed
-                  if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
-                    console.error("Failed to open popup. May be blocked by browser.");
-                    // Fallback - try to navigate in the same window
-                    window.location.href = mapsUrl;
-                  }
-                } catch (err) {
-                  console.error("Error opening Google Maps:", err);
-                  // Ultimate fallback
-                  window.location.href = mapsUrl;
-                }
-              }}
+            <a 
+              href={`https://www.google.com/maps?q=${encodeURIComponent(`${restaurant.name}, ${restaurant.address}`)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 flex-1"
             >
               Get Directions
-            </Button>
+            </a>
           </div>
         </CardContent>
       </Card>
