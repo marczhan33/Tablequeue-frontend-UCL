@@ -1,0 +1,150 @@
+import { useState, useEffect } from 'react';
+import { Restaurant, TableType, WaitlistEntry } from '@shared/schema';
+import { calculateWaitTime, formatWaitTime, formatTime, CapacityAnalytics } from '@/lib/smart-capacity';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Badge } from '@/components/ui/badge';
+import { Loader2, Clock, Users, CalendarClock, Calendar } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+
+interface SmartCapacityDisplayProps {
+  restaurantId: number;
+  partySize: number;
+}
+
+export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityDisplayProps) {
+  const [capacityData, setCapacityData] = useState<CapacityAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Fetch the restaurant data
+  const { data: restaurant } = useQuery<Restaurant>({
+    queryKey: [`/api/restaurants/${restaurantId}`],
+  });
+  
+  // Fetch table types for this restaurant
+  const { data: tableTypes } = useQuery<TableType[]>({
+    queryKey: [`/api/restaurants/${restaurantId}/table-types`],
+    enabled: !!restaurant,
+  });
+  
+  // Fetch current waitlist
+  const { data: waitlist } = useQuery<WaitlistEntry[]>({
+    queryKey: [`/api/restaurants/${restaurantId}/waitlist`],
+    enabled: !!restaurant,
+  });
+  
+  // Calculate capacity analytics whenever dependencies change
+  useEffect(() => {
+    if (restaurant && tableTypes && waitlist) {
+      const analytics = calculateWaitTime(
+        restaurant,
+        partySize,
+        tableTypes,
+        waitlist
+      );
+      
+      setCapacityData(analytics);
+      setLoading(false);
+    }
+  }, [restaurant, tableTypes, waitlist, partySize]);
+  
+  if (loading || !capacityData) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6 flex justify-center items-center h-40">
+          <Loader2 className="h-8 w-8 text-primary animate-spin" />
+        </CardContent>
+      </Card>
+    );
+  }
+  
+  // Get confidence level color
+  const getConfidenceColor = (confidence: 'high' | 'medium' | 'low'): string => {
+    switch (confidence) {
+      case 'high': return 'bg-green-500';
+      case 'medium': return 'bg-yellow-500';
+      case 'low': return 'bg-red-500';
+      default: return 'bg-gray-500';
+    }
+  };
+  
+  return (
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          Smart Wait Prediction
+          <Badge 
+            variant="outline" 
+            className="ml-auto"
+          >
+            <span className={`mr-1.5 h-2 w-2 rounded-full ${getConfidenceColor(capacityData.confidence)}`}></span>
+            {`${capacityData.confidence.charAt(0).toUpperCase()}${capacityData.confidence.slice(1)} Confidence`}
+          </Badge>
+        </CardTitle>
+        <CardDescription>
+          For party of {partySize}
+        </CardDescription>
+      </CardHeader>
+      
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">Estimated Wait</span>
+            <div className="flex items-center mt-1">
+              <Clock className="h-4 w-4 mr-1.5 text-primary" />
+              <span className="text-2xl font-semibold">
+                {formatWaitTime(capacityData.estimatedWaitTime)}
+              </span>
+            </div>
+          </div>
+          
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">Available Tables</span>
+            <div className="flex items-center mt-1">
+              <Users className="h-4 w-4 mr-1.5 text-primary" />
+              <span className="text-2xl font-semibold">
+                {capacityData.availableTables}
+              </span>
+            </div>
+          </div>
+        </div>
+        
+        <div>
+          <div className="flex justify-between mb-1">
+            <span className="text-sm text-muted-foreground">Current Capacity</span>
+            <span className="text-sm font-medium">{capacityData.busyLevel}%</span>
+          </div>
+          <Progress value={capacityData.busyLevel} className="h-2" />
+        </div>
+        
+        <div className="grid grid-cols-2 gap-4 pt-2">
+          <div className="flex flex-col">
+            <span className="text-sm text-muted-foreground">Est. Seating Time</span>
+            <div className="flex items-center mt-1">
+              <CalendarClock className="h-4 w-4 mr-1.5 text-primary" />
+              <span className="text-lg font-medium">
+                {formatTime(capacityData.nextAvailableTime)}
+              </span>
+            </div>
+          </div>
+          
+          {capacityData.recommendedArrivalTime && (
+            <div className="flex flex-col">
+              <span className="text-sm text-muted-foreground">Recommended Arrival</span>
+              <div className="flex items-center mt-1">
+                <Calendar className="h-4 w-4 mr-1.5 text-primary" />
+                <span className="text-lg font-medium">
+                  {formatTime(capacityData.recommendedArrivalTime)}
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      </CardContent>
+      
+      <CardFooter className="text-xs text-muted-foreground">
+        Wait times are estimated and may vary based on actual restaurant conditions.
+      </CardFooter>
+    </Card>
+  );
+}

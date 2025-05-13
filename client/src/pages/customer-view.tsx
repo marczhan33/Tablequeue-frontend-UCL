@@ -38,7 +38,9 @@ const CustomerView = () => {
   
   // Get unique cuisines from restaurants
   const availableCuisines = restaurants 
-    ? [...new Set(restaurants.map(r => r.cuisine))]
+    ? restaurants
+        .map(r => r.cuisine)
+        .filter((cuisine, index, self) => self.indexOf(cuisine) === index)
     : [];
   
   // Apply filters to restaurants

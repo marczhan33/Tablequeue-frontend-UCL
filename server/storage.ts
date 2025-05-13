@@ -35,6 +35,13 @@ export interface IStorage {
   updateWaitTime(id: number, status: WaitStatus, customTime?: number): Promise<Restaurant | undefined>;
   searchRestaurants(query: string): Promise<Restaurant[]>;
   
+  // Table type operations
+  getTableTypes(restaurantId: number): Promise<TableType[]>;
+  getTableType(id: number): Promise<TableType | undefined>;
+  createTableType(tableType: InsertTableType): Promise<TableType>;
+  updateTableType(id: number, data: Partial<TableType>): Promise<TableType | undefined>;
+  deleteTableType(id: number): Promise<boolean>;
+  
   // Waitlist operations
   getWaitlistEntries(restaurantId: number): Promise<WaitlistEntry[]>;
   getWaitlistEntry(id: number): Promise<WaitlistEntry | undefined>;
