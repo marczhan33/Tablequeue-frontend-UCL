@@ -9,6 +9,7 @@ import CustomerView from "@/pages/customer-view";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import RestaurantDetails from "@/pages/restaurant-details";
 import HowItWorks from "@/pages/how-it-works";
+import WaitlistPage from "@/pages/waitlist";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -18,6 +19,7 @@ function Router() {
       <Route path="/restaurant/:id" component={RestaurantDetails} />
       <Route path="/restaurant-dashboard" component={RestaurantDashboard} />
       <Route path="/how-it-works" component={HowItWorks} />
+      <Route path="/waitlist/:qrCodeId" component={WaitlistPage} />
       <Route component={NotFound} />
     </Switch>
   );

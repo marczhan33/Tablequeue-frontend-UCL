@@ -4,6 +4,9 @@ import { Restaurant, WaitStatus } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import GoogleMap from "@/components/ui/google-map";
 import { useToast } from "@/hooks/use-toast";
+import QRCodeGenerator from "@/components/qr-code-generator";
+import WaitlistManagement from "@/components/waitlist-management";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mock restaurant ID for demo - in a real app, this would come from authentication
 const RESTAURANT_ID = 4;
@@ -12,6 +15,7 @@ const RestaurantDashboard = () => {
   const { toast } = useToast();
   const [customWaitTime, setCustomWaitTime] = useState(15);
   const [partySize, setPartySize] = useState("Any size");
+  const [activeTab, setActiveTab] = useState("overview");
   
   // Fetch restaurant data
   const { data: restaurant, isLoading } = useQuery<Restaurant>({
@@ -116,223 +120,255 @@ const RestaurantDashboard = () => {
           </span>
         </div>
       </div>
-
-      {/* Current Status Card */}
-      <div className="bg-gray-50 rounded-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4">Current Wait Status</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Available Status */}
-          <div 
-            className={`bg-white rounded-lg p-4 ${
-              restaurant.currentWaitStatus === 'available' 
-                ? 'border-2 border-secondary shadow-sm'
-                : 'border border-gray-200 hover:shadow-sm cursor-pointer'
-            } flex flex-col items-center`}
-            onClick={() => handleWaitStatusChange('available')}
-          >
-            <div className="w-16 h-16 rounded-full bg-status-available flex items-center justify-center mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="font-medium">Available</span>
-            <span className="text-xs text-gray-500">No wait time</span>
-          </div>
-          
-          {/* Short Wait Status */}
-          <div 
-            className={`bg-white rounded-lg p-4 ${
-              restaurant.currentWaitStatus === 'short' 
-                ? 'border-2 border-secondary shadow-sm'
-                : 'border border-gray-200 hover:shadow-sm cursor-pointer'
-            } flex flex-col items-center`}
-            onClick={() => handleWaitStatusChange('short')}
-          >
-            <div className="w-16 h-16 rounded-full bg-status-short flex items-center justify-center mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="font-medium">Short Wait</span>
-            <span className="text-xs text-gray-500">15-30 minutes</span>
-          </div>
-          
-          {/* Long Wait Status */}
-          <div 
-            className={`bg-white rounded-lg p-4 ${
-              restaurant.currentWaitStatus === 'long' 
-                ? 'border-2 border-secondary shadow-sm'
-                : 'border border-gray-200 hover:shadow-sm cursor-pointer'
-            } flex flex-col items-center`}
-            onClick={() => handleWaitStatusChange('long')}
-          >
-            <div className="w-16 h-16 rounded-full bg-status-long flex items-center justify-center mb-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 01-.043-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <span className="font-medium">Long Wait</span>
-            <span className="text-xs text-gray-500">30+ minutes</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Custom Wait Time Setup */}
-      <div className="bg-gray-50 rounded-lg p-6 mb-8">
-        <h3 className="text-lg font-semibold mb-4">Custom Wait Time</h3>
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-grow">
-            <label htmlFor="wait-time" className="block text-sm font-medium text-gray-700 mb-1">Estimated wait time (minutes)</label>
-            <input 
-              type="number" 
-              id="wait-time" 
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-              placeholder="Enter minutes" 
-              min="0" 
-              max="180" 
-              value={customWaitTime}
-              onChange={(e) => setCustomWaitTime(parseInt(e.target.value))}
-            />
-          </div>
-          <div className="flex-grow">
-            <label htmlFor="party-size" className="block text-sm font-medium text-gray-700 mb-1">For party size</label>
-            <select 
-              id="party-size" 
-              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-              value={partySize}
-              onChange={(e) => setPartySize(e.target.value)}
-            >
-              <option>Any size</option>
-              <option>1-2 people</option>
-              <option>3-4 people</option>
-              <option>5+ people</option>
-            </select>
-          </div>
-          <div className="flex items-end">
-            <button 
-              className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm w-full md:w-auto"
-              onClick={handleCustomWaitTimeUpdate}
-              disabled={updateWaitTime.isPending}
-            >
-              {updateWaitTime.isPending ? 'Updating...' : 'Update Wait Time'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Restaurant Information */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="col-span-2">
-          <h3 className="text-lg font-semibold mb-4">Restaurant Information</h3>
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
-                <input 
-                  type="text" 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                  value={restaurant.name}
-                  onChange={(e) => updateRestaurant.mutate({ name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
-                <input 
-                  type="tel" 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                  value={restaurant.phoneNumber || ""}
-                  onChange={(e) => updateRestaurant.mutate({ phoneNumber: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine Type</label>
-                <select 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                  value={restaurant.cuisine}
-                  onChange={(e) => updateRestaurant.mutate({ cuisine: e.target.value })}
-                >
-                  <option>Seafood</option>
-                  <option>Italian</option>
-                  <option>American</option>
-                  <option>Asian</option>
-                  <option>Mexican</option>
-                  <option>Other</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
-                <select 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                  value={restaurant.priceRange}
-                  onChange={(e) => updateRestaurant.mutate({ priceRange: e.target.value })}
-                >
-                  <option>$ (Under $10)</option>
-                  <option>$$ ($11-$30)</option>
-                  <option>$$$ ($31-$60)</option>
-                  <option>$$$$ (Over $60)</option>
-                </select>
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                <textarea 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                  rows={3}
-                  value={restaurant.description || ""}
-                  onChange={(e) => updateRestaurant.mutate({ description: e.target.value })}
-                ></textarea>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold mb-4">Opening Hours</h3>
-          <div className="bg-gray-50 rounded-lg p-6">
-            <div className="space-y-3">
-              {operatingHours && Object.entries(operatingHours).map(([day, hours]: [string, any]) => (
-                <div key={day} className="flex justify-between">
-                  <span className="font-medium">{day.charAt(0).toUpperCase() + day.slice(1)}</span>
-                  <span>{hours.open} - {hours.close}</span>
+      
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
+        <TabsList className="w-full grid grid-cols-3 mb-6">
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="waitlist">Waitlist Management</TabsTrigger>
+          <TabsTrigger value="qrcode">QR Code Generator</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="overview">
+          {/* Current Status Card */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4">Current Wait Status</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Available Status */}
+              <div 
+                className={`bg-white rounded-lg p-4 ${
+                  restaurant.currentWaitStatus === 'available' 
+                    ? 'border-2 border-secondary shadow-sm'
+                    : 'border border-gray-200 hover:shadow-sm cursor-pointer'
+                } flex flex-col items-center`}
+                onClick={() => handleWaitStatusChange('available')}
+              >
+                <div className="w-16 h-16 rounded-full bg-status-available flex items-center justify-center mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
                 </div>
-              ))}
-              {!operatingHours && (
-                <p className="text-gray-500">No operating hours set.</p>
-              )}
+                <span className="font-medium">Available</span>
+                <span className="text-xs text-gray-500">No wait time</span>
+              </div>
+              
+              {/* Short Wait Status */}
+              <div 
+                className={`bg-white rounded-lg p-4 ${
+                  restaurant.currentWaitStatus === 'short' 
+                    ? 'border-2 border-secondary shadow-sm'
+                    : 'border border-gray-200 hover:shadow-sm cursor-pointer'
+                } flex flex-col items-center`}
+                onClick={() => handleWaitStatusChange('short')}
+              >
+                <div className="w-16 h-16 rounded-full bg-status-short flex items-center justify-center mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="font-medium">Short Wait</span>
+                <span className="text-xs text-gray-500">15-30 minutes</span>
+              </div>
+              
+              {/* Long Wait Status */}
+              <div 
+                className={`bg-white rounded-lg p-4 ${
+                  restaurant.currentWaitStatus === 'long' 
+                    ? 'border-2 border-secondary shadow-sm'
+                    : 'border border-gray-200 hover:shadow-sm cursor-pointer'
+                } flex flex-col items-center`}
+                onClick={() => handleWaitStatusChange('long')}
+              >
+                <div className="w-16 h-16 rounded-full bg-status-long flex items-center justify-center mb-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 01-.043-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <span className="font-medium">Long Wait</span>
+                <span className="text-xs text-gray-500">30+ minutes</span>
+              </div>
             </div>
-            <button className="mt-4 text-secondary hover:text-primary transition-colors text-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
-              </svg>
-              Edit Hours
-            </button>
           </div>
-        </div>
-      </div>
 
-      {/* Google Maps Integration */}
-      <h3 className="text-lg font-semibold mb-4">Location</h3>
-      <div className="bg-gray-50 rounded-lg p-6">
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-          <input 
-            type="text" 
-            className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-            value={restaurant.address}
-            onChange={(e) => updateRestaurant.mutate({ address: e.target.value })}
-          />
-        </div>
-        {/* Google Maps component */}
-        <GoogleMap
-          latitude={restaurant.latitude}
-          longitude={restaurant.longitude}
-          markerTitle={restaurant.name}
-          className="mb-4"
-        />
-        <div className="flex justify-end">
-          <button className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm">
-            Verify Location
-          </button>
-        </div>
-      </div>
+          {/* Custom Wait Time Setup */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-8">
+            <h3 className="text-lg font-semibold mb-4">Custom Wait Time</h3>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-grow">
+                <label htmlFor="wait-time" className="block text-sm font-medium text-gray-700 mb-1">Estimated wait time (minutes)</label>
+                <input 
+                  type="number" 
+                  id="wait-time" 
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
+                  placeholder="Enter minutes" 
+                  min="0" 
+                  max="180" 
+                  value={customWaitTime}
+                  onChange={(e) => setCustomWaitTime(parseInt(e.target.value))}
+                />
+              </div>
+              <div className="flex-grow">
+                <label htmlFor="party-size" className="block text-sm font-medium text-gray-700 mb-1">For party size</label>
+                <select 
+                  id="party-size" 
+                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                  value={partySize}
+                  onChange={(e) => setPartySize(e.target.value)}
+                >
+                  <option>Any size</option>
+                  <option>1-2 people</option>
+                  <option>3-4 people</option>
+                  <option>5+ people</option>
+                </select>
+              </div>
+              <div className="flex items-end">
+                <button 
+                  className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm w-full md:w-auto"
+                  onClick={handleCustomWaitTimeUpdate}
+                  disabled={updateWaitTime.isPending}
+                >
+                  {updateWaitTime.isPending ? 'Updating...' : 'Update Wait Time'}
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Restaurant Information */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="col-span-2">
+              <h3 className="text-lg font-semibold mb-4">Restaurant Information</h3>
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Restaurant Name</label>
+                    <input 
+                      type="text" 
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
+                      value={restaurant.name}
+                      onChange={(e) => updateRestaurant.mutate({ name: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input 
+                      type="tel" 
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
+                      value={restaurant.phoneNumber || ""}
+                      onChange={(e) => updateRestaurant.mutate({ phoneNumber: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine Type</label>
+                    <select 
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                      value={restaurant.cuisine}
+                      onChange={(e) => updateRestaurant.mutate({ cuisine: e.target.value })}
+                    >
+                      <option>Seafood</option>
+                      <option>Italian</option>
+                      <option>American</option>
+                      <option>Asian</option>
+                      <option>Mexican</option>
+                      <option>Other</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                    <select 
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
+                      value={restaurant.priceRange}
+                      onChange={(e) => updateRestaurant.mutate({ priceRange: e.target.value })}
+                    >
+                      <option>$ (Under $10)</option>
+                      <option>$$ ($11-$30)</option>
+                      <option>$$$ ($31-$60)</option>
+                      <option>$$$$ (Over $60)</option>
+                    </select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <textarea 
+                      className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
+                      rows={3}
+                      value={restaurant.description || ""}
+                      onChange={(e) => updateRestaurant.mutate({ description: e.target.value })}
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Opening Hours</h3>
+              <div className="bg-gray-50 rounded-lg p-6">
+                <div className="space-y-3">
+                  {operatingHours && Object.entries(operatingHours).map(([day, hours]: [string, any]) => (
+                    <div key={day} className="flex justify-between">
+                      <span className="font-medium">{day.charAt(0).toUpperCase() + day.slice(1)}</span>
+                      <span>{hours.open} - {hours.close}</span>
+                    </div>
+                  ))}
+                  {!operatingHours && (
+                    <p className="text-gray-500">No operating hours set.</p>
+                  )}
+                </div>
+                <button className="mt-4 text-secondary hover:text-primary transition-colors text-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
+                  </svg>
+                  Edit Hours
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Google Maps Integration */}
+          <h3 className="text-lg font-semibold mb-4">Location</h3>
+          <div className="bg-gray-50 rounded-lg p-6">
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+              <input 
+                type="text" 
+                className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
+                value={restaurant.address}
+                onChange={(e) => updateRestaurant.mutate({ address: e.target.value })}
+              />
+            </div>
+            {/* Google Maps component */}
+            <GoogleMap
+              latitude={restaurant.latitude}
+              longitude={restaurant.longitude}
+              markerTitle={restaurant.name}
+              className="mb-4"
+            />
+            <div className="flex justify-end">
+              <button className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm">
+                Verify Location
+              </button>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="waitlist">
+          <WaitlistManagement restaurantId={RESTAURANT_ID} />
+        </TabsContent>
+        
+        <TabsContent value="qrcode">
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">QR Code Generator</h3>
+            <p className="mb-4 text-gray-600">
+              Generate a QR code for your restaurant that customers can scan to join your waitlist.
+              Place this QR code on your restaurant window or at the entrance.
+            </p>
+            <ol className="list-decimal ml-5 mb-4 space-y-2 text-gray-600">
+              <li>Generate the QR code using the tool below</li>
+              <li>Download and print the QR code</li>
+              <li>Place it in a visible spot for customers</li>
+              <li>When scanned, customers will be able to join your waitlist</li>
+            </ol>
+          </div>
+          
+          <QRCodeGenerator restaurantId={RESTAURANT_ID} restaurantName={restaurant.name} />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

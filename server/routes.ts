@@ -1,7 +1,13 @@
 import express, { type Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertUserSchema, insertRestaurantSchema, waitStatusEnum } from "@shared/schema";
+import { 
+  insertUserSchema, 
+  insertRestaurantSchema, 
+  insertWaitlistEntrySchema,
+  waitStatusEnum, 
+  waitlistStatusEnum 
+} from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -160,6 +166,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching restaurants by owner:", error);
       return res.status(500).json({ message: "Error fetching restaurants by owner" });
+    }
+  });
+  
+  // QR code generation endpoint
+  apiRouter.post("/restaurants/:id/qr-code", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Generate or get existing QR code
+      const qrCodeId = await storage.generateRestaurantQrCode(id);
+      
+      res.json({ qrCodeId });
+    } catch (error) {
+      console.error("Error generating QR code:", error);
+      res.status(500).json({ message: "Error generating QR code" });
+    }
+  });
+  
+  // Get restaurant by QR code
+  apiRouter.get("/restaurants/qr/:qrCodeId", async (req: Request, res: Response) => {
+    try {
+      const { qrCodeId } = req.params;
+      
+      const restaurant = await storage.getRestaurantByQrCodeId(qrCodeId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Invalid QR code" });
+      }
+      
+      res.json(restaurant);
+    } catch (error) {
+      console.error("Error getting restaurant by QR code:", error);
+      res.status(500).json({ message: "Error retrieving restaurant information" });
+    }
+  });
+  
+  // Waitlist endpoints
+  apiRouter.get("/restaurants/:id/waitlist", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const waitlistEntries = await storage.getWaitlistEntries(id);
+      res.json(waitlistEntries);
+    } catch (error) {
+      console.error("Error getting waitlist entries:", error);
+      res.status(500).json({ message: "Error retrieving waitlist entries" });
+    }
+  });
+  
+  apiRouter.post("/restaurants/:id/waitlist", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Create waitlist entry
+      const entry = await storage.createWaitlistEntry({
+        ...req.body,
+        restaurantId: id,
+      });
+      
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating waitlist entry:", error);
+      res.status(500).json({ message: "Error adding to waitlist" });
+    }
+  });
+  
+  apiRouter.patch("/restaurants/:id/waitlist/:entryId", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const entryId = parseInt(req.params.entryId);
+      if (isNaN(restaurantId) || isNaN(entryId)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Update waitlist entry
+      const entry = await storage.updateWaitlistEntry(entryId, req.body);
+      if (!entry) {
+        return res.status(404).json({ message: "Waitlist entry not found" });
+      }
+      
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating waitlist entry:", error);
+      res.status(500).json({ message: "Error updating waitlist entry" });
     }
   });
   
