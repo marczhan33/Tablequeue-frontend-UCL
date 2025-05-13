@@ -258,7 +258,10 @@ export default function WaitlistStatusPage() {
             </Button>
             <Button
               className="flex-1"
-              onClick={() => window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}`}
+              onClick={() => {
+                const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}`;
+                window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+              }}
             >
               Get Directions
             </Button>
