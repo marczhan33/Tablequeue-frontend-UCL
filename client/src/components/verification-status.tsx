@@ -13,10 +13,10 @@ export function VerificationStatus() {
   const { toast } = useToast();
   const [isResending, setIsResending] = useState(false);
 
-  // If user isn't logged in or is already verified, don't show anything
-  if (!user || user.isVerified) {
-    return null;
-  }
+  // Since we're auto-verifying users in development mode, 
+  // we'll hide this component completely for now
+  // When email verification is properly set up, this logic will be useful
+  return null;
 
   const handleResendVerification = async () => {
     try {
