@@ -892,6 +892,236 @@ export class MemStorage implements IStorage {
       });
     });
   }
+  
+  // Analytics operations
+  async getDailyAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<DailyAnalytics[]> {
+    let analytics = Array.from(this.dailyAnalyticsData.values()).filter(
+      analytics => analytics.restaurantId === restaurantId
+    );
+    
+    if (startDate) {
+      analytics = analytics.filter(a => a.date >= startDate);
+    }
+    
+    if (endDate) {
+      analytics = analytics.filter(a => a.date <= endDate);
+    }
+    
+    return analytics.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+  
+  async getHourlyAnalytics(restaurantId: number, date: Date): Promise<HourlyAnalytics[]> {
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const analytics = Array.from(this.hourlyAnalyticsData.values()).filter(
+      analytics => analytics.restaurantId === restaurantId && 
+                   analytics.hour >= startOfDay &&
+                   analytics.hour <= endOfDay
+    );
+    
+    return analytics.sort((a, b) => a.hour.getTime() - b.hour.getTime());
+  }
+  
+  async getTableAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<TableAnalytics[]> {
+    let analytics = Array.from(this.tableAnalyticsData.values()).filter(
+      analytics => analytics.restaurantId === restaurantId
+    );
+    
+    if (startDate) {
+      analytics = analytics.filter(a => a.date >= startDate);
+    }
+    
+    if (endDate) {
+      analytics = analytics.filter(a => a.date <= endDate);
+    }
+    
+    return analytics.sort((a, b) => a.date.getTime() - b.date.getTime());
+  }
+  
+  async createDailyAnalytics(data: InsertDailyAnalytics): Promise<DailyAnalytics> {
+    const id = this.dailyAnalyticsCurrentId++;
+    const analytics: DailyAnalytics = { ...data, id };
+    this.dailyAnalyticsData.set(id, analytics);
+    return analytics;
+  }
+  
+  async createHourlyAnalytics(data: InsertHourlyAnalytics): Promise<HourlyAnalytics> {
+    const id = this.hourlyAnalyticsCurrentId++;
+    const analytics: HourlyAnalytics = { ...data, id };
+    this.hourlyAnalyticsData.set(id, analytics);
+    return analytics;
+  }
+  
+  async createTableAnalytics(data: InsertTableAnalytics): Promise<TableAnalytics> {
+    const id = this.tableAnalyticsCurrentId++;
+    const analytics: TableAnalytics = { ...data, id };
+    this.tableAnalyticsData.set(id, analytics);
+    return analytics;
+  }
+  
+  async generateAnalyticsFromWaitlist(restaurantId: number, date: Date): Promise<boolean> {
+    try {
+      // Get all waitlist entries for the restaurant on the specified date
+      const startOfDay = new Date(date);
+      startOfDay.setHours(0, 0, 0, 0);
+      
+      const endOfDay = new Date(date);
+      endOfDay.setHours(23, 59, 59, 999);
+      
+      const entries = Array.from(this.waitlistEntries.values()).filter(
+        entry => entry.restaurantId === restaurantId && 
+                 entry.createdAt >= startOfDay &&
+                 entry.createdAt <= endOfDay
+      );
+      
+      if (entries.length === 0) {
+        return false;
+      }
+      
+      // Generate daily analytics
+      const totalWaitTime = entries.reduce((sum, entry) => sum + entry.estimatedWaitTime, 0);
+      const averageWaitTime = entries.length > 0 ? totalWaitTime / entries.length : 0;
+      
+      const seatedEntries = entries.filter(entry => entry.status === 'seated');
+      const canceledEntries = entries.filter(entry => entry.status === 'canceled');
+      
+      await this.createDailyAnalytics({
+        restaurantId,
+        date: new Date(date),
+        totalCustomers: entries.length,
+        averageWaitTime,
+        seatedCustomers: seatedEntries.length,
+        canceledCustomers: canceledEntries.length,
+        peakHour: this.calculatePeakHour(entries),
+        averagePartySize: this.calculateAveragePartySize(entries)
+      });
+      
+      // Generate hourly analytics
+      const hourlyData = this.groupEntriesByHour(entries);
+      for (const [hour, hourEntries] of Object.entries(hourlyData)) {
+        const hourDate = new Date(startOfDay);
+        hourDate.setHours(parseInt(hour));
+        
+        await this.createHourlyAnalytics({
+          restaurantId,
+          hour: hourDate,
+          customerCount: hourEntries.length,
+          averageWaitTime: hourEntries.reduce((sum, entry) => sum + entry.estimatedWaitTime, 0) / hourEntries.length,
+          seatedCount: hourEntries.filter(entry => entry.status === 'seated').length,
+          canceledCount: hourEntries.filter(entry => entry.status === 'canceled').length
+        });
+      }
+      
+      // Generate table analytics
+      const tableData = this.groupEntriesByTableType(entries);
+      for (const [tableTypeId, tableEntries] of Object.entries(tableData)) {
+        const typeId = parseInt(tableTypeId);
+        if (isNaN(typeId)) continue;
+        
+        const tableType = await this.getTableType(typeId);
+        if (!tableType) continue;
+        
+        await this.createTableAnalytics({
+          restaurantId,
+          date: new Date(date),
+          tableTypeId: typeId,
+          tableName: tableType.name,
+          totalUsage: tableEntries.length,
+          averageSeatingDuration: this.calculateAverageSeatingDuration(tableEntries),
+          peakUsageHour: this.calculatePeakHourForTableType(tableEntries)
+        });
+      }
+      
+      return true;
+    } catch (error) {
+      console.error("Error generating analytics:", error);
+      return false;
+    }
+  }
+  
+  // Helper methods for analytics
+  private calculatePeakHour(entries: WaitlistEntry[]): number {
+    const hourCounts = new Map<number, number>();
+    
+    for (const entry of entries) {
+      const hour = entry.createdAt.getHours();
+      const currentCount = hourCounts.get(hour) || 0;
+      hourCounts.set(hour, currentCount + 1);
+    }
+    
+    let peakHour = 0;
+    let maxCount = 0;
+    
+    for (const [hour, count] of hourCounts.entries()) {
+      if (count > maxCount) {
+        maxCount = count;
+        peakHour = hour;
+      }
+    }
+    
+    return peakHour;
+  }
+  
+  private calculateAveragePartySize(entries: WaitlistEntry[]): number {
+    if (entries.length === 0) return 0;
+    const totalPartySize = entries.reduce((sum, entry) => sum + entry.partySize, 0);
+    return totalPartySize / entries.length;
+  }
+  
+  private calculateAverageSeatingDuration(entries: WaitlistEntry[]): number {
+    const seatedEntries = entries.filter(entry => 
+      entry.status === 'seated' && entry.seatedAt !== null && entry.completedAt !== null
+    );
+    
+    if (seatedEntries.length === 0) return 0;
+    
+    const totalDuration = seatedEntries.reduce((sum, entry) => {
+      if (entry.seatedAt && entry.completedAt) {
+        return sum + (entry.completedAt.getTime() - entry.seatedAt.getTime()) / (1000 * 60); // in minutes
+      }
+      return sum;
+    }, 0);
+    
+    return totalDuration / seatedEntries.length;
+  }
+  
+  private calculatePeakHourForTableType(entries: WaitlistEntry[]): number {
+    return this.calculatePeakHour(entries);
+  }
+  
+  private groupEntriesByHour(entries: WaitlistEntry[]): Record<string, WaitlistEntry[]> {
+    const hourlyData: Record<string, WaitlistEntry[]> = {};
+    
+    for (const entry of entries) {
+      const hour = entry.createdAt.getHours();
+      if (!hourlyData[hour]) {
+        hourlyData[hour] = [];
+      }
+      hourlyData[hour].push(entry);
+    }
+    
+    return hourlyData;
+  }
+  
+  private groupEntriesByTableType(entries: WaitlistEntry[]): Record<string, WaitlistEntry[]> {
+    const tableData: Record<string, WaitlistEntry[]> = {};
+    
+    for (const entry of entries) {
+      if (entry.tableTypeId) {
+        const typeId = entry.tableTypeId;
+        if (!tableData[typeId]) {
+          tableData[typeId] = [];
+        }
+        tableData[typeId].push(entry);
+      }
+    }
+    
+    return tableData;
+  }
 }
 
 // Use in-memory storage for now since we don't have a proper database connection
