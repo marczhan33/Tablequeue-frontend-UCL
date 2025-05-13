@@ -154,7 +154,7 @@ export const operatingHoursSchema = z.object({
 
 export type OperatingHours = z.infer<typeof operatingHoursSchema>;
 
-// Form schema for QR code customer inputs
+// Form schema for QR code customer inputs (for in-person queue)
 export const qrCodeCustomerFormSchema = z.object({
   customerName: z.string().min(2, "Name is required"),
   partySize: z.number().min(1, "Party size must be at least 1"),
@@ -163,7 +163,19 @@ export const qrCodeCustomerFormSchema = z.object({
   specialRequests: z.string().optional(),
 });
 
+// Remote waitlist form schema (for joining the queue remotely)
+export const remoteWaitlistFormSchema = z.object({
+  customerName: z.string().min(2, "Name is required"),
+  partySize: z.number().min(1, "Party size must be at least 1"),
+  phoneNumber: z.string().min(10, "Valid phone number required for remote queue"),
+  email: z.string().email("Valid email required for confirmation").optional(),
+  dietaryRequirements: z.string().optional(),
+  specialRequests: z.string().optional(),
+  expectedArrivalTime: z.string(), // ISO string for expected arrival time
+});
+
 export type QrCodeCustomerForm = z.infer<typeof qrCodeCustomerFormSchema>;
+export type RemoteWaitlistForm = z.infer<typeof remoteWaitlistFormSchema>;
 
 // ----- Historical Data Analytics Schema -----
 

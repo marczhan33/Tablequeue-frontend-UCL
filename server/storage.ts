@@ -49,8 +49,11 @@ export interface IStorage {
   // Waitlist operations
   getWaitlistEntries(restaurantId: number): Promise<WaitlistEntry[]>;
   getWaitlistEntry(id: number): Promise<WaitlistEntry | undefined>;
+  getWaitlistEntryByConfirmationCode(code: string): Promise<WaitlistEntry | undefined>;
   createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry>;
   updateWaitlistEntry(id: number, data: Partial<WaitlistEntry>): Promise<WaitlistEntry | undefined>;
+  createRemoteWaitlistEntry(entry: InsertWaitlistEntry & { isRemote: true, expectedArrivalTime: Date }): Promise<WaitlistEntry>;
+  confirmRemoteArrival(confirmationCode: string): Promise<WaitlistEntry | undefined>;
   
   // QR code operations
   generateRestaurantQrCode(restaurantId: number): Promise<string>;
@@ -446,6 +449,11 @@ export class MemStorage implements IStorage {
     return this.waitlistEntries.get(id);
   }
   
+  async getWaitlistEntryByConfirmationCode(code: string): Promise<WaitlistEntry | undefined> {
+    return Array.from(this.waitlistEntries.values())
+      .find(entry => entry.confirmationCode === code);
+  }
+  
   async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {
     const id = this.waitlistEntryCurrentId++;
     const createdAt = new Date();
@@ -538,17 +546,29 @@ export class MemStorage implements IStorage {
       updatedData.seatedAt = new Date();
     }
     
+    if (data.status === 'remote_confirmed' && entry.status === 'remote_pending') {
+      // Customer confirmed they're on their way
+      updatedData.expectedArrivalTime = data.expectedArrivalTime || new Date(Date.now() + 30 * 60000); // Default 30 min
+    }
+    
+    if (data.status === 'waiting' && (entry.status === 'remote_pending' || entry.status === 'remote_confirmed')) {
+      // Remote customer has arrived at the restaurant
+      updatedData.arrivedAt = new Date();
+    }
+    
     const updatedEntry = { ...entry, ...updatedData };
     this.waitlistEntries.set(id, updatedEntry);
     
     // If someone is seated or cancelled, update queue positions for others
     if ((data.status === 'seated' || data.status === 'cancelled') && 
-        (entry.status === 'waiting' || entry.status === 'notified')) {
+        (entry.status === 'waiting' || entry.status === 'notified' || 
+         entry.status === 'remote_pending' || entry.status === 'remote_confirmed')) {
       
       // Update queue positions for all waiting entries at this restaurant
       const restaurantEntries = await this.getWaitlistEntries(entry.restaurantId);
       const waitingEntries = restaurantEntries.filter(
-        e => (e.status === 'waiting' || e.status === 'notified') && e.id !== id
+        e => (e.status === 'waiting' || e.status === 'notified' || 
+              e.status === 'remote_pending' || e.status === 'remote_confirmed') && e.id !== id
       );
       
       // Sort by created time to ensure proper queue position
