@@ -259,7 +259,24 @@ export default function WaitlistStatusPage() {
             </Button>
             <Button 
               className="flex-1"
-              onClick={() => window.location.href = `https://www.google.com/maps/dir/?api=1&destination=${restaurant.latitude},${restaurant.longitude}`}
+              onClick={() => {
+                // Try multiple formats for maximum compatibility
+                // First attempt - location-based query (works well on desktop)
+                const locationQuery = encodeURIComponent(`${restaurant.name}, ${restaurant.address}`);
+                const mapsLocationUrl = `https://www.google.com/maps/search/?api=1&query=${locationQuery}`;
+                
+                // Second attempt - directions API (works well on mobile)
+                const directionsUrl = `https://maps.google.com/?daddr=${restaurant.latitude},${restaurant.longitude}`;
+                
+                // Try to detect if user is on mobile
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                // Use the appropriate URL based on device
+                const mapsUrl = isMobile ? directionsUrl : mapsLocationUrl;
+                
+                // Open in new tab
+                window.open(mapsUrl, '_blank');
+              }}
             >
               Get Directions
             </Button>
