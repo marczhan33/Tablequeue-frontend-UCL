@@ -6,6 +6,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import createMemoryStore from "memorystore";
 
 declare global {
   namespace Express {
@@ -29,10 +30,18 @@ async function comparePasswords(supplied: string, stored: string) {
 }
 
 export function setupAuth(app: Express) {
-  const sessionSettings: session.SessionOptions = {
+  // Create memory store for sessions
+  const MemoryStore = createMemoryStore(session);
+  const sessionStore = new MemoryStore({
+    checkPeriod: 86400000 // prune expired entries every 24h
+  });
+
+  // Session configuration
+  const sessionConfig: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'tablequeue-session-secret', // In production, use environment variable
     resave: false,
     saveUninitialized: false,
+    store: sessionStore,
     cookie: { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production',
@@ -41,7 +50,7 @@ export function setupAuth(app: Express) {
   };
 
   app.set("trust proxy", 1);
-  app.use(session(sessionSettings));
+  app.use(session(sessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
 
@@ -109,7 +118,7 @@ export function setupAuth(app: Express) {
   });
 
   app.post("/api/login", (req, res, next) => {
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: Express.User | false) => {
       if (err) return next(err);
       if (!user) return res.status(401).json({ error: "Invalid username or password" });
       
