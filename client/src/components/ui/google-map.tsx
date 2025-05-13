@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 // Type definition for Google Maps API
 declare global {
@@ -21,34 +21,102 @@ interface GoogleMapProps {
   className?: string;
 }
 
-const GoogleMap = ({ 
+const GoogleMap: React.FC<GoogleMapProps> = ({ 
   latitude, 
   longitude, 
   zoom = 15, 
   markerTitle = 'Restaurant Location',
   height = '250px',
   className = ''
-}: GoogleMapProps) => {
+}) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '';
+  const [useFallbackMap, setUseFallbackMap] = useState(!apiKey);
   
   // Open the actual location in Google Maps when clicked
   const openInGoogleMaps = () => {
     window.open(`https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`, '_blank');
   };
   
-  // Function to initialize the map
+  // Function to initialize map with coordinates
+  const initializeMap = () => {
+    if (!mapRef.current) return;
+    
+    try {
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+      
+      // Create the map
+      const map = new window.google.maps.Map(mapRef.current, {
+        center: { lat, lng },
+        zoom: zoom,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: false,
+      });
+      
+      // Add marker for restaurant location
+      const marker = new window.google.maps.Marker({
+        position: { lat, lng },
+        map: map,
+        title: markerTitle,
+      });
+  
+      // Add info window with wait time information
+      const waitTimeInfo = window.waitTimeData ? window.waitTimeData[markerTitle] : null;
+      const waitTimeContent = waitTimeInfo
+        ? `<div style="font-family: Arial, sans-serif; padding: 5px;">
+             <div><strong>${markerTitle}</strong></div>
+             <div style="display: flex; align-items: center; margin-top: 8px;">
+               <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${
+                 waitTimeInfo.status === 'available' ? '#4CAF50' : 
+                 waitTimeInfo.status === 'short' ? '#FF9800' : 
+                 waitTimeInfo.status === 'long' ? '#F44336' :
+                 waitTimeInfo.status === 'very_long' ? '#9C27B0' : '#757575'
+               }; margin-right: 6px;"></span>
+               <span style="font-size: 0.9em;">${
+                 waitTimeInfo.status === 'available' ? 'No wait' : 
+                 waitTimeInfo.status === 'short' ? 'Short wait (15-30 min)' : 
+                 waitTimeInfo.status === 'long' ? 'Long wait (30-60 min)' :
+                 waitTimeInfo.status === 'very_long' ? 'Very long wait (60+ min)' : 'Closed'
+               }</span>
+             </div>
+             ${waitTimeInfo.minutes ? `<div style="margin-top: 4px; font-size: 0.85em; color: #555;">Approx. ${waitTimeInfo.minutes} minutes</div>` : ''}
+           </div>`
+        : `<div style="font-family: Arial, sans-serif; padding: 5px;"><strong>${markerTitle}</strong></div>`;
+      
+      const infoWindow = new window.google.maps.InfoWindow({
+        content: waitTimeContent
+      });
+  
+      marker.addListener('click', () => {
+        infoWindow.open(map, marker);
+      });
+    } catch (error) {
+      console.error('Error initializing Google Map:', error);
+      setUseFallbackMap(true);
+    }
+  };
+  
+  // Function to load the map script
   useEffect(() => {
-    // Skip if no API key or proper coordinates
-    if (!mapRef.current || !latitude || !longitude) return;
-
-    // Check if we have an API key
+    // Skip if no proper coordinates or already using fallback
+    if (!mapRef.current || !latitude || !longitude || useFallbackMap) return;
+    
+    // Check if we have a valid API key
     if (!apiKey) {
-      // If no API key, use our fallback map interface
+      console.warn('Google Maps API key is missing. Using fallback map interface.');
+      setUseFallbackMap(true);
       return;
     }
     
-    // If the Google Maps script is already loaded
+    // Handle map loading errors
+    const handleMapError = () => {
+      console.warn('Google Maps failed to load. Using fallback interface.');
+      setUseFallbackMap(true);
+    };
+    
+    // If the Google Maps script is already loaded, initialize the map
     if (window.google && window.google.maps) {
       initializeMap();
       return;
@@ -59,84 +127,31 @@ const GoogleMap = ({
     script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&callback=initMap`;
     script.async = true;
     script.defer = true;
+    script.onerror = handleMapError;
     
-    window.initMap = initializeMap;
+    // Set up timeout in case the script loads but has API key issues
+    const timeoutId = setTimeout(handleMapError, 5000);
+    
+    // Define the callback for when the script loads
+    window.initMap = () => {
+      clearTimeout(timeoutId);
+      initializeMap();
+    };
     
     document.head.appendChild(script);
     
+    // Cleanup function
     return () => {
-      // Cleanup if component unmounts before script loads
+      clearTimeout(timeoutId);
       window.initMap = () => {};
       if (document.head.contains(script)) {
         document.head.removeChild(script);
       }
     };
-  }, [latitude, longitude, zoom, markerTitle, apiKey]);
+  }, [latitude, longitude, zoom, markerTitle, apiKey, useFallbackMap]);
   
-  // Function to initialize map with coordinates
-  const initializeMap = () => {
-    if (!mapRef.current) return;
-    
-    const lat = parseFloat(latitude);
-    const lng = parseFloat(longitude);
-    
-    // Create the map
-    const map = new window.google.maps.Map(mapRef.current, {
-      center: { lat, lng },
-      zoom: zoom,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: false,
-    });
-    
-    // Add marker for restaurant location
-    new window.google.maps.Marker({
-      position: { lat, lng },
-      map: map,
-      title: markerTitle,
-    });
-
-    // Add info window with wait time information
-    const waitTimeInfo = window.waitTimeData ? window.waitTimeData[markerTitle] : null;
-    const waitTimeContent = waitTimeInfo
-      ? `<div style="font-family: Arial, sans-serif; padding: 5px;">
-           <div><strong>${markerTitle}</strong></div>
-           <div style="display: flex; align-items: center; margin-top: 8px;">
-             <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${
-               waitTimeInfo.status === 'available' ? '#4CAF50' : 
-               waitTimeInfo.status === 'short' ? '#FF9800' : 
-               waitTimeInfo.status === 'long' ? '#F44336' :
-               waitTimeInfo.status === 'very_long' ? '#9C27B0' : '#757575'
-             }; margin-right: 6px;"></span>
-             <span style="font-size: 0.9em;">${
-               waitTimeInfo.status === 'available' ? 'No wait' : 
-               waitTimeInfo.status === 'short' ? 'Short wait (15-30 min)' : 
-               waitTimeInfo.status === 'long' ? 'Long wait (30-60 min)' :
-               waitTimeInfo.status === 'very_long' ? 'Very long wait (60+ min)' : 'Closed'
-             }</span>
-           </div>
-           ${waitTimeInfo.minutes ? `<div style="margin-top: 4px; font-size: 0.85em; color: #555;">Approx. ${waitTimeInfo.minutes} minutes</div>` : ''}
-         </div>`
-      : `<div style="font-family: Arial, sans-serif; padding: 5px;"><strong>${markerTitle}</strong></div>`;
-    
-    const infoWindow = new window.google.maps.InfoWindow({
-      content: waitTimeContent
-    });
-
-    // Open info window when marker is clicked
-    const marker = new window.google.maps.Marker({
-      position: { lat, lng },
-      map: map,
-      title: markerTitle,
-    });
-
-    marker.addListener('click', () => {
-      infoWindow.open(map, marker);
-    });
-  };
-  
-  // If no API key, render a static map
-  if (!apiKey) {
+  // Render the fallback map interface
+  if (useFallbackMap) {
     return (
       <div 
         className={`rounded-lg overflow-hidden ${className} cursor-pointer`}
@@ -145,13 +160,12 @@ const GoogleMap = ({
         onClick={openInGoogleMaps}
       >
         <div className="h-full bg-gray-100 flex flex-col items-center justify-center p-4 relative">
-          {/* Interactive map-like appearance */}
+          {/* Grid background */}
           <div className="absolute inset-0 bg-blue-50 opacity-50 pointer-events-none">
-            {/* Grid lines to simulate a map */}
             <div className="w-full h-full" style={{ backgroundImage: 'linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
           </div>
           
-          {/* Location pin in the center */}
+          {/* Location pin */}
           <div className="z-10 bg-primary text-white rounded-full p-4 mb-2 shadow-lg">
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
@@ -180,7 +194,7 @@ const GoogleMap = ({
     );
   }
   
-  // Render the actual Google Maps
+  // Render the Google Maps container
   return (
     <div 
       ref={mapRef} 
