@@ -1,4 +1,4 @@
-import express, { type Express, Request, Response } from "express";
+import express, { type Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { 
@@ -9,8 +9,34 @@ import {
   waitlistStatusEnum 
 } from "@shared/schema";
 import { z } from "zod";
+import { setupAuth } from "./auth";
+
+// Middleware to ensure user is authenticated
+function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).json({ error: "Unauthorized - Please log in" });
+}
+
+// Middleware to ensure user is restaurant owner
+function ensureRestaurantOwner(req: Request, res: Response, next: NextFunction) {
+  if (req.isAuthenticated() && req.user.role === 'owner') {
+    return next();
+  }
+  res.status(403).json({ error: "Forbidden - Restaurant owner access required" });
+}
+
+// Function to check if a user owns a specific restaurant
+async function isRestaurantOwner(userId: number, restaurantId: number): Promise<boolean> {
+  const restaurant = await storage.getRestaurant(restaurantId);
+  return restaurant?.userId === userId;
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Setup authentication
+  setupAuth(app);
+  
   // API Routes - all prefixed with /api
   const apiRouter = express.Router();
   
