@@ -79,7 +79,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
       const data = await response.json();
       toast({
         title: 'Added to Remote Waitlist',
-        description: `You've been added to the waitlist! Your confirmation code is ${data.confirmationCode}. Please use this code when you arrive at the restaurant.`,
+        description: `You've been added to the waitlist with queue position #${data.queuePosition}! Your confirmation code is ${data.confirmationCode}. Please use this code when you arrive at the restaurant to preserve your position in line.`,
       });
       
       if (onSuccess) {
@@ -114,8 +114,9 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
         <CardTitle className="text-xl font-bold">{restaurant.name} Remote Waitlist</CardTitle>
-        <CardDescription>
-          Join the waitlist before you arrive and skip the wait when you get here
+        <CardDescription className="space-y-2">
+          <p>Join the waitlist before you arrive and skip the wait when you get here</p>
+          <p className="text-primary font-medium">Secure your spot in line now! Your position is reserved from the moment you submit this form.</p>
         </CardDescription>
       </CardHeader>
       <CardContent>
