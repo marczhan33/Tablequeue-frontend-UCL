@@ -3,8 +3,9 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/hooks/use-auth";
-import { ProtectedRoute } from "@/components/auth/protected-route";
+import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import { Loader2 } from "lucide-react";
+import { Redirect } from "wouter";
 import { VerificationStatus } from "@/components/verification-status";
 import { DevModeNotice } from "@/components/dev-mode-notice";
 import Header from "@/components/layout/header";
@@ -17,12 +18,56 @@ import WaitlistPage from "@/pages/waitlist";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
+function ProtectedRoute({ path, component: Component, ownerOnly = false }: { path: string, component: React.ComponentType, ownerOnly?: boolean }) {
+  const { user, isLoading } = useAuth();
+  const [, setLocation] = useLocation();
+
+  if (isLoading) {
+    return (
+      <Route path={path}>
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </Route>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Route path={path}>
+        <Redirect to="/auth" />
+      </Route>
+    );
+  }
+
+  if (ownerOnly && user.role !== "owner") {
+    return (
+      <Route path={path}>
+        <div className="flex flex-col items-center justify-center min-h-[50vh] px-4 text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-2">Access Denied</h1>
+          <p className="text-lg mb-6">You must be a restaurant owner to access this page.</p>
+          <button 
+            onClick={() => setLocation("/")}
+            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors"
+          >
+            Go to Homepage
+          </button>
+        </div>
+      </Route>
+    );
+  }
+
+  return <Route path={path} component={Component} />;
+}
+
 function Router() {
   return (
     <Switch>
       <Route path="/" component={CustomerView} />
       <Route path="/restaurant/:id" component={RestaurantDetails} />
-      <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} ownerOnly={true} />
+      <Route path="/restaurant-dashboard">
+        <RestaurantDashboard />
+      </Route>
       <Route path="/how-it-works" component={HowItWorks} />
       <Route path="/waitlist/:qrCodeId" component={WaitlistPage} />
       <Route path="/auth" component={AuthPage} />

@@ -35,7 +35,15 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
   
   // Fetch capacity prediction directly from the API
   const { data: prediction } = useQuery<CapacityPredictionResponse>({
-    queryKey: [`/api/restaurants/${restaurantId}/capacity-prediction`, { partySize }],
+    queryKey: [`/api/restaurants/${restaurantId}/capacity-prediction`, partySize],
+    queryFn: async ({ queryKey }) => {
+      const url = `${queryKey[0]}?partySize=${queryKey[1]}`;
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch capacity prediction');
+      }
+      return response.json();
+    },
     enabled: !!restaurantId && partySize > 0,
   });
   
