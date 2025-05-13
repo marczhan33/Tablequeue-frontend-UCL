@@ -19,12 +19,7 @@ export function createGoogleMapsUrl(
   latitude?: string, 
   longitude?: string
 ): string {
-  // First try using coordinates if available
-  if (latitude && longitude) {
-    return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
-  }
-  
-  // Fall back to address search
-  const searchQuery = encodeURIComponent(`${name}, ${address}`);
-  return `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+  // Use a super-simple maps.google.com URL that works more reliably in restricted environments
+  const query = encodeURIComponent(`${name}, ${address}`);
+  return `https://maps.google.com?q=${query}`;
 }
