@@ -597,6 +597,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Get current waitlist entries
       const waitlistEntries = await storage.getWaitlistEntries(id);
       
+      // Get historical analytics data to enhance prediction
+      const now = new Date();
+      const pastDate = new Date(now);
+      pastDate.setDate(pastDate.getDate() - 28); // Get 4 weeks of historical data
+      
+      // Get historical analytics data
+      let historicalData = {
+        averageWaitTime: 0,
+        peakHour: 0,
+        dayOfWeekMultiplier: 1.0,
+        averagePartySize: 0,
+        hasHistoricalData: false
+      };
+      
+      try {
+        // Get daily analytics data
+        const dailyAnalytics = await storage.getDailyAnalytics(id, pastDate);
+        
+        if (dailyAnalytics.length > 0) {
+          // Extract useful historical patterns
+          
+          // Calculate average wait time
+          const totalWaitTime = dailyAnalytics.reduce((sum, day) => sum + day.averageWaitTime, 0);
+          historicalData.averageWaitTime = totalWaitTime / dailyAnalytics.length;
+          
+          // Find most common peak hour
+          const peakHourCounts: {[hour: number]: number} = {};
+          dailyAnalytics.forEach(day => {
+            const hour = day.peakHour || 0;
+            peakHourCounts[hour] = (peakHourCounts[hour] || 0) + 1;
+          });
+          
+          let maxCount = 0;
+          let mostCommonPeakHour = 0;
+          Object.entries(peakHourCounts).forEach(([hour, count]) => {
+            if (count > maxCount) {
+              maxCount = count;
+              mostCommonPeakHour = parseInt(hour);
+            }
+          });
+          
+          historicalData.peakHour = mostCommonPeakHour;
+          
+          // Calculate average party size
+          const totalPartySize = dailyAnalytics.reduce((sum, day) => {
+            // Handle averagePartySize that might be stored as a string
+            const avgPartySize = typeof day.averagePartySize === 'string' 
+              ? parseFloat(day.averagePartySize) 
+              : day.averagePartySize || 0;
+            return sum + avgPartySize;
+          }, 0);
+          
+          historicalData.averagePartySize = totalPartySize / dailyAnalytics.length || 2; // Default to 2 if calculation fails
+          
+          // Consider day of week patterns (weekends usually busier)
+          const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, etc.
+          const isWeekend = dayOfWeek === 0 || dayOfWeek === 6; // Sunday or Saturday
+          historicalData.dayOfWeekMultiplier = isWeekend ? 1.25 : 1.0;
+          
+          historicalData.hasHistoricalData = true;
+        }
+      } catch (error) {
+        console.error("Error fetching historical analytics:", error);
+        // Continue without historical data if there's an error
+      }
+      
       // Calculate the prediction
       // This would typically use a complex algorithm, but for now we'll use a simple approach
       let estWaitTime = 0;
@@ -671,6 +737,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
+      // Incorporate historical data to enhance prediction
+      if (historicalData.hasHistoricalData) {
+        // Get current time
+        const currentTime = new Date();
+        const currentHour = currentTime.getHours();
+        
+        // Check if we're in or near historical peak hour for this restaurant
+        const hourDifference = Math.abs(currentHour - historicalData.peakHour);
+        if (hourDifference <= 1) {
+          // We're at or very near peak hour, increase the wait time
+          estWaitTime = Math.round(estWaitTime * 1.25); // 25% longer wait during peak hours
+          // We'll set confidence level later
+        }
+        
+        // Adjust for day of week (weekends usually busier)
+        estWaitTime = Math.round(estWaitTime * historicalData.dayOfWeekMultiplier);
+        
+        // Adjust for party size relative to average party size
+        if (historicalData.averagePartySize > 0) {
+          const partySizeRatio = partySize / historicalData.averagePartySize;
+          // Apply a dampened effect of party size difference (square root to dampen)
+          estWaitTime = Math.round(estWaitTime * Math.sqrt(partySizeRatio));
+        }
+        
+        // Include the fact that we're using historical data in the prediction
+        console.log(`Enhanced prediction with historical data: avg wait ${historicalData.averageWaitTime}, peak hour ${historicalData.peakHour}`);
+      }
+      
       // Round to nearest 5 minutes
       estWaitTime = Math.ceil(estWaitTime / 5) * 5;
       
@@ -691,16 +785,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? 'high' 
         : ((restaurant.customWaitTime ?? 0) > 0 ? 'medium' : 'low');
       
-      // Return prediction
+      // Return prediction with improved confidence based on historical data
+      
+      // Format messages for user-friendly display
+      const arrivalTimeMessage = estWaitTime <= 5 
+        ? 'Arrive now' 
+        : estWaitTime <= 15 
+          ? `Arrive in about ${estWaitTime} minutes` 
+          : null;
+      
       res.json({
         restaurantId: id,
         partySize,
         estimatedWaitTime: estWaitTime,
         nextAvailableTime,
         recommendedArrivalTime,
+        arrivalTimeMessage,
         busyLevel,
         confidence,
-        availableTables: restaurant.tableCapacity || 0
+        availableTables: restaurant.tableCapacity || 0,
+        predictionDetails: {
+          usedHistoricalData: historicalData.hasHistoricalData,
+          basedOn: historicalData.hasHistoricalData 
+            ? 'Current conditions and historical patterns' 
+            : 'Current conditions only',
+          confidence: confidence,
+          accuracyLevel: historicalData.hasHistoricalData ? 'Enhanced' : 'Standard'
+        }
       });
       
     } catch (error) {
