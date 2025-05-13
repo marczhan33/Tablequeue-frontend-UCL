@@ -277,6 +277,7 @@ export class MemStorage implements IStorage {
   private tableTypes: Map<number, TableType>;
   private waitlistEntries: Map<number, WaitlistEntry>;
   private restaurantQrCodes: Map<string, number>; // Maps QR code IDs to restaurant IDs
+  private confirmationCodes: Map<string, number>; // Maps confirmation codes to waitlist entry IDs
   private dailyAnalyticsData: Map<number, DailyAnalytics>;
   private hourlyAnalyticsData: Map<number, HourlyAnalytics>;
   private tableAnalyticsData: Map<number, TableAnalytics>;
@@ -609,6 +610,113 @@ export class MemStorage implements IStorage {
       }
     }
     
+    return updatedEntry;
+  }
+  
+  async createRemoteWaitlistEntry(entry: InsertWaitlistEntry & { isRemote: true, expectedArrivalTime: Date }): Promise<WaitlistEntry> {
+    const id = this.waitlistEntryCurrentId++;
+    const createdAt = new Date();
+    
+    // Calculate queue position - count active entries for this restaurant
+    const restaurantEntries = await this.getWaitlistEntries(entry.restaurantId);
+    const activeEntries = restaurantEntries.filter(
+      e => e.status === 'waiting' || e.status === 'notified' || 
+           e.status === 'remote_pending' || e.status === 'remote_confirmed'
+    );
+    const queuePosition = activeEntries.length + 1;
+    
+    // Get restaurant to calculate estimated wait time
+    const restaurant = await this.getRestaurant(entry.restaurantId);
+    let estimatedWaitTime = 15; // Default 15 minutes wait
+    
+    if (restaurant) {
+      if (restaurant.avgSeatingTime) {
+        // If restaurant has average seating time, use that
+        estimatedWaitTime = restaurant.avgSeatingTime * queuePosition;
+      } else if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
+        // Otherwise use custom wait time per party
+        estimatedWaitTime = restaurant.customWaitTime;
+      } else {
+        // Use status-based estimate
+        switch (restaurant.currentWaitStatus) {
+          case 'available': estimatedWaitTime = 0; break;
+          case 'short': estimatedWaitTime = 15; break;
+          case 'long': estimatedWaitTime = 45; break;
+          case 'very_long': estimatedWaitTime = 75; break;
+          case 'closed': estimatedWaitTime = 0; break;
+          default: estimatedWaitTime = 30;
+        }
+      }
+    }
+    
+    // Generate a random 6-digit confirmation code
+    const confirmationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    
+    const waitlistEntry: WaitlistEntry = {
+      ...entry,
+      id,
+      queuePosition,
+      estimatedWaitTime,
+      createdAt,
+      status: 'remote_pending',
+      notifiedAt: null,
+      seatedAt: null,
+      arrivedAt: null,
+      confirmationCode,
+      notes: entry.notes || null,
+      dietaryRequirements: entry.dietaryRequirements || null,
+      phoneNumber: entry.phoneNumber || null,
+      email: entry.email || null
+    };
+    
+    this.waitlistEntries.set(id, waitlistEntry);
+    this.confirmationCodes.set(confirmationCode, id);
+    
+    // Update restaurant wait time based on queue length
+    if (restaurant) {
+      let newStatus: WaitStatus = 'available';
+      if (queuePosition >= 10) {
+        newStatus = 'long';
+      } else if (queuePosition >= 2) {
+        newStatus = 'short';
+      }
+      
+      // Only update if the new wait status indicates longer wait than current
+      const statusPriority = {
+        available: 0,
+        short: 1,
+        long: 2,
+        very_long: 3,
+        closed: 4
+      };
+      
+      if (statusPriority[newStatus] > statusPriority[restaurant.currentWaitStatus as WaitStatus]) {
+        this.updateWaitTime(restaurant.id, newStatus);
+      }
+    }
+    
+    return waitlistEntry;
+  }
+  
+  async confirmRemoteArrival(confirmationCode: string): Promise<WaitlistEntry | undefined> {
+    const entryId = this.confirmationCodes.get(confirmationCode);
+    if (!entryId) {
+      return undefined; // Invalid confirmation code
+    }
+    
+    const entry = this.waitlistEntries.get(entryId);
+    if (!entry || (entry.status !== 'remote_pending' && entry.status !== 'remote_confirmed')) {
+      return undefined;
+    }
+    
+    // Update status to mark arrival
+    const updatedEntry = { 
+      ...entry, 
+      status: 'waiting',
+      arrivedAt: new Date()
+    };
+    
+    this.waitlistEntries.set(entry.id, updatedEntry);
     return updatedEntry;
   }
   

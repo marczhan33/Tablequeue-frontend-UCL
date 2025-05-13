@@ -7,7 +7,8 @@ import {
   insertWaitlistEntrySchema,
   insertTableTypeSchema,
   waitStatusEnum, 
-  waitlistStatusEnum 
+  waitlistStatusEnum,
+  remoteWaitlistFormSchema
 } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
