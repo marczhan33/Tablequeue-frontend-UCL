@@ -709,6 +709,158 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Analytics endpoints
+  apiRouter.get("/restaurants/:id/analytics/daily", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if user is authorized to access this restaurant's data
+      if (req.user.role !== 'admin') {
+        const isOwner = await isRestaurantOwner(req.user.id, id);
+        if (!isOwner) {
+          return res.status(403).json({ error: "Unauthorized to access this restaurant's analytics" });
+        }
+      }
+      
+      let startDateObj: Date | undefined;
+      let endDateObj: Date | undefined;
+      
+      if (req.query.startDate && typeof req.query.startDate === 'string') {
+        startDateObj = new Date(req.query.startDate);
+      }
+      
+      if (req.query.endDate && typeof req.query.endDate === 'string') {
+        endDateObj = new Date(req.query.endDate);
+      }
+      
+      const analytics = await storage.getDailyAnalytics(id, startDateObj, endDateObj);
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error retrieving daily analytics:", error);
+      res.status(500).json({ error: "Failed to retrieve daily analytics" });
+    }
+  });
+  
+  apiRouter.get("/restaurants/:id/analytics/hourly", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if user is authorized to access this restaurant's data
+      if (req.user.role !== 'admin') {
+        const isOwner = await isRestaurantOwner(req.user.id, id);
+        if (!isOwner) {
+          return res.status(403).json({ error: "Unauthorized to access this restaurant's analytics" });
+        }
+      }
+      
+      if (!req.query.date || typeof req.query.date !== 'string') {
+        return res.status(400).json({ error: "Date parameter is required" });
+      }
+      
+      const dateObj = new Date(req.query.date);
+      
+      if (isNaN(dateObj.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+      
+      const analytics = await storage.getHourlyAnalytics(id, dateObj);
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error retrieving hourly analytics:", error);
+      res.status(500).json({ error: "Failed to retrieve hourly analytics" });
+    }
+  });
+  
+  apiRouter.get("/restaurants/:id/analytics/tables", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if user is authorized to access this restaurant's data
+      if (req.user.role !== 'admin') {
+        const isOwner = await isRestaurantOwner(req.user.id, id);
+        if (!isOwner) {
+          return res.status(403).json({ error: "Unauthorized to access this restaurant's analytics" });
+        }
+      }
+      
+      let startDateObj: Date | undefined;
+      let endDateObj: Date | undefined;
+      
+      if (req.query.startDate && typeof req.query.startDate === 'string') {
+        startDateObj = new Date(req.query.startDate);
+      }
+      
+      if (req.query.endDate && typeof req.query.endDate === 'string') {
+        endDateObj = new Date(req.query.endDate);
+      }
+      
+      const analytics = await storage.getTableAnalytics(id, startDateObj, endDateObj);
+      
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error retrieving table analytics:", error);
+      res.status(500).json({ error: "Failed to retrieve table analytics" });
+    }
+  });
+  
+  apiRouter.post("/restaurants/:id/analytics/generate", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if user is authorized to access this restaurant's data
+      if (req.user.role !== 'admin') {
+        const isOwner = await isRestaurantOwner(req.user.id, id);
+        if (!isOwner) {
+          return res.status(403).json({ error: "Unauthorized to manage this restaurant's analytics" });
+        }
+      }
+      
+      if (!req.body.date) {
+        return res.status(400).json({ error: "Date parameter is required" });
+      }
+      
+      const dateObj = new Date(req.body.date);
+      
+      if (isNaN(dateObj.getTime())) {
+        return res.status(400).json({ error: "Invalid date format" });
+      }
+      
+      const success = await storage.generateAnalyticsFromWaitlist(id, dateObj);
+      
+      if (success) {
+        res.json({ 
+          success: true, 
+          message: "Analytics generated successfully" 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          message: "No waitlist data available for the specified date" 
+        });
+      }
+    } catch (error) {
+      console.error("Error generating analytics:", error);
+      res.status(500).json({ 
+        success: false, 
+        error: "Failed to generate analytics" 
+      });
+    }
+  });
+  
   // Register all routes with /api prefix
   app.use("/api", apiRouter);
   
