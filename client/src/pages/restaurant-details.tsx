@@ -141,10 +141,12 @@ const RestaurantDetails = () => {
         </Card>
         
         {/* Display the prediction results */}
-        <SmartCapacityDisplay 
-          restaurantId={parseInt(restaurantId || "0")} 
-          partySize={partySize} 
-        />
+        {restaurantId && (
+          <SmartCapacityDisplay 
+            restaurantId={parseInt(restaurantId)} 
+            partySize={partySize} 
+          />
+        )}
       </div>
       
       {/* Additional content like reviews could be added here */}

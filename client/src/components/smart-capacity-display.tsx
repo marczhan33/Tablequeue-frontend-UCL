@@ -35,42 +35,57 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
   useEffect(() => {
     if (restaurantId && partySize > 0) {
       setLoading(true);
+      console.log(`Fetching capacity prediction for restaurant ${restaurantId} with party size ${partySize}`);
       
-      fetch(`/api/restaurants/${restaurantId}/capacity-prediction?partySize=${partySize}`)
+      // Create a more explicit URL
+      const url = `/api/restaurants/${restaurantId}/capacity-prediction?partySize=${partySize}`;
+      console.log("Prediction URL:", url);
+      
+      fetch(url)
         .then(response => {
+          console.log("Prediction API response status:", response.status);
           if (!response.ok) {
-            throw new Error('Failed to fetch capacity prediction');
+            throw new Error(`Failed to fetch capacity prediction (status ${response.status})`);
           }
           return response.json();
         })
         .then(data => {
+          console.log("Prediction API data received:", data);
           setPrediction(data);
-          setLoading(false);
         })
         .catch(err => {
           console.error('Error fetching prediction:', err);
           setPredictionError(true);
           setLoading(false);
         });
+    } else {
+      console.log(`Invalid inputs for prediction: restaurantId=${restaurantId}, partySize=${partySize}`);
     }
   }, [restaurantId, partySize]);
   
   // Update capacity data when prediction is available
   useEffect(() => {
     if (prediction) {
-      // Transform API response to match our CapacityAnalytics interface
-      const analytics: CapacityAnalytics = {
-        estimatedWaitTime: prediction.estimatedWaitTime,
-        confidence: prediction.confidence,
-        availableTables: prediction.availableTables,
-        busyLevel: prediction.busyLevel,
-        nextAvailableTime: new Date(prediction.nextAvailableTime),
-        recommendedArrivalTime: prediction.recommendedArrivalTime ? 
-          new Date(prediction.recommendedArrivalTime) : undefined
-      };
-      
-      setCapacityData(analytics);
-      setLoading(false);
+      try {
+        // Transform API response to match our CapacityAnalytics interface
+        const analytics: CapacityAnalytics = {
+          estimatedWaitTime: prediction.estimatedWaitTime,
+          confidence: prediction.confidence,
+          availableTables: prediction.availableTables,
+          busyLevel: prediction.busyLevel,
+          nextAvailableTime: new Date(prediction.nextAvailableTime),
+          recommendedArrivalTime: prediction.recommendedArrivalTime ? 
+            new Date(prediction.recommendedArrivalTime) : undefined
+        };
+        
+        console.log("Setting capacity data with:", analytics);
+        setCapacityData(analytics);
+      } catch (err) {
+        console.error("Error processing prediction data:", err);
+        setPredictionError(true);
+      } finally {
+        setLoading(false);
+      }
     }
   }, [prediction]);
   
