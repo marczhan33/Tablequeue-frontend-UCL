@@ -1,7 +1,8 @@
 import { 
   users, type User, type InsertUser, 
   restaurants, type Restaurant, type InsertRestaurant,
-  type WaitStatus
+  waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
+  type WaitStatus, type WaitlistStatus
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, like, or } from "drizzle-orm";
