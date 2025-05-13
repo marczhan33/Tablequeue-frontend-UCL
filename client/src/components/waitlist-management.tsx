@@ -30,9 +30,6 @@ export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) =>
     queryKey: ['/api/restaurants', restaurantId, 'waitlist'],
     queryFn: async () => {
       const response = await apiRequest(`/api/restaurants/${restaurantId}/waitlist`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch waitlist entries');
-      }
       return response.json();
     },
   });
@@ -40,14 +37,11 @@ export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) =>
   // Mutation to update waitlist entry status
   const updateEntryMutation = useMutation({
     mutationFn: async ({ entryId, status }: { entryId: number; status: string }) => {
-      const response = await apiRequest(`/api/restaurants/${restaurantId}/waitlist/${entryId}`, {
+      const response = await apiRequest({
+        url: `/api/restaurants/${restaurantId}/waitlist/${entryId}`,
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: { status }
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to update entry status');
-      }
       
       return response.json();
     },
@@ -111,7 +105,7 @@ export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) =>
       case 'notified':
         return <Badge variant="secondary">Notified</Badge>;
       case 'seated':
-        return <Badge variant="success">Seated</Badge>;
+        return <Badge variant="secondary" className="bg-green-500 hover:bg-green-600 text-white">Seated</Badge>;
       case 'cancelled':
         return <Badge variant="destructive">Cancelled</Badge>;
       default:

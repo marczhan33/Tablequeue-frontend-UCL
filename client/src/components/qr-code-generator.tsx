@@ -28,24 +28,17 @@ export const QRCodeGenerator = ({ restaurantId, restaurantName }: QRCodeGenerato
     try {
       setIsGenerating(true);
       // Call API to generate or retrieve QR code
-      const response = await apiRequest(`/api/restaurants/${restaurantId}/qr-code`, {
+      const response = await apiRequest({
+        url: `/api/restaurants/${restaurantId}/qr-code`,
         method: 'POST'
       });
       
-      if (response.ok) {
-        const data = await response.json();
-        setQrCodeValue(data.qrCodeId);
-        toast({
-          title: 'QR Code Generated',
-          description: 'Your QR code has been generated successfully.',
-        });
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Failed to generate QR code.',
-          variant: 'destructive',
-        });
-      }
+      const data = await response.json();
+      setQrCodeValue(data.qrCodeId);
+      toast({
+        title: 'QR Code Generated',
+        description: 'Your QR code has been generated successfully.',
+      });
     } catch (error) {
       toast({
         title: 'Error',

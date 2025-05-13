@@ -104,11 +104,7 @@ export default function WaitlistPage() {
     queryFn: async () => {
       try {
         const response = await apiRequest(`/api/restaurants/qr/${qrCodeId}`);
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to find restaurant');
-        }
-        return response.json();
+        return await response.json();
       } catch (error) {
         console.error('Error fetching restaurant by QR code:', error);
         throw error;

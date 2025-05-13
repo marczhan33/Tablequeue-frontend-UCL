@@ -44,31 +44,23 @@ export const WaitlistForm = ({ restaurant, onSuccess }: WaitlistFormProps) => {
   const onSubmit = async (values: WaitlistFormValues) => {
     try {
       // Submit waitlist entry
-      const response = await apiRequest(`/api/restaurants/${restaurant.id}/waitlist`, {
+      const response = await apiRequest({
+        url: `/api/restaurants/${restaurant.id}/waitlist`,
         method: 'POST',
-        body: JSON.stringify(values),
+        body: values
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        toast({
-          title: 'Added to Waitlist',
-          description: `You've been added to the waitlist! Your estimated wait time is ${data.estimatedWaitTime} minutes.`,
-        });
-        
-        if (onSuccess) {
-          onSuccess(data);
-        }
-        
-        form.reset();
-      } else {
-        const error = await response.json();
-        toast({
-          title: 'Error',
-          description: error.message || 'Failed to join waitlist',
-          variant: 'destructive',
-        });
+      const data = await response.json();
+      toast({
+        title: 'Added to Waitlist',
+        description: `You've been added to the waitlist! Your estimated wait time is ${data.estimatedWaitTime} minutes.`,
+      });
+      
+      if (onSuccess) {
+        onSuccess(data);
       }
+      
+      form.reset();
     } catch (error) {
       toast({
         title: 'Error',
