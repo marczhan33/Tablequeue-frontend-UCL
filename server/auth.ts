@@ -139,11 +139,22 @@ export function setupAuth(app: Express) {
       if (err) return next(err);
       if (!user) return res.status(401).json({ error: "Invalid username or password" });
       
+      // Optional: Check if user is verified
+      // Uncomment the following lines to require email verification before login
+      /*
+      if (!user.isVerified) {
+        return res.status(403).json({ 
+          error: "Email not verified", 
+          message: "Please verify your email before logging in"
+        });
+      }
+      */
+      
       req.login(user, (err) => {
         if (err) return next(err);
-        // Return user without password
-        const { password, ...userWithoutPassword } = user;
-        res.status(200).json(userWithoutPassword);
+        // Return user without sensitive data
+        const { password, verificationToken, ...userWithoutSensitiveData } = user;
+        res.status(200).json(userWithoutSensitiveData);
       });
     })(req, res, next);
   });
@@ -159,7 +170,50 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.status(401).json({ error: "Not authenticated" });
     
     // Return user without password
-    const { password, ...userWithoutPassword } = req.user as SelectUser;
-    res.json(userWithoutPassword);
+    const { password, verificationToken, ...userWithoutSensitiveData } = req.user as SelectUser;
+    res.json(userWithoutSensitiveData);
+  });
+  
+  // Email verification endpoint
+  app.get("/api/verify-email", async (req, res) => {
+    const { token } = req.query;
+    
+    if (!token || typeof token !== 'string') {
+      return res.status(400).json({ error: "Invalid verification token" });
+    }
+    
+    try {
+      // Find user with this token
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Verification token not found" });
+      }
+      
+      // Check if token has expired
+      if (user.verificationExpires && new Date() > new Date(user.verificationExpires)) {
+        return res.status(400).json({ error: "Verification token has expired" });
+      }
+      
+      // Mark user as verified and clear the token
+      await storage.updateUserVerification(user.id, true);
+      
+      // If user is logged in, update their session
+      if (req.isAuthenticated() && req.user && (req.user as SelectUser).id === user.id) {
+        (req.user as SelectUser).isVerified = true;
+      }
+      
+      // Redirect to a success page or return success JSON response
+      if (req.headers.accept && req.headers.accept.includes('text/html')) {
+        // For browser requests - redirect to a success page
+        res.redirect('/#verified=success');
+      } else {
+        // For API requests - return JSON
+        res.json({ success: true, message: "Email verified successfully" });
+      }
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ error: "Email verification failed" });
+    }
   });
 }

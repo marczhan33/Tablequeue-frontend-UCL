@@ -277,12 +277,57 @@ export class MemStorage implements IStorage {
       (user) => user.username === username,
     );
   }
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.email === email,
+    );
+  }
+  
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    return Array.from(this.users.values()).find(
+      (user) => user.verificationToken === token,
+    );
+  }
 
-  async createUser(insertUser: InsertUser): Promise<User> {
+  async createUser(insertUser: InsertUser & { 
+    isVerified?: boolean;
+    verificationToken?: string;
+    verificationExpires?: Date;
+  }): Promise<User> {
     const id = this.userCurrentId++;
-    const user: User = { ...insertUser, id };
+    
+    // Create user with verification fields
+    const user: User = { 
+      ...insertUser, 
+      id,
+      isVerified: insertUser.isVerified ?? false,
+      verificationToken: insertUser.verificationToken ?? null,
+      verificationExpires: insertUser.verificationExpires ?? null,
+      createdAt: new Date() 
+    };
+    
     this.users.set(id, user);
     return user;
+  }
+  
+  async updateUserVerification(id: number, isVerified: boolean): Promise<User | undefined> {
+    const user = this.users.get(id);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    // Update verification status
+    const updatedUser = { 
+      ...user, 
+      isVerified,
+      verificationToken: null, 
+      verificationExpires: null 
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
   }
 
   // Restaurant operations
@@ -551,6 +596,9 @@ export class MemStorage implements IStorage {
       email: 'owner@tablequeue.com',
       role: 'restaurant',
       phone: null,
+      isVerified: true,
+      verificationToken: null,
+      verificationExpires: null,
       createdAt: new Date()
     };
     
