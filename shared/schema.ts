@@ -16,6 +16,18 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Table types for restaurants
+export const tableTypes = pgTable("table_types", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  name: text("name").notNull(), // e.g., "Two-seater", "Four-seater", "Bar", "Booth", "Outdoor"
+  capacity: integer("capacity").notNull(), // How many people this table can seat
+  count: integer("count").notNull(), // How many tables of this type are available
+  estimatedTurnoverTime: integer("estimated_turnover_time").notNull(), // Average time in minutes for a table to become available
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Restaurant table
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
@@ -40,6 +52,7 @@ export const restaurants = pgTable("restaurants", {
   hasFoodDelivery: text("has_food_delivery").array(), // Which delivery platforms (Uber Eats, etc.)
   hasReservationSystem: text("has_reservation_system"), // Name of reservation system if any
   reservationUrl: text("reservation_url"), // URL to reservation system
+  useAdvancedQueue: boolean("use_advanced_queue").default(false), // Whether to use advanced queue management
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -54,6 +67,7 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   estimatedWaitTime: integer("estimated_wait_time").notNull(), // In minutes
   queuePosition: integer("queue_position").notNull(),
   status: text("status").notNull().default("waiting"), // waiting, seated, cancelled
+  tableTypeId: integer("table_type_id"), // Link to specific table type
   createdAt: timestamp("created_at").defaultNow(),
   notifiedAt: timestamp("notified_at"), // When SMS was sent
   seatedAt: timestamp("seated_at"),
@@ -93,6 +107,11 @@ export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
   createdAt: true,
 });
 
+export const insertTableTypeSchema = createInsertSchema(tableTypes).omit({
+  id: true,
+  createdAt: true,
+});
+
 export const insertWaitlistEntrySchema = createInsertSchema(waitlistEntries).omit({
   id: true,
   createdAt: true,
@@ -106,6 +125,9 @@ export type User = typeof users.$inferSelect;
 
 export type InsertRestaurant = z.infer<typeof insertRestaurantSchema>;
 export type Restaurant = typeof restaurants.$inferSelect;
+
+export type InsertTableType = z.infer<typeof insertTableTypeSchema>;
+export type TableType = typeof tableTypes.$inferSelect;
 
 export type InsertWaitlistEntry = z.infer<typeof insertWaitlistEntrySchema>;
 export type WaitlistEntry = typeof waitlistEntries.$inferSelect;
