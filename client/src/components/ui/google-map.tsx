@@ -6,7 +6,7 @@ declare global {
     google: any;
     initMap: () => void;
     waitTimeData?: Record<string, {
-      status: 'available' | 'short' | 'long';
+      status: 'available' | 'short' | 'long' | 'very_long' | 'closed';
       minutes?: number;
     }>;
   }
@@ -104,13 +104,18 @@ const GoogleMap = ({
            <div style="display: flex; align-items: center; margin-top: 8px;">
              <span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: ${
                waitTimeInfo.status === 'available' ? '#4CAF50' : 
-               waitTimeInfo.status === 'short' ? '#FF9800' : '#F44336'
+               waitTimeInfo.status === 'short' ? '#FF9800' : 
+               waitTimeInfo.status === 'long' ? '#F44336' :
+               waitTimeInfo.status === 'very_long' ? '#9C27B0' : '#757575'
              }; margin-right: 6px;"></span>
              <span style="font-size: 0.9em;">${
                waitTimeInfo.status === 'available' ? 'No wait' : 
-               waitTimeInfo.status === 'short' ? 'Short wait (15-30 min)' : 'Long wait (30+ min)'
+               waitTimeInfo.status === 'short' ? 'Short wait (15-30 min)' : 
+               waitTimeInfo.status === 'long' ? 'Long wait (30-60 min)' :
+               waitTimeInfo.status === 'very_long' ? 'Very long wait (60+ min)' : 'Closed'
              }</span>
            </div>
+           ${waitTimeInfo.minutes ? `<div style="margin-top: 4px; font-size: 0.85em; color: #555;">Approx. ${waitTimeInfo.minutes} minutes</div>` : ''}
          </div>`
       : `<div style="font-family: Arial, sans-serif; padding: 5px;"><strong>${markerTitle}</strong></div>`;
     

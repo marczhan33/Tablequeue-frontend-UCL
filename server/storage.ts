@@ -402,7 +402,9 @@ export class MemStorage implements IStorage {
       const statusPriority = {
         available: 0,
         short: 1,
-        long: 2
+        long: 2,
+        very_long: 3,
+        closed: 4
       };
       
       if (statusPriority[newStatus] > statusPriority[restaurant.currentWaitStatus as WaitStatus]) {
