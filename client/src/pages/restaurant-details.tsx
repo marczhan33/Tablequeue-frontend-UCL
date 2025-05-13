@@ -3,7 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { Restaurant } from "@shared/schema";
 import LocationWaitTime from "@/components/location-wait-time";
 import { SmartCapacityDisplay } from "@/components/smart-capacity-display";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,11 +15,33 @@ const RestaurantDetails = () => {
   const restaurantId = params?.id;
   const [partySize, setPartySize] = useState(2);
   
-  // Fetch restaurant by ID
-  const { data: restaurant, isLoading, error } = useQuery<Restaurant>({
-    queryKey: [`/api/restaurants/${restaurantId}`],
-    enabled: !!restaurantId,
-  });
+  // Fetch restaurant by ID with a simple try/catch for better error handling
+  const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  useEffect(() => {
+    if (restaurantId) {
+      setIsLoading(true);
+      
+      fetch(`/api/restaurants/${restaurantId}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Failed to fetch restaurant (status ${response.status})`);
+          }
+          return response.json();
+        })
+        .then(data => {
+          setRestaurant(data);
+          setIsLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching restaurant:', err);
+          setError(err);
+          setIsLoading(false);
+        });
+    }
+  }, [restaurantId]);
   
   // Handle loading state
   if (isLoading) {

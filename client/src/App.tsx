@@ -63,15 +63,27 @@ function ProtectedRoute({ path, component: Component, ownerOnly = false }: { pat
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={CustomerView} />
-      <Route path="/restaurant/:id" component={RestaurantDetails} />
+      <Route path="/">
+        <CustomerView />
+      </Route>
+      <Route path="/restaurant/:id">
+        <RestaurantDetails />
+      </Route>
       <Route path="/restaurant-dashboard">
         <RestaurantDashboard />
       </Route>
-      <Route path="/how-it-works" component={HowItWorks} />
-      <Route path="/waitlist/:qrCodeId" component={WaitlistPage} />
-      <Route path="/auth" component={AuthPage} />
-      <Route component={NotFound} />
+      <Route path="/how-it-works">
+        <HowItWorks />
+      </Route>
+      <Route path="/waitlist/:qrCodeId">
+        <WaitlistPage />
+      </Route>
+      <Route path="/auth">
+        <AuthPage />
+      </Route>
+      <Route>
+        <NotFound />
+      </Route>
     </Switch>
   );
 }

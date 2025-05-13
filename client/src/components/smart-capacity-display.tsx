@@ -33,19 +33,32 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
     availableTables: number;
   }
   
-  // Fetch capacity prediction directly from the API
-  const { data: prediction } = useQuery<CapacityPredictionResponse>({
-    queryKey: [`/api/restaurants/${restaurantId}/capacity-prediction`, partySize],
-    queryFn: async ({ queryKey }) => {
-      const url = `${queryKey[0]}?partySize=${queryKey[1]}`;
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch capacity prediction');
-      }
-      return response.json();
-    },
-    enabled: !!restaurantId && partySize > 0,
-  });
+  // Fetch capacity prediction directly from the API using a simpler approach
+  const [prediction, setPrediction] = useState<CapacityPredictionResponse | null>(null);
+  const [predictionError, setPredictionError] = useState<boolean>(false);
+  
+  useEffect(() => {
+    if (restaurantId && partySize > 0) {
+      setLoading(true);
+      
+      fetch(`/api/restaurants/${restaurantId}/capacity-prediction?partySize=${partySize}`)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Failed to fetch capacity prediction');
+          }
+          return response.json();
+        })
+        .then(data => {
+          setPrediction(data);
+          setLoading(false);
+        })
+        .catch(err => {
+          console.error('Error fetching prediction:', err);
+          setPredictionError(true);
+          setLoading(false);
+        });
+    }
+  }, [restaurantId, partySize]);
   
   // Update capacity data when prediction is available
   useEffect(() => {
@@ -65,6 +78,17 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
       setLoading(false);
     }
   }, [prediction]);
+  
+  if (predictionError) {
+    return (
+      <Card className="w-full">
+        <CardContent className="pt-6 flex flex-col justify-center items-center h-40">
+          <p className="text-red-500 mb-2">Unable to load wait time prediction</p>
+          <p className="text-sm text-gray-500">Try refreshing the page or contact support.</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   if (loading || !capacityData) {
     return (
