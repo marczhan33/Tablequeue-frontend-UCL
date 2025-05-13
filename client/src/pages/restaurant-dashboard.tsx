@@ -8,6 +8,7 @@ import QRCodeGenerator from "@/components/qr-code-generator";
 import WaitlistManagement from "@/components/waitlist-management";
 import RemoteWaitlistManager from "@/components/remote-waitlist-manager";
 import TableTypeManager from "@/components/table-type-manager";
+import TurnoverAnalysis from "@/components/turnover-analysis";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mock restaurant ID for demo - in a real app, this would come from authentication
@@ -388,7 +389,7 @@ const RestaurantDashboard = () => {
             
             <TableTypeManager restaurantId={RESTAURANT_ID} />
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm">
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm mb-6">
               <h4 className="font-medium text-yellow-800 mb-1">Table Type Tips</h4>
               <ul className="list-disc list-inside text-yellow-700 space-y-1">
                 <li>Create different table types based on seating capacity and location (indoor, outdoor, etc.)</li>
@@ -396,6 +397,9 @@ const RestaurantDashboard = () => {
                 <li>More specific table types lead to better customer matching and shorter wait times</li>
               </ul>
             </div>
+            
+            <h3 className="text-lg font-semibold mb-4">Turnover Time Analytics</h3>
+            <TurnoverAnalysis restaurantId={RESTAURANT_ID} />
           </div>
         </TabsContent>
         

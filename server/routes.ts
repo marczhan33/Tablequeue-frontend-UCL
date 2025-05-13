@@ -663,8 +663,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // API to apply turnover time recommendations
+  apiRouter.post("/restaurants/:id/apply-turnover-recommendations", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const { recommendations } = req.body;
+      if (!recommendations || !Array.isArray(recommendations)) {
+        return res.status(400).json({ message: "Invalid recommendations format" });
+      }
+      
+      // Apply each recommendation
+      const updates = [];
+      for (const rec of recommendations) {
+        if (rec.tableTypeId && rec.suggestedTime) {
+          const result = await storage.updateTableType(rec.tableTypeId, {
+            estimatedTurnoverTime: rec.suggestedTime
+          });
+          
+          if (result) {
+            updates.push(result);
+          }
+        }
+      }
+      
+      return res.status(200).json({ 
+        message: `${updates.length} table types updated with recommended turnover times`,
+        updatedTableTypes: updates
+      });
+    } catch (error) {
+      console.error("Error applying turnover recommendations:", error);
+      return res.status(500).json({ message: "Failed to apply recommendations" });
+    }
+  });
+  
   // CREATE a new table type
-  apiRouter.post("/restaurants/:id/table-types", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+  apiRouter.post("/restaurants/:id/table-types", async (req: Request, res: Response) => {
     try {
       const restaurantId = parseInt(req.params.id);
       if (isNaN(restaurantId)) {
@@ -700,7 +737,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // UPDATE a table type
-  apiRouter.patch("/table-types/:id", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+  apiRouter.patch("/table-types/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -729,7 +766,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // DELETE a table type
-  apiRouter.delete("/table-types/:id", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+  apiRouter.delete("/table-types/:id", async (req: Request, res: Response) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {

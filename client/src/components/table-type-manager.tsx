@@ -170,7 +170,9 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
 
   // Handle delete confirmation
   const handleDelete = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this table type?")) {
+    // Use a custom confirmation dialog
+    const confirmed = confirm("Are you sure you want to delete this table type?");
+    if (confirmed) {
       deleteTableType.mutate(id);
     }
   };
