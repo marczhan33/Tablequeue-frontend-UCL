@@ -13,6 +13,8 @@ import {
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import { setupGoogleAuth } from "./auth-routes";
+import { analyticsRouter } from "./analytics/routes";
+import { processTableTurnover, initializeAnalytics } from "./analytics";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
