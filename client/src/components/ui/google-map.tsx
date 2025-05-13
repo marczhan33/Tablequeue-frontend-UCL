@@ -114,11 +114,32 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     const handleMapError = () => {
       console.warn('Google Maps failed to load. Using fallback interface.');
       setUseFallbackMap(true);
+      
+      // Also clear the map container to remove error messages
+      if (mapRef.current) {
+        mapRef.current.innerHTML = '';
+      }
     };
     
-    // If the Google Maps script is already loaded, initialize the map
+    // Listen for error messages in the console
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+      // Check if this is a Google Maps API error
+      if (args.length > 0 && typeof args[0] === 'string' && 
+          (args[0].includes('Google Maps JavaScript API error') || 
+           args[0].includes('InvalidKeyMapError'))) {
+        handleMapError();
+      }
+      originalConsoleError.apply(console, args);
+    };
+    
+    // If the Google Maps script is already loaded
     if (window.google && window.google.maps) {
-      initializeMap();
+      try {
+        initializeMap();
+      } catch (error) {
+        handleMapError();
+      }
       return;
     }
     
@@ -129,13 +150,34 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     script.defer = true;
     script.onerror = handleMapError;
     
-    // Set up timeout in case the script loads but has API key issues
-    const timeoutId = setTimeout(handleMapError, 5000);
+    // Set up a shorter timeout for better user experience
+    const timeoutId = setTimeout(handleMapError, 3000);
+    
+    // Also set up a mutation observer to watch for error messages in the map container
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'childList' && mapRef.current) {
+          // Check if the error message is added to the DOM
+          if (mapRef.current.textContent?.includes('Oops! Something went wrong')) {
+            handleMapError();
+            observer.disconnect();
+          }
+        }
+      }
+    });
+    
+    if (mapRef.current) {
+      observer.observe(mapRef.current, { childList: true, subtree: true });
+    }
     
     // Define the callback for when the script loads
     window.initMap = () => {
       clearTimeout(timeoutId);
-      initializeMap();
+      try {
+        initializeMap();
+      } catch (error) {
+        handleMapError();
+      }
     };
     
     document.head.appendChild(script);
@@ -144,6 +186,8 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     return () => {
       clearTimeout(timeoutId);
       window.initMap = () => {};
+      console.error = originalConsoleError;
+      observer.disconnect();
       if (document.head.contains(script)) {
         document.head.removeChild(script);
       }
