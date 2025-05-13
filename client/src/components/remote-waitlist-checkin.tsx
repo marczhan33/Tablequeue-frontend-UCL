@@ -227,6 +227,13 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
           <p>You've been successfully checked in at {restaurant.name}.</p>
           <p>Your <span className="font-medium">original queue position</span> has been preserved!</p>
           <p className="text-muted-foreground">The staff will call your name when your table is ready.</p>
+          
+          <Button 
+            onClick={() => window.location.href = `/restaurants/${restaurant.id}`}
+            className="mt-4"
+          >
+            Back to Restaurant
+          </Button>
         </CardContent>
       </Card>
     );
@@ -308,10 +315,10 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
                 <QrCode className="h-20 w-20 mx-auto mb-4 text-primary" />
                 <p className="mb-4">Scan the QR code at the restaurant entrance</p>
                 
-                {/* This is a simplified simulation since we can't use the actual camera */}
-                <Button onClick={handleQRScan} variant="outline" disabled={isVerified}>
-                  {isVerified ? 'QR Code Verified' : 'Simulate QR Scan'}
-                </Button>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Use your device's camera to scan the QR code displayed at the restaurant.
+                  You'll be automatically verified when the code is recognized.
+                </p>
               </div>
             </TabsContent>
             
@@ -363,9 +370,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
         </div>
         
         {/* Confirmation Code Section */}
-        <div>
-          <h3 className="text-lg font-medium mb-2">Step 2: Enter Your Code</h3>
-          
+        <div>          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -376,7 +381,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
                     <FormLabel>Confirmation Code</FormLabel>
                     <FormControl>
                       <Input 
-                        placeholder="Enter your 6-digit code" 
+                        placeholder="Enter your confirmation code" 
                         className="text-center text-lg tracking-wider" 
                         {...field} 
                       />
