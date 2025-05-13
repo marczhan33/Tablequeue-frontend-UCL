@@ -274,11 +274,17 @@ export class MemStorage implements IStorage {
   private tableTypes: Map<number, TableType>;
   private waitlistEntries: Map<number, WaitlistEntry>;
   private restaurantQrCodes: Map<string, number>; // Maps QR code IDs to restaurant IDs
+  private dailyAnalyticsData: Map<number, DailyAnalytics>;
+  private hourlyAnalyticsData: Map<number, HourlyAnalytics>;
+  private tableAnalyticsData: Map<number, TableAnalytics>;
   
   private userCurrentId: number;
   private restaurantCurrentId: number;
   private tableTypeCurrentId: number;
   private waitlistEntryCurrentId: number;
+  private dailyAnalyticsCurrentId: number;
+  private hourlyAnalyticsCurrentId: number;
+  private tableAnalyticsCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -286,11 +292,17 @@ export class MemStorage implements IStorage {
     this.tableTypes = new Map();
     this.waitlistEntries = new Map();
     this.restaurantQrCodes = new Map();
+    this.dailyAnalyticsData = new Map();
+    this.hourlyAnalyticsData = new Map();
+    this.tableAnalyticsData = new Map();
     
     this.userCurrentId = 1;
     this.restaurantCurrentId = 1;
     this.tableTypeCurrentId = 1;
     this.waitlistEntryCurrentId = 1;
+    this.dailyAnalyticsCurrentId = 1;
+    this.hourlyAnalyticsCurrentId = 1;
+    this.tableAnalyticsCurrentId = 1;
     
     // Initialize with some sample data
     this.initSampleData();
