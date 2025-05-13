@@ -522,6 +522,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Cannot check in - incorrect entry status" });
       }
       
+      // Check if the customer is too late (more than 15 minutes past expected arrival)
+      if (entry.expectedArrivalTime) {
+        const expectedTime = new Date(entry.expectedArrivalTime);
+        const graceWindow = new Date(expectedTime.getTime() + 15 * 60000); // 15 minutes in milliseconds
+        const now = new Date();
+        
+        if (now > graceWindow) {
+          // Customer is significantly late, but we'll still allow them to check in
+          // with warning in the response - restaurant staff can decide what to do
+          const updated = await storage.confirmRemoteArrival(confirmationCode);
+          updated.isLate = true; // Add flag for UI to display a warning/notification
+          return res.json(updated);
+        }
+      }
+      
       // Mark the customer as arrived (change status to waiting and set arrivedAt timestamp)
       const updated = await storage.confirmRemoteArrival(confirmationCode);
       
@@ -529,6 +544,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error checking in remote waitlist entry:", error);
       res.status(500).json({ message: "Error checking in" });
+    }
+  });
+  
+  // Endpoint to cleanup expired remote waitlist entries (internal use)
+  apiRouter.post("/restaurants/:id/remote-waitlist/cleanup", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Get all remote_pending entries for this restaurant
+      const entries = await storage.getWaitlistEntries(restaurantId);
+      const remotePendingEntries = entries.filter(entry => 
+        entry.status === 'remote_pending' && entry.expectedArrivalTime
+      );
+      
+      let cancelledCount = 0;
+      
+      // Process each entry to check if it's past the grace period (15 min after expected arrival)
+      for (const entry of remotePendingEntries) {
+        if (entry.expectedArrivalTime) {
+          const expectedTime = new Date(entry.expectedArrivalTime);
+          const graceWindow = new Date(expectedTime.getTime() + 15 * 60000); // 15 minutes
+          const now = new Date();
+          
+          if (now > graceWindow) {
+            // Cancel the entry since it's past the grace period
+            await storage.updateWaitlistEntry(entry.id, {
+              status: 'cancelled'
+            });
+            cancelledCount++;
+          }
+        }
+      }
+      
+      res.json({ 
+        message: `Successfully processed expired entries`, 
+        cancelledCount 
+      });
+    } catch (error) {
+      console.error("Error cleaning up remote waitlist entries:", error);
+      res.status(500).json({ message: "Error cleaning up entries" });
     }
   });
   
