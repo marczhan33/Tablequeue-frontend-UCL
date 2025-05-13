@@ -85,6 +85,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
         </CardHeader>
         <CardContent className="space-y-4 text-center">
           <p>You've been successfully checked in at {restaurant.name}.</p>
+          <p>Your <span className="font-medium">original queue position</span> has been preserved!</p>
           <p className="text-muted-foreground">The staff will call your name when your table is ready.</p>
         </CardContent>
       </Card>

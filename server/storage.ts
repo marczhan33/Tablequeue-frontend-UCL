@@ -709,11 +709,13 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
-    // Update status to mark arrival
+    // Update status to mark arrival but KEEP the original queue position
+    // This preserves their spot in line from when they joined remotely
     const updatedEntry = { 
       ...entry, 
       status: 'waiting',
       arrivedAt: new Date()
+      // Importantly, we're NOT recalculating queuePosition here
     };
     
     this.waitlistEntries.set(entry.id, updatedEntry);
