@@ -21,6 +21,16 @@ export interface IStorage {
   updateRestaurant(id: number, data: Partial<Restaurant>): Promise<Restaurant | undefined>;
   updateWaitTime(id: number, status: WaitStatus, customTime?: number): Promise<Restaurant | undefined>;
   searchRestaurants(query: string): Promise<Restaurant[]>;
+  
+  // Waitlist operations
+  getWaitlistEntries(restaurantId: number): Promise<WaitlistEntry[]>;
+  getWaitlistEntry(id: number): Promise<WaitlistEntry | undefined>;
+  createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry>;
+  updateWaitlistEntry(id: number, data: Partial<WaitlistEntry>): Promise<WaitlistEntry | undefined>;
+  
+  // QR code operations
+  generateRestaurantQrCode(restaurantId: number): Promise<string>;
+  getRestaurantByQrCodeId(qrCodeId: string): Promise<Restaurant | undefined>;
 }
 
 // Database storage implementation
@@ -228,14 +238,22 @@ const dbStorage = new DatabaseStorage();
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private restaurants: Map<number, Restaurant>;
+  private waitlistEntries: Map<number, WaitlistEntry>;
+  private restaurantQrCodes: Map<string, number>; // Maps QR code IDs to restaurant IDs
+  
   private userCurrentId: number;
   private restaurantCurrentId: number;
+  private waitlistEntryCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.restaurants = new Map();
+    this.waitlistEntries = new Map();
+    this.restaurantQrCodes = new Map();
+    
     this.userCurrentId = 1;
     this.restaurantCurrentId = 1;
+    this.waitlistEntryCurrentId = 1;
     
     // Initialize with some sample data
     this.initSampleData();
@@ -312,6 +330,200 @@ export class MemStorage implements IStorage {
       restaurant.address.toLowerCase().includes(lowercaseQuery)
     );
   }
+  
+  // Waitlist operations
+  async getWaitlistEntries(restaurantId: number): Promise<WaitlistEntry[]> {
+    return Array.from(this.waitlistEntries.values())
+      .filter(entry => entry.restaurantId === restaurantId);
+  }
+  
+  async getWaitlistEntry(id: number): Promise<WaitlistEntry | undefined> {
+    return this.waitlistEntries.get(id);
+  }
+  
+  async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {
+    const id = this.waitlistEntryCurrentId++;
+    const createdAt = new Date();
+    
+    // Calculate queue position - count active entries for this restaurant
+    const restaurantEntries = await this.getWaitlistEntries(entry.restaurantId);
+    const activeEntries = restaurantEntries.filter(e => e.status === 'waiting' || e.status === 'notified');
+    const queuePosition = activeEntries.length + 1;
+    
+    // Get restaurant to calculate estimated wait time
+    const restaurant = await this.getRestaurant(entry.restaurantId);
+    let estimatedWaitTime = 15; // Default 15 minutes wait
+    
+    if (restaurant) {
+      if (restaurant.avgSeatingTime) {
+        // If restaurant has average seating time, use that
+        estimatedWaitTime = restaurant.avgSeatingTime * queuePosition;
+      } else if (restaurant.customWaitTime > 0) {
+        // Otherwise use custom wait time per party
+        estimatedWaitTime = restaurant.customWaitTime;
+      } else {
+        // Use status-based estimate
+        switch (restaurant.currentWaitStatus) {
+          case 'available': estimatedWaitTime = 0; break;
+          case 'short': estimatedWaitTime = 15; break;
+          case 'long': estimatedWaitTime = 45; break;
+          default: estimatedWaitTime = 30;
+        }
+      }
+    }
+    
+    const waitlistEntry: WaitlistEntry = {
+      ...entry,
+      id,
+      queuePosition,
+      estimatedWaitTime,
+      createdAt,
+      status: 'waiting',
+      notifiedAt: null,
+      seatedAt: null,
+      notes: entry.notes || null,
+      dietaryRequirements: entry.dietaryRequirements || null,
+      phoneNumber: entry.phoneNumber || null
+    };
+    
+    this.waitlistEntries.set(id, waitlistEntry);
+    
+    // Update restaurant wait time based on queue length
+    if (restaurant) {
+      let newStatus: WaitStatus = 'available';
+      if (queuePosition >= 10) {
+        newStatus = 'long';
+      } else if (queuePosition >= 2) {
+        newStatus = 'short';
+      }
+      
+      // Only update if the new wait status indicates longer wait than current
+      const statusPriority = {
+        available: 0,
+        short: 1,
+        long: 2
+      };
+      
+      if (statusPriority[newStatus] > statusPriority[restaurant.currentWaitStatus as WaitStatus]) {
+        this.updateWaitTime(restaurant.id, newStatus);
+      }
+    }
+    
+    return waitlistEntry;
+  }
+  
+  async updateWaitlistEntry(id: number, data: Partial<WaitlistEntry>): Promise<WaitlistEntry | undefined> {
+    const entry = this.waitlistEntries.get(id);
+    if (!entry) {
+      return undefined;
+    }
+    
+    // If status is being updated, add timestamp
+    let updatedData: Partial<WaitlistEntry> = { ...data };
+    
+    if (data.status === 'notified' && entry.status !== 'notified') {
+      updatedData.notifiedAt = new Date();
+    }
+    
+    if (data.status === 'seated' && entry.status !== 'seated') {
+      updatedData.seatedAt = new Date();
+    }
+    
+    const updatedEntry = { ...entry, ...updatedData };
+    this.waitlistEntries.set(id, updatedEntry);
+    
+    // If someone is seated or cancelled, update queue positions for others
+    if ((data.status === 'seated' || data.status === 'cancelled') && 
+        (entry.status === 'waiting' || entry.status === 'notified')) {
+      
+      // Update queue positions for all waiting entries at this restaurant
+      const restaurantEntries = await this.getWaitlistEntries(entry.restaurantId);
+      const waitingEntries = restaurantEntries.filter(
+        e => (e.status === 'waiting' || e.status === 'notified') && e.id !== id
+      );
+      
+      // Sort by created time to ensure proper queue position
+      waitingEntries.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      
+      // Update queue positions
+      for (let i = 0; i < waitingEntries.length; i++) {
+        const waitingEntry = waitingEntries[i];
+        const newPosition = i + 1;
+        
+        if (waitingEntry.queuePosition !== newPosition) {
+          const updated = { ...waitingEntry, queuePosition: newPosition };
+          this.waitlistEntries.set(waitingEntry.id, updated);
+        }
+      }
+      
+      // Update restaurant wait time based on remaining queue
+      const restaurant = await this.getRestaurant(entry.restaurantId);
+      if (restaurant) {
+        let newStatus: WaitStatus = 'available';
+        
+        if (waitingEntries.length >= 10) {
+          newStatus = 'long';
+        } else if (waitingEntries.length >= 2) {
+          newStatus = 'short';
+        }
+        
+        if (waitingEntries.length === 0) {
+          this.updateWaitTime(restaurant.id, 'available', 0);
+        } else if (newStatus !== restaurant.currentWaitStatus) {
+          this.updateWaitTime(restaurant.id, newStatus);
+        }
+      }
+    }
+    
+    return updatedEntry;
+  }
+  
+  // QR code operations
+  async generateRestaurantQrCode(restaurantId: number): Promise<string> {
+    const restaurant = await this.getRestaurant(restaurantId);
+    if (!restaurant) {
+      throw new Error(`Restaurant with ID ${restaurantId} not found`);
+    }
+    
+    // If restaurant already has a QR code, return it
+    if (restaurant.qrCodeId) {
+      return restaurant.qrCodeId;
+    }
+    
+    // Otherwise generate a new one
+    const qrCodeId = this.generateUniqueQrCodeId();
+    await this.updateRestaurant(restaurantId, { qrCodeId });
+    this.restaurantQrCodes.set(qrCodeId, restaurantId);
+    
+    return qrCodeId;
+  }
+  
+  async getRestaurantByQrCodeId(qrCodeId: string): Promise<Restaurant | undefined> {
+    const restaurantId = this.restaurantQrCodes.get(qrCodeId);
+    if (!restaurantId) {
+      return undefined;
+    }
+    
+    return this.getRestaurant(restaurantId);
+  }
+  
+  // Helper methods
+  private generateUniqueQrCodeId(): string {
+    // Generate a random alphanumeric string
+    const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let result = '';
+    for (let i = 0; i < 10; i++) {
+      result += characters.charAt(Math.floor(Math.random() * characters.length));
+    }
+    
+    // Check if it's already in use
+    if (this.restaurantQrCodes.has(result)) {
+      // If it is, generate a new one recursively
+      return this.generateUniqueQrCodeId();
+    }
+    
+    return result;
+  }
 
   // Initialize with sample data
   private initSampleData() {
@@ -321,10 +533,18 @@ export class MemStorage implements IStorage {
       username: 'restaurant_owner',
       password: 'password123',
       email: 'owner@tablequeue.com',
-      role: 'restaurant'
+      role: 'restaurant',
+      phone: null,
+      createdAt: new Date()
     };
     
     this.users.set(restaurantOwner.id, restaurantOwner);
+    
+    // Generate QR code IDs
+    const qrCode1 = this.generateUniqueQrCodeId();
+    const qrCode2 = this.generateUniqueQrCodeId();
+    const qrCode3 = this.generateUniqueQrCodeId();
+    const qrCode4 = this.generateUniqueQrCodeId();
     
     // Create sample restaurants with realistic data
     const sampleRestaurants: Omit<Restaurant, 'id'>[] = [
