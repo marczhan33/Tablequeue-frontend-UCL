@@ -260,14 +260,26 @@ export default function WaitlistStatusPage() {
             <Button
               className="flex-1"
               onClick={() => {
-                // Use our utility function to create a reliable Google Maps URL
-                const mapsUrl = createGoogleMapsUrl(
-                  restaurant.name,
-                  restaurant.address,
-                  restaurant.latitude,
-                  restaurant.longitude
-                );
-                window.open(mapsUrl, '_blank');
+                // Directly construct a super simple Google Maps URL
+                const query = encodeURIComponent(`${restaurant.name}, ${restaurant.address}`);
+                const mapsUrl = `https://www.google.com/maps?q=${query}`;
+                console.log("Opening maps URL:", mapsUrl);
+                
+                try {
+                  // Try to open in a new tab
+                  const newWindow = window.open(mapsUrl, '_blank');
+                  
+                  // Check if popup was blocked or failed
+                  if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                    console.error("Failed to open popup. May be blocked by browser.");
+                    // Fallback - try to navigate in the same window
+                    window.location.href = mapsUrl;
+                  }
+                } catch (err) {
+                  console.error("Error opening Google Maps:", err);
+                  // Ultimate fallback
+                  window.location.href = mapsUrl;
+                }
               }}
             >
               Get Directions
