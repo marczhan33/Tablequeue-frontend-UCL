@@ -198,7 +198,7 @@ export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) =>
                         <TableCell>{entry.partySize}</TableCell>
                         <TableCell>{entry.estimatedWaitTime} min</TableCell>
                         <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                        <TableCell>{formatTime(entry.createdAt.toString())}</TableCell>
+                        <TableCell>{entry.createdAt ? formatTime(entry.createdAt.toString()) : 'Unknown'}</TableCell>
                         <TableCell>
                           <div className="flex space-x-2">
                             {(entry.status === 'waiting') && (

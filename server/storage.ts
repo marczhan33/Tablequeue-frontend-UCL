@@ -444,7 +444,11 @@ export class MemStorage implements IStorage {
       );
       
       // Sort by created time to ensure proper queue position
-      waitingEntries.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+      waitingEntries.sort((a, b) => {
+        const timeA = a.createdAt ? a.createdAt.getTime() : 0;
+        const timeB = b.createdAt ? b.createdAt.getTime() : 0;
+        return timeA - timeB;
+      });
       
       // Update queue positions
       for (let i = 0; i < waitingEntries.length; i++) {

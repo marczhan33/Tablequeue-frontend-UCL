@@ -174,7 +174,7 @@ export const WaitlistForm = ({ restaurant, onSuccess }: WaitlistFormProps) => {
       </CardContent>
       <CardFooter className="flex flex-col">
         <p className="text-sm text-muted-foreground text-center">
-          Current wait time: {restaurant.customWaitTime > 0 
+          Current wait time: {restaurant.customWaitTime && restaurant.customWaitTime > 0 
             ? `Approximately ${restaurant.customWaitTime} minutes` 
             : getWaitTimeText(restaurant.currentWaitStatus)}
         </p>
