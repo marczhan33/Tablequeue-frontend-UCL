@@ -2,11 +2,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Restaurant } from "@shared/schema";
 import LocationWaitTime from "@/components/location-wait-time";
+import { SmartCapacityDisplay } from "@/components/smart-capacity-display";
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 const RestaurantDetails = () => {
   const [_, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const restaurantId = params?.id;
+  const [partySize, setPartySize] = useState(2);
   
   // Fetch restaurant by ID
   const { data: restaurant, isLoading, error } = useQuery<Restaurant>({
@@ -69,6 +76,54 @@ const RestaurantDetails = () => {
       </div>
       
       <LocationWaitTime restaurant={restaurant} />
+      
+      <div className="mt-8 mb-4">
+        <h2 className="text-2xl font-bold mb-4">Smart Wait Time Prediction</h2>
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle>Check Specific Wait Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="partySize">Party Size</Label>
+                <div className="flex items-center mt-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setPartySize(Math.max(1, partySize - 1))}
+                    disabled={partySize <= 1}
+                    className="px-3"
+                  >
+                    -
+                  </Button>
+                  <div className="mx-3 w-10 text-center font-medium">{partySize}</div>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setPartySize(partySize + 1)}
+                    className="px-3"
+                  >
+                    +
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="col-span-2">
+                <p className="text-sm text-gray-500 mb-2">
+                  Get a more accurate wait time prediction based on your party size, current reservations, and historical data.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Display the prediction results */}
+        <SmartCapacityDisplay 
+          restaurantId={parseInt(restaurantId || "0")} 
+          partySize={partySize} 
+        />
+      </div>
       
       {/* Additional content like reviews could be added here */}
     </div>

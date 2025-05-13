@@ -572,6 +572,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Get capacity prediction for a restaurant with a specific party size
+  apiRouter.get("/restaurants/:id/capacity-prediction", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const partySize = parseInt(req.query.partySize as string);
+      if (isNaN(partySize) || partySize < 1) {
+        return res.status(400).json({ message: "Invalid party size. Must be a positive number." });
+      }
+      
+      // Get restaurant
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Get table types for the restaurant
+      const tableTypes = await storage.getTableTypes(id);
+      
+      // Get current waitlist entries
+      const waitlistEntries = await storage.getWaitlistEntries(id);
+      
+      // Calculate the prediction
+      // This would typically use a complex algorithm, but for now we'll use a simple approach
+      let estWaitTime = 0;
+      
+      if (restaurant.useAdvancedQueue && tableTypes.length > 0) {
+        // Get suitable tables for this party size
+        const suitableTables = tableTypes.filter(
+          table => table.capacity >= partySize && table.isActive
+        );
+        
+        // Active waitlist entries (not seated or cancelled)
+        const activeWaitlist = waitlistEntries.filter(
+          entry => entry.status === 'waiting' || entry.status === 'notified'
+        );
+        
+        // Count available tables of suitable sizes
+        const availableTables = suitableTables.reduce(
+          (total, table) => total + table.count, 
+          0
+        );
+        
+        // Calculate people ahead in queue with similar party sizes
+        const similarPartySizeEntries = activeWaitlist.filter(
+          entry => Math.abs(entry.partySize - partySize) <= 2
+        );
+        
+        // Get average turnover time
+        const avgTurnoverTime = suitableTables.length > 0
+          ? suitableTables.reduce((sum, table) => sum + table.estimatedTurnoverTime, 0) / suitableTables.length
+          : 45; // Default 45 minutes
+        
+        // Base wait time from restaurant status
+        const baseWaitTime = (() => {
+          switch (restaurant.currentWaitStatus) {
+            case 'available': return 0;
+            case 'short': return 15;
+            case 'long': return 30;
+            case 'very_long': return 60;
+            case 'closed': return 0;
+            default: return 15;
+          }
+        })();
+        
+        // Adjust for custom wait time if set
+        estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
+          ? restaurant.customWaitTime
+          : baseWaitTime;
+          
+        // Add wait time for each person ahead with similar party size
+        if (similarPartySizeEntries.length > 0) {
+          estWaitTime += similarPartySizeEntries.length * (avgTurnoverTime / Math.max(1, availableTables));
+        }
+        
+        // If no suitable tables, give a high wait time
+        if (suitableTables.length === 0) {
+          estWaitTime = 120; // 2 hours
+        }
+      } else {
+        // Fallback to basic wait time if advanced queue is not enabled
+        switch (restaurant.currentWaitStatus) {
+          case 'available': estWaitTime = 0; break;
+          case 'short': estWaitTime = 15; break;
+          case 'long': estWaitTime = 30; break;
+          case 'very_long': estWaitTime = 60; break;
+          case 'closed': estWaitTime = 0; break;
+          default: estWaitTime = 15;
+        }
+        
+        // Adjust for party size
+        if (partySize > 4) {
+          estWaitTime = Math.round(estWaitTime * 1.5); // 50% longer wait for large parties
+        }
+      }
+      
+      // Round to nearest 5 minutes
+      estWaitTime = Math.ceil(estWaitTime / 5) * 5;
+      
+      // Calculate next available time
+      const nextAvailableTime = new Date(Date.now() + estWaitTime * 60 * 1000).toISOString();
+      
+      // Calculate recommended arrival time (15 minutes before estimated seating)
+      const recommendedArrivalTime = new Date(Date.now() + (estWaitTime - 15) * 60 * 1000).toISOString();
+      
+      // Busy level as percentage
+      const busyLevel = Math.min(100, Math.round(
+        (waitlistEntries.filter(e => e.status === 'waiting' || e.status === 'notified').length / 
+        Math.max(1, restaurant.tableCapacity || 10)) * 100
+      ));
+      
+      // Confidence level based on available data
+      const confidence = restaurant.useAdvancedQueue && tableTypes.length > 0 
+        ? 'high' 
+        : ((restaurant.customWaitTime ?? 0) > 0 ? 'medium' : 'low');
+      
+      // Return prediction
+      res.json({
+        restaurantId: id,
+        partySize,
+        estimatedWaitTime: estWaitTime,
+        nextAvailableTime,
+        recommendedArrivalTime,
+        busyLevel,
+        confidence,
+        availableTables: restaurant.tableCapacity || 0
+      });
+      
+    } catch (error) {
+      console.error("Error generating capacity prediction:", error);
+      res.status(500).json({ message: "Error generating capacity prediction" });
+    }
+  });
+  
   // Register all routes with /api prefix
   app.use("/api", apiRouter);
   

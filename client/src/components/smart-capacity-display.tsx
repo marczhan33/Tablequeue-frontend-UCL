@@ -21,32 +21,42 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
     queryKey: [`/api/restaurants/${restaurantId}`],
   });
   
-  // Fetch table types for this restaurant
-  const { data: tableTypes } = useQuery<TableType[]>({
-    queryKey: [`/api/restaurants/${restaurantId}/table-types`],
-    enabled: !!restaurant,
+  // Define the prediction response type
+  interface CapacityPredictionResponse {
+    restaurantId: number;
+    partySize: number;
+    estimatedWaitTime: number;
+    nextAvailableTime: string;
+    recommendedArrivalTime?: string;
+    busyLevel: number;
+    confidence: 'high' | 'medium' | 'low';
+    availableTables: number;
+  }
+  
+  // Fetch capacity prediction directly from the API
+  const { data: prediction } = useQuery<CapacityPredictionResponse>({
+    queryKey: [`/api/restaurants/${restaurantId}/capacity-prediction`, { partySize }],
+    enabled: !!restaurantId && partySize > 0,
   });
   
-  // Fetch current waitlist
-  const { data: waitlist } = useQuery<WaitlistEntry[]>({
-    queryKey: [`/api/restaurants/${restaurantId}/waitlist`],
-    enabled: !!restaurant,
-  });
-  
-  // Calculate capacity analytics whenever dependencies change
+  // Update capacity data when prediction is available
   useEffect(() => {
-    if (restaurant && tableTypes && waitlist) {
-      const analytics = calculateWaitTime(
-        restaurant,
-        partySize,
-        tableTypes,
-        waitlist
-      );
+    if (prediction) {
+      // Transform API response to match our CapacityAnalytics interface
+      const analytics: CapacityAnalytics = {
+        estimatedWaitTime: prediction.estimatedWaitTime,
+        confidence: prediction.confidence,
+        availableTables: prediction.availableTables,
+        busyLevel: prediction.busyLevel,
+        nextAvailableTime: new Date(prediction.nextAvailableTime),
+        recommendedArrivalTime: prediction.recommendedArrivalTime ? 
+          new Date(prediction.recommendedArrivalTime) : undefined
+      };
       
       setCapacityData(analytics);
       setLoading(false);
     }
-  }, [restaurant, tableTypes, waitlist, partySize]);
+  }, [prediction]);
   
   if (loading || !capacityData) {
     return (
