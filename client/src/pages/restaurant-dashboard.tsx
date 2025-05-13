@@ -364,6 +364,41 @@ const RestaurantDashboard = () => {
           </div>
         </TabsContent>
         
+        <TabsContent value="tables">
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Table Management</h3>
+            <p className="text-gray-600 mb-6">Manage your restaurant's table types and optimize queue management based on party sizes.</p>
+            
+            <div className="mb-8">
+              <h4 className="text-md font-semibold mb-3">Advanced Queue Settings</h4>
+              <div className="flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={restaurant.useAdvancedQueue || false}
+                    onChange={(e) => updateRestaurant.mutate({ useAdvancedQueue: e.target.checked })}
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900">Enable Advanced Queue Management</span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">When enabled, the system will automatically match customers to appropriate tables based on party size.</p>
+            </div>
+            
+            <TableTypeManager restaurantId={RESTAURANT_ID} />
+            
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm">
+              <h4 className="font-medium text-yellow-800 mb-1">Table Type Tips</h4>
+              <ul className="list-disc list-inside text-yellow-700 space-y-1">
+                <li>Create different table types based on seating capacity and location (indoor, outdoor, etc.)</li>
+                <li>Set accurate turnover times to improve wait time predictions</li>
+                <li>More specific table types lead to better customer matching and shorter wait times</li>
+              </ul>
+            </div>
+          </div>
+        </TabsContent>
+        
         <TabsContent value="qrcode">
           <div className="bg-gray-50 rounded-lg p-6 mb-6">
             <h3 className="text-lg font-semibold mb-4">QR Code Generator</h3>
