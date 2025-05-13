@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -155,3 +155,71 @@ export const qrCodeCustomerFormSchema = z.object({
 });
 
 export type QrCodeCustomerForm = z.infer<typeof qrCodeCustomerFormSchema>;
+
+// ----- Historical Data Analytics Schema -----
+
+// Daily restaurant analytics data
+export const dailyAnalytics = pgTable("daily_analytics", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  date: date("date").notNull(),
+  totalCustomers: integer("total_customers").notNull(),
+  averageWaitTime: integer("average_wait_time").notNull(), // In minutes
+  peakWaitTime: integer("peak_wait_time").notNull(), // In minutes
+  totalParties: integer("total_parties").notNull(),
+  averagePartySize: numeric("average_party_size", { precision: 4, scale: 2 }).notNull(),
+  cancelledWaitlist: integer("cancelled_waitlist").notNull(),
+  turnoverRate: numeric("turnover_rate", { precision: 4, scale: 2 }), // Average parties seated per hour
+  revenue: numeric("revenue", { precision: 10, scale: 2 }), // Optional revenue data if provided
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Hourly restaurant analytics for more granular data
+export const hourlyAnalytics = pgTable("hourly_analytics", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  date: date("date").notNull(),
+  hour: integer("hour").notNull(), // 0-23 hour of day
+  customers: integer("customers").notNull(), // Customers during this hour
+  averageWaitTime: integer("average_wait_time").notNull(), // In minutes
+  partiesSeated: integer("parties_seated").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Table analytics for understanding table utilization
+export const tableAnalytics = pgTable("table_analytics", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  tableTypeId: integer("table_type_id").notNull(),
+  date: date("date").notNull(),
+  totalUsage: integer("total_usage").notNull(), // How many times this table type was used
+  averageTurnoverTime: integer("average_turnover_time").notNull(), // Average time in minutes
+  utilization: numeric("utilization", { precision: 5, scale: 2 }).notNull(), // Percentage of time tables were occupied
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Insert schemas for analytics tables
+export const insertDailyAnalyticsSchema = createInsertSchema(dailyAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertHourlyAnalyticsSchema = createInsertSchema(hourlyAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertTableAnalyticsSchema = createInsertSchema(tableAnalytics).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types for analytics tables
+export type InsertDailyAnalytics = z.infer<typeof insertDailyAnalyticsSchema>;
+export type DailyAnalytics = typeof dailyAnalytics.$inferSelect;
+
+export type InsertHourlyAnalytics = z.infer<typeof insertHourlyAnalyticsSchema>;
+export type HourlyAnalytics = typeof hourlyAnalytics.$inferSelect;
+
+export type InsertTableAnalytics = z.infer<typeof insertTableAnalyticsSchema>;
+export type TableAnalytics = typeof tableAnalytics.$inferSelect;

@@ -3,6 +3,9 @@ import {
   restaurants, type Restaurant, type InsertRestaurant,
   waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
   tableTypes, type TableType, type InsertTableType,
+  dailyAnalytics, type DailyAnalytics, type InsertDailyAnalytics,
+  hourlyAnalytics, type HourlyAnalytics, type InsertHourlyAnalytics,
+  tableAnalytics, type TableAnalytics, type InsertTableAnalytics,
   type WaitStatus, type WaitlistStatus
 } from "@shared/schema";
 import { db } from "./db";
@@ -52,6 +55,15 @@ export interface IStorage {
   // QR code operations
   generateRestaurantQrCode(restaurantId: number): Promise<string>;
   getRestaurantByQrCodeId(qrCodeId: string): Promise<Restaurant | undefined>;
+  
+  // Analytics operations
+  getDailyAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<DailyAnalytics[]>;
+  getHourlyAnalytics(restaurantId: number, date: Date): Promise<HourlyAnalytics[]>;
+  getTableAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<TableAnalytics[]>;
+  createDailyAnalytics(data: InsertDailyAnalytics): Promise<DailyAnalytics>;
+  createHourlyAnalytics(data: InsertHourlyAnalytics): Promise<HourlyAnalytics>;
+  createTableAnalytics(data: InsertTableAnalytics): Promise<TableAnalytics>;
+  generateAnalyticsFromWaitlist(restaurantId: number, date: Date): Promise<boolean>;
 }
 
 // Database storage implementation
