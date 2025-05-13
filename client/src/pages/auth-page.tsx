@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { GoogleSignInButton } from "@/components/ui/google-sign-in-button";
 import {
   Form,
   FormControl,
@@ -42,7 +44,8 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
-  const { user, loginMutation, registerMutation } = useAuth();
+  const { user, registerMutation, loginWithGoogle } = useAuth();
+  // We're moving away from traditional login in favor of Google sign-in
   const [location, setLocation] = useLocation();
   const hasRedirected = useRef(false);
   
@@ -79,9 +82,11 @@ export default function AuthPage() {
     },
   });
 
-  // Handle login submission
+  // Handle login submission 
+  // Note: We're transitioning to Google sign-in, so this function is kept for backward compatibility
   const onLoginSubmit = (values: LoginFormValues) => {
-    loginMutation.mutate(values);
+    console.log("Traditional login is being phased out in favor of Google sign-in");
+    // Redirect users to use Google sign-in instead
   };
 
   // Handle registration submission
@@ -139,16 +144,27 @@ export default function AuthPage() {
                   <Button 
                     type="submit" 
                     className="w-full"
-                    disabled={loginMutation.isPending}
                   >
-                    {loginMutation.isPending ? (
-                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Logging in...</>
-                    ) : (
-                      "Login"
-                    )}
+                    Login
                   </Button>
                 </form>
               </Form>
+              
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-background px-2 text-muted-foreground text-sm">
+                    OR
+                  </span>
+                </div>
+              </div>
+              
+              <GoogleSignInButton 
+                onClick={loginWithGoogle} 
+                text="Sign in with Google" 
+              />
             </TabsContent>
             
             {/* Registration Form */}
@@ -251,6 +267,22 @@ export default function AuthPage() {
                   </Button>
                 </form>
               </Form>
+              
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-background px-2 text-muted-foreground text-sm">
+                    OR
+                  </span>
+                </div>
+              </div>
+              
+              <GoogleSignInButton 
+                onClick={loginWithGoogle} 
+                text="Sign up with Google" 
+              />
             </TabsContent>
           </Tabs>
         </div>
