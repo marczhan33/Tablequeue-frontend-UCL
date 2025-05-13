@@ -161,6 +161,8 @@ export const qrCodeCustomerFormSchema = z.object({
   phoneNumber: z.string().optional(),
   dietaryRequirements: z.string().optional(),
   specialRequests: z.string().optional(),
+  tableTypeId: z.number().optional(), // Optional table type selection
+  preferredTableType: z.string().optional(), // For user's preference when no specific ID
 });
 
 // Remote waitlist form schema (for joining the queue remotely)
@@ -172,6 +174,8 @@ export const remoteWaitlistFormSchema = z.object({
   dietaryRequirements: z.string().optional(),
   specialRequests: z.string().optional(),
   expectedArrivalTime: z.string(), // ISO string for expected arrival time
+  tableTypeId: z.number().optional(), // Optional table type selection
+  preferredTableType: z.string().optional(), // For user's preference when no specific ID
 });
 
 export type QrCodeCustomerForm = z.infer<typeof qrCodeCustomerFormSchema>;
