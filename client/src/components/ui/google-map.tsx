@@ -196,6 +196,17 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   
   // Render the fallback map interface
   if (useFallbackMap) {
+    // Get wait time color based on restaurant name - this helps simulate the actual map experience
+    let statusColor = '#4CAF50'; // default available color
+    
+    if (window.waitTimeData && window.waitTimeData[markerTitle]) {
+      const waitStatus = window.waitTimeData[markerTitle].status;
+      statusColor = waitStatus === 'available' ? '#4CAF50' : 
+                   waitStatus === 'short' ? '#FF9800' : 
+                   waitStatus === 'long' ? '#F44336' :
+                   waitStatus === 'very_long' ? '#9C27B0' : '#757575';
+    }
+    
     return (
       <div 
         className={`rounded-lg overflow-hidden ${className} cursor-pointer`}
@@ -204,34 +215,76 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         onClick={openInGoogleMaps}
       >
         <div className="h-full bg-gray-100 flex flex-col items-center justify-center p-4 relative">
-          {/* Grid background */}
+          {/* Grid background with roads simulation */}
           <div className="absolute inset-0 bg-blue-50 opacity-50 pointer-events-none">
-            <div className="w-full h-full" style={{ backgroundImage: 'linear-gradient(to right, #e5e7eb 1px, transparent 1px), linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+            <div className="w-full h-full" 
+                 style={{ 
+                  backgroundImage: `
+                    linear-gradient(to right, #e5e7eb 1px, transparent 1px), 
+                    linear-gradient(to bottom, #e5e7eb 1px, transparent 1px),
+                    linear-gradient(to right, rgba(59, 130, 246, 0.3) 3px, transparent 3px),
+                    linear-gradient(to bottom, rgba(59, 130, 246, 0.3) 3px, transparent 3px)
+                  `, 
+                  backgroundSize: '20px 20px, 20px 20px, 100px 100px, 100px 100px'
+                 }}
+            ></div>
           </div>
           
-          {/* Location pin */}
-          <div className="z-10 bg-primary text-white rounded-full p-4 mb-2 shadow-lg">
-            <svg 
-              xmlns="http://www.w3.org/2000/svg" 
-              className="h-8 w-8" 
-              viewBox="0 0 20 20" 
-              fill="currentColor"
+          {/* Location pin with animation */}
+          <div className="z-10 flex flex-col items-center">
+            <div 
+              className="relative shadow-lg" 
+              style={{ animation: 'bounce 2s infinite' }}
             >
-              <path 
-                fillRule="evenodd" 
-                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" 
-                clipRule="evenodd" 
-              />
-            </svg>
+              <div 
+                className="w-12 h-12 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: statusColor }}
+              >
+                <svg 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  className="h-8 w-8 text-white" 
+                  viewBox="0 0 20 20" 
+                  fill="currentColor"
+                >
+                  <path 
+                    fillRule="evenodd" 
+                    d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" 
+                    clipRule="evenodd" 
+                  />
+                </svg>
+              </div>
+              <div 
+                className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 w-6 h-3 rounded-full bg-black opacity-20"
+                style={{ animation: 'pulse 2s infinite' }}
+              ></div>
+            </div>
           </div>
           
           {/* Address info */}
-          <div className="z-10 text-center bg-white rounded-lg p-2 shadow-md max-w-xs">
-            <h4 className="font-semibold mb-1">{markerTitle}</h4>
-            <p className="text-sm text-gray-500">
-              Lat: {parseFloat(latitude).toFixed(4)}, Lng: {parseFloat(longitude).toFixed(4)}
+          <div className="z-10 text-center bg-white rounded-lg p-3 shadow-md max-w-xs mt-4 border border-gray-200">
+            <h4 className="font-semibold mb-1 text-lg">{markerTitle}</h4>
+            <div className="flex items-center justify-center mb-1">
+              <div 
+                className="w-3 h-3 rounded-full mr-2"
+                style={{ backgroundColor: statusColor }}
+              ></div>
+              <p className="text-sm">
+                {window.waitTimeData && window.waitTimeData[markerTitle]?.status === 'available' ? 'No wait' : 
+                 window.waitTimeData && window.waitTimeData[markerTitle]?.status === 'short' ? 'Short wait' : 
+                 window.waitTimeData && window.waitTimeData[markerTitle]?.status === 'long' ? 'Long wait' :
+                 window.waitTimeData && window.waitTimeData[markerTitle]?.status === 'very_long' ? 'Very long wait' : 
+                 window.waitTimeData && window.waitTimeData[markerTitle]?.status === 'closed' ? 'Closed' : 'Status unavailable'}
+              </p>
+            </div>
+            <p className="text-sm text-gray-500 border-t border-gray-100 pt-2 mt-1">
+              Location: {parseFloat(latitude).toFixed(4)}, {parseFloat(longitude).toFixed(4)}
             </p>
-            <p className="text-xs text-primary mt-1 font-medium">Click to open in Google Maps</p>
+            <p className="text-xs text-primary mt-2 font-medium flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clipRule="evenodd" />
+              </svg>
+              Open in Google Maps
+            </p>
           </div>
         </div>
       </div>
