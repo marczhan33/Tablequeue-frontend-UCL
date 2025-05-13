@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Restaurant, TableType, WaitlistEntry } from '@shared/schema';
 import { calculateWaitTime, formatWaitTime, formatTime, CapacityAnalytics } from '@/lib/smart-capacity';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Clock, Users, CalendarClock, Calendar } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
 
 interface SmartCapacityDisplayProps {
   restaurantId: number;
@@ -16,10 +14,7 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
   const [capacityData, setCapacityData] = useState<CapacityAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   
-  // Fetch the restaurant data
-  const { data: restaurant } = useQuery<Restaurant>({
-    queryKey: [`/api/restaurants/${restaurantId}`],
-  });
+  // We're getting the restaurant from the parent component now
   
   // Define the prediction response type
   interface CapacityPredictionResponse {

@@ -138,7 +138,7 @@ export function calculateWaitTime(
  * Get the base wait time in minutes from a wait status
  */
 function getBaseWaitTime(status: WaitStatus): number {
-  switch (status as string) {
+  switch (status) {
     case 'available': return 0;
     case 'short': return 15;
     case 'long': return 30;
