@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
 import { z } from "zod";
+import { VerificationSuccess } from "@/components/verification-status";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,8 +43,12 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { user, loginMutation, registerMutation } = useAuth();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const hasRedirected = useRef(false);
+  
+  // Check if the URL has a verified parameter
+  const urlParams = new URLSearchParams(location.split('?')[1] || '');
+  const isVerified = urlParams.get('verified') === 'success';
 
   // Handle redirect if already logged in
   useEffect(() => {
@@ -90,6 +95,8 @@ export default function AuthPage() {
       <div className="flex-1 p-6 lg:p-8 flex flex-col items-center justify-center">
         <div className="w-full max-w-md">
           <h1 className="text-3xl font-bold font-heading text-center mb-8">Welcome to TableQueue</h1>
+          
+          {isVerified && <VerificationSuccess />}
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">

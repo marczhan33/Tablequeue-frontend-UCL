@@ -87,6 +87,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Email verification endpoint
+  apiRouter.get("/verify-email", async (req: Request, res: Response) => {
+    try {
+      const { token } = req.query;
+      
+      if (!token || typeof token !== 'string') {
+        return res.status(400).json({ error: "Invalid verification token" });
+      }
+      
+      // Find user with this token
+      const user = await storage.getUserByVerificationToken(token);
+      
+      if (!user) {
+        return res.status(404).json({ error: "Invalid or expired verification token" });
+      }
+      
+      // Check if token has expired
+      if (user.verificationExpires && new Date(user.verificationExpires) < new Date()) {
+        return res.status(400).json({ error: "Verification token has expired" });
+      }
+      
+      // Update user verification status
+      await storage.updateUserVerification(user.id, true);
+      
+      // Redirect to the verification success page
+      res.redirect('/auth?verified=success');
+    } catch (error) {
+      console.error("Email verification error:", error);
+      res.status(500).json({ error: "Failed to verify email" });
+    }
+  });
+  
   // Test email endpoint
   apiRouter.post("/test-email", async (req: Request, res: Response) => {
     try {
