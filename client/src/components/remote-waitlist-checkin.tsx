@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { useLocation } from 'wouter';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from './ui/card';
 import { Input } from './ui/input';
@@ -44,6 +45,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
   const [locationError, setLocationError] = useState<string | null>(null);
   const [qrCodeLink, setQrCodeLink] = useState<string | null>(null);
   const linkInputRef = useRef<HTMLInputElement>(null);
+  const [, navigate] = useLocation();
   
   const form = useForm<CheckinFormValues>({
     resolver: zodResolver(checkinFormSchema),
@@ -229,7 +231,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
           <p className="text-muted-foreground">The staff will call your name when your table is ready.</p>
           
           <Button 
-            onClick={() => window.location.href = `/restaurants/${restaurant.id}`}
+            onClick={() => navigate(`/restaurants/${restaurant.id}`)}
             className="mt-4"
           >
             Back to Restaurant

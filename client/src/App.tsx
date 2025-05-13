@@ -68,6 +68,9 @@ function Router() {
       <Route path="/">
         <CustomerView />
       </Route>
+      <Route path="/restaurants/:id">
+        <RestaurantDetails />
+      </Route>
       <Route path="/restaurant/:id">
         <RestaurantDetails />
       </Route>
@@ -102,7 +105,7 @@ function App() {
   // Function to determine if a route is active
   const isActive = (path: string) => {
     // Special case for the restaurant details page
-    if (path === '/' && location.startsWith('/restaurant/')) {
+    if (path === '/' && (location.startsWith('/restaurant/') || location.startsWith('/restaurants/'))) {
       return false;
     }
     // For other pages, exact match or startsWith for the base route
@@ -110,7 +113,7 @@ function App() {
   };
   
   // Don't show navigation tabs on authentication or restaurant details pages
-  const showNavTabs = !location.startsWith('/restaurant/') && location !== '/auth';
+  const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth';
   
   return (
     <QueryClientProvider client={queryClient}>
