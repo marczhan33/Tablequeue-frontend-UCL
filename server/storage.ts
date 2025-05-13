@@ -807,7 +807,65 @@ export class MemStorage implements IStorage {
     // Add all sample restaurants to the storage
     sampleRestaurants.forEach(restaurant => {
       const id = this.restaurantCurrentId++;
-      this.restaurants.set(id, { ...restaurant, id });
+      this.restaurants.set(id, { 
+        ...restaurant, 
+        id, 
+        useAdvancedQueue: true // Enable advanced queue for sample restaurants
+      });
+      
+      // Add sample table types for each restaurant
+      const tableTypes = [
+        {
+          restaurantId: id,
+          name: "Two-seater",
+          capacity: 2,
+          count: 8,
+          estimatedTurnoverTime: 45,
+          isActive: true
+        },
+        {
+          restaurantId: id,
+          name: "Four-seater",
+          capacity: 4,
+          count: 12,
+          estimatedTurnoverTime: 60,
+          isActive: true
+        },
+        {
+          restaurantId: id,
+          name: "Large Group",
+          capacity: 8,
+          count: 4,
+          estimatedTurnoverTime: 90,
+          isActive: true
+        },
+        {
+          restaurantId: id,
+          name: "Bar",
+          capacity: 1,
+          count: 10,
+          estimatedTurnoverTime: 40,
+          isActive: true
+        },
+        {
+          restaurantId: id,
+          name: "Outdoor",
+          capacity: 4,
+          count: 6,
+          estimatedTurnoverTime: 75,
+          isActive: restaurant.id % 2 === 0 // Only activate outdoor tables for some restaurants
+        }
+      ];
+      
+      // Add all sample table types to the storage
+      tableTypes.forEach(tableType => {
+        const tableTypeId = this.tableTypeCurrentId++;
+        this.tableTypes.set(tableTypeId, {
+          ...tableType,
+          id: tableTypeId,
+          createdAt: new Date()
+        });
+      });
     });
   }
 }

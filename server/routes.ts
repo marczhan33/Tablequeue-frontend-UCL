@@ -5,6 +5,7 @@ import {
   insertUserSchema, 
   insertRestaurantSchema, 
   insertWaitlistEntrySchema,
+  insertTableTypeSchema,
   waitStatusEnum, 
   waitlistStatusEnum 
 } from "@shared/schema";
@@ -426,6 +427,148 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating waitlist entry:", error);
       res.status(500).json({ message: "Error updating waitlist entry" });
+    }
+  });
+  
+  // Table type endpoints
+  
+  // GET all table types for a restaurant
+  apiRouter.get("/restaurants/:id/table-types", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const tableTypes = await storage.getTableTypes(id);
+      res.json(tableTypes);
+    } catch (error) {
+      console.error("Error fetching table types:", error);
+      res.status(500).json({ message: "Error fetching table types" });
+    }
+  });
+  
+  // GET a specific table type
+  apiRouter.get("/table-types/:id", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid table type ID" });
+      }
+      
+      const tableType = await storage.getTableType(id);
+      if (!tableType) {
+        return res.status(404).json({ message: "Table type not found" });
+      }
+      
+      res.json(tableType);
+    } catch (error) {
+      console.error("Error fetching table type:", error);
+      res.status(500).json({ message: "Error fetching table type" });
+    }
+  });
+  
+  // CREATE a new table type
+  apiRouter.post("/restaurants/:id/table-types", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Validate request data
+      const validatedData = insertTableTypeSchema.parse({
+        ...req.body,
+        restaurantId
+      });
+      
+      // Create table type
+      const tableType = await storage.createTableType(validatedData);
+      res.status(201).json(tableType);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Error creating table type:", error);
+      res.status(500).json({ message: "Error creating table type" });
+    }
+  });
+  
+  // UPDATE a table type
+  apiRouter.patch("/table-types/:id", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid table type ID" });
+      }
+      
+      // Check if table type exists
+      const tableType = await storage.getTableType(id);
+      if (!tableType) {
+        return res.status(404).json({ message: "Table type not found" });
+      }
+      
+      // Ensure user is owner of the restaurant this table type belongs to
+      const restaurant = await storage.getRestaurant(tableType.restaurantId);
+      if (!restaurant || !req.user || restaurant.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized - You don't own this restaurant" });
+      }
+      
+      // Update table type
+      const updatedTableType = await storage.updateTableType(id, req.body);
+      res.json(updatedTableType);
+    } catch (error) {
+      console.error("Error updating table type:", error);
+      res.status(500).json({ message: "Error updating table type" });
+    }
+  });
+  
+  // DELETE a table type
+  apiRouter.delete("/table-types/:id", ensureAuthenticated, ensureRestaurantOwner, async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid table type ID" });
+      }
+      
+      // Check if table type exists
+      const tableType = await storage.getTableType(id);
+      if (!tableType) {
+        return res.status(404).json({ message: "Table type not found" });
+      }
+      
+      // Ensure user is owner of the restaurant this table type belongs to
+      const restaurant = await storage.getRestaurant(tableType.restaurantId);
+      if (!restaurant || !req.user || restaurant.userId !== req.user.id) {
+        return res.status(403).json({ message: "Unauthorized - You don't own this restaurant" });
+      }
+      
+      // Delete table type
+      const success = await storage.deleteTableType(id);
+      if (success) {
+        res.status(204).end();
+      } else {
+        res.status(500).json({ message: "Failed to delete table type" });
+      }
+    } catch (error) {
+      console.error("Error deleting table type:", error);
+      res.status(500).json({ message: "Error deleting table type" });
     }
   });
   
