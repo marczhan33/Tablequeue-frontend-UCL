@@ -46,6 +46,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes - all prefixed with /api
   const apiRouter = express.Router();
   
+  // Initialize analytics
+  initializeAnalytics();
+  
   // Resend verification email endpoint
   apiRouter.post("/resend-verification", ensureAuthenticated, async (req: Request, res: Response) => {
     try {
@@ -612,6 +615,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entry = await storage.updateWaitlistEntry(entryId, req.body);
       if (!entry) {
         return res.status(404).json({ message: "Waitlist entry not found" });
+      }
+      
+      // If the customer is being seated, process turnover data for analytics
+      if (req.body.status === 'seated' && entry.tableTypeId) {
+        // Store current time as seatedAt if not provided
+        if (!entry.seatedAt) {
+          await storage.updateWaitlistEntry(entry.id, {
+            seatedAt: new Date()
+          });
+        }
+        
+        // Process and store this data for analytics
+        try {
+          await processTableTurnover(entry);
+        } catch (error) {
+          console.error("Error processing turnover data:", error);
+          // Non-blocking - we don't want to fail the API if analytics fails
+        }
       }
       
       res.json(entry);
@@ -1202,6 +1223,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Register all routes with /api prefix
   app.use("/api", apiRouter);
+  
+  // Mount the analytics router
+  app.use("/api", analyticsRouter);
   
   const httpServer = createServer(app);
   return httpServer;

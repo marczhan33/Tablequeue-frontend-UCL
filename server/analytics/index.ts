@@ -51,9 +51,12 @@ export async function processTableTurnover(entry: WaitlistEntry): Promise<void> 
  * Initialize analytics system
  */
 export function initializeAnalytics(): void {
-  console.log("Table turnover analytics initialized");
+  console.log("Table turnover analytics system initialized");
+  
+  // In a production environment, you might:
+  // 1. Set up scheduled jobs to aggregate data
+  // 2. Initialize connection to analytics database
+  // 3. Set up event listeners for real-time analytics
 }
 
-export {
-  turnoverDataService
-};
+export { turnoverDataService };
