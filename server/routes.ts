@@ -128,6 +128,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Email is required" });
       }
       
+      // Ensure we have a verified sender email
+      if (!process.env.EMAIL_FROM) {
+        console.warn("EMAIL_FROM environment variable not set, using default");
+        process.env.EMAIL_FROM = 'noreply@tablequeue.com';
+      }
+      
+      console.log(`Using sender email: ${process.env.EMAIL_FROM}`);
+      
       // Import the email service
       const { sendTestEmail } = await import('./email-service');
       

@@ -89,19 +89,30 @@ The TableQueue Team`
   };
 
   try {
+    // Check if we have a from address
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@tablequeue.com';
+    
+    console.log(`Attempting to send email from ${fromEmail} to ${params.to}`);
+    
     await mailService.send({
       to: params.to,
       from: {
-        email: process.env.EMAIL_FROM || 'noreply@tablequeue.com',
+        email: fromEmail,
         name: 'TableQueue'
       },
       subject: params.subject,
       text: params.text || '',
       html: params.html || '',
     });
+    console.log("Email sent successfully");
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('SendGrid email error:', error);
+    
+    if (error.response && error.response.body && error.response.body.errors) {
+      console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
+    }
+    
     return false;
   }
 }
@@ -118,19 +129,30 @@ export async function sendTestEmail(to: string): Promise<boolean> {
   }
   
   try {
+    // Check if we have a from address
+    const fromEmail = process.env.EMAIL_FROM || 'noreply@tablequeue.com';
+    
+    console.log(`Attempting to send test email from ${fromEmail} to ${to}`);
+    
     await mailService.send({
       to,
       from: {
-        email: process.env.EMAIL_FROM || 'noreply@tablequeue.com',
+        email: fromEmail,
         name: 'TableQueue'
       },
       subject: 'TableQueue Email Service Test',
       text: 'This is a test email to verify that SendGrid integration is working correctly.',
       html: '<h1>TableQueue Email Test</h1><p>This is a test email to verify that SendGrid integration is working correctly.</p>',
     });
+    console.log("Test email sent successfully");
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('SendGrid test email error:', error);
+    
+    if (error.response && error.response.body && error.response.body.errors) {
+      console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
+    }
+    
     return false;
   }
 }

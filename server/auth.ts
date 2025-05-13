@@ -104,19 +104,18 @@ export function setupAuth(app: Express) {
       // Hash the password
       const hashedPassword = await hashPassword(password);
       
-      // For development, allow auto-verification without email
-      // In production, this should always be false
-      const autoVerify = !process.env.SENDGRID_API_KEY;
+      // Always auto-verify for development until SendGrid domain verification is complete
+      // In production, this should be tied to actual verification
+      const autoVerify = true; // Auto-verify all users for now
       let token = null;
       let expires = null;
       
-      // Generate verification token and expiration if email verification is enabled
-      if (!autoVerify) {
-        const { generateVerificationToken, sendVerificationEmail } = await import('./email-service');
-        const verificationData = generateVerificationToken();
-        token = verificationData.token;
-        expires = verificationData.expires;
-      }
+      // Generate verification token but don't require it for login
+      // This keeps the system ready for when email verification is properly set up
+      const { generateVerificationToken } = await import('./email-service');
+      const verificationData = generateVerificationToken();
+      token = verificationData.token;
+      expires = verificationData.expires;
 
       // Create user
       const user = await storage.createUser({
