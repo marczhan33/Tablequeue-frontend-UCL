@@ -2,6 +2,7 @@ import {
   users, type User, type InsertUser, 
   restaurants, type Restaurant, type InsertRestaurant,
   waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
+  tableTypes, type TableType, type InsertTableType,
   type WaitStatus, type WaitlistStatus
 } from "@shared/schema";
 import { db } from "./db";
@@ -258,21 +259,25 @@ const dbStorage = new DatabaseStorage();
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private restaurants: Map<number, Restaurant>;
+  private tableTypes: Map<number, TableType>;
   private waitlistEntries: Map<number, WaitlistEntry>;
   private restaurantQrCodes: Map<string, number>; // Maps QR code IDs to restaurant IDs
   
   private userCurrentId: number;
   private restaurantCurrentId: number;
+  private tableTypeCurrentId: number;
   private waitlistEntryCurrentId: number;
 
   constructor() {
     this.users = new Map();
     this.restaurants = new Map();
+    this.tableTypes = new Map();
     this.waitlistEntries = new Map();
     this.restaurantQrCodes = new Map();
     
     this.userCurrentId = 1;
     this.restaurantCurrentId = 1;
+    this.tableTypeCurrentId = 1;
     this.waitlistEntryCurrentId = 1;
     
     // Initialize with some sample data
@@ -589,6 +594,40 @@ export class MemStorage implements IStorage {
     }
     
     return this.getRestaurant(restaurantId);
+  }
+  
+  // Table type operations
+  async getTableTypes(restaurantId: number): Promise<TableType[]> {
+    return Array.from(this.tableTypes.values())
+      .filter(tableType => tableType.restaurantId === restaurantId);
+  }
+
+  async getTableType(id: number): Promise<TableType | undefined> {
+    return this.tableTypes.get(id);
+  }
+
+  async createTableType(tableType: InsertTableType): Promise<TableType> {
+    const id = this.tableTypeCurrentId++;
+    const newTableType: TableType = { 
+      ...tableType, 
+      id,
+      createdAt: new Date() 
+    };
+    this.tableTypes.set(id, newTableType);
+    return newTableType;
+  }
+
+  async updateTableType(id: number, data: Partial<TableType>): Promise<TableType | undefined> {
+    const tableType = this.tableTypes.get(id);
+    if (!tableType) return undefined;
+
+    const updatedTableType = { ...tableType, ...data };
+    this.tableTypes.set(id, updatedTableType);
+    return updatedTableType;
+  }
+
+  async deleteTableType(id: number): Promise<boolean> {
+    return this.tableTypes.delete(id);
   }
   
   // Helper methods
