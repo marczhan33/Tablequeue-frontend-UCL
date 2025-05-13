@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import QRCodeGenerator from "@/components/qr-code-generator";
 import WaitlistManagement from "@/components/waitlist-management";
 import RemoteWaitlistManager from "@/components/remote-waitlist-manager";
+import TableTypeManager from "@/components/table-type-manager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mock restaurant ID for demo - in a real app, this would come from authentication
