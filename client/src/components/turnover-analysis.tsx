@@ -13,6 +13,7 @@ interface TurnoverAnalysisProps {
 
 export default function TurnoverAnalysis({ restaurantId }: TurnoverAnalysisProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const { toast } = useToast();
   
   // Fetch table types
   const { data: tableTypes, isLoading: isLoadingTableTypes } = useQuery<TableType[]>({
@@ -39,6 +40,41 @@ export default function TurnoverAnalysis({ restaurantId }: TurnoverAnalysisProps
   
   // Check if we have any recommendations
   const hasRecommendations = analysis.some(item => item.recommendation);
+  
+  // Mutation for applying recommendations
+  const applyRecommendations = useMutation({
+    mutationFn: async () => {
+      // Format recommendations for the API
+      const recommendations = analysis
+        .filter(item => item.recommendation)
+        .map(item => ({
+          tableTypeId: item.tableTypeId,
+          suggestedTime: item.recommendation?.suggestedTime
+        }));
+      
+      return await apiRequest({
+        url: `/api/restaurants/${restaurantId}/apply-turnover-recommendations`,
+        method: "POST",
+        body: { recommendations }
+      });
+    },
+    onSuccess: () => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurantId}/table-types`] });
+      
+      toast({
+        title: "Recommendations Applied",
+        description: "Table turnover times have been updated with the recommended values.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to apply recommendations: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  });
   
   return (
     <div className="bg-white border rounded-lg shadow-sm p-4 mb-6">
@@ -84,11 +120,32 @@ export default function TurnoverAnalysis({ restaurantId }: TurnoverAnalysisProps
                 <div className="flex-shrink-0">
                   <RefreshCw className="h-5 w-5 text-blue-600" />
                 </div>
-                <div className="ml-3">
+                <div className="ml-3 flex-grow">
                   <h3 className="text-sm font-medium text-blue-800">Turnover Time Recommendations Available</h3>
                   <div className="mt-1 text-sm text-blue-700">
                     Based on actual seating data, we suggest adjusting turnover times for {summary?.tablesNeedingAdjustment} table types.
                   </div>
+                </div>
+                <div className="flex-shrink-0">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => applyRecommendations.mutate()}
+                    disabled={applyRecommendations.isPending}
+                    className="flex items-center text-xs"
+                  >
+                    {applyRecommendations.isPending ? (
+                      <>
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                        Applying...
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="mr-1 h-3 w-3" />
+                        Apply All Recommendations
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
             </div>
