@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "@/components/auth/protected-route";
+import { VerificationStatus } from "@/components/verification-status";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import CustomerView from "@/pages/customer-view";
@@ -103,6 +104,7 @@ function App() {
             )}
             
             <main className="flex-grow py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+              {location !== '/auth' && <VerificationStatus />}
               <Router />
             </main>
             

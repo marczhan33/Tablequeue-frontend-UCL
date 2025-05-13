@@ -22,7 +22,8 @@ export function VerificationStatus() {
     try {
       setIsResending(true);
       
-      const response = await apiRequest('/api/resend-verification', {
+      const response = await apiRequest({
+        url: '/api/resend-verification',
         method: 'POST'
       });
       
