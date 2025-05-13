@@ -199,8 +199,8 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
                     <div className="flex items-center">
                       {entry.expectedArrivalTime ? (
                         <>
-                          {formatTime(entry.expectedArrivalTime)}
-                          {isEntryLate(entry.expectedArrivalTime) && (
+                          {formatTime(String(entry.expectedArrivalTime))}
+                          {isEntryLate(String(entry.expectedArrivalTime)) && (
                             <AlertCircle className="ml-2 h-4 w-4 text-amber-500" />
                           )}
                         </>

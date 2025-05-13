@@ -6,6 +6,7 @@ import GoogleMap from "@/components/ui/google-map";
 import { useToast } from "@/hooks/use-toast";
 import QRCodeGenerator from "@/components/qr-code-generator";
 import WaitlistManagement from "@/components/waitlist-management";
+import RemoteWaitlistManager from "@/components/remote-waitlist-manager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 // Mock restaurant ID for demo - in a real app, this would come from authentication
@@ -353,7 +354,12 @@ const RestaurantDashboard = () => {
         </TabsContent>
         
         <TabsContent value="waitlist">
-          <WaitlistManagement restaurantId={RESTAURANT_ID} />
+          <div className="space-y-8">
+            <WaitlistManagement restaurantId={RESTAURANT_ID} />
+            
+            {/* Remote Waitlist Management Section */}
+            {restaurant && <RemoteWaitlistManager restaurant={restaurant} />}
+          </div>
         </TabsContent>
         
         <TabsContent value="qrcode">
