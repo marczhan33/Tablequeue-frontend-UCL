@@ -12,7 +12,14 @@ export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  getUserByVerificationToken(token: string): Promise<User | undefined>;
+  createUser(user: InsertUser & { 
+    isVerified?: boolean;
+    verificationToken?: string;
+    verificationExpires?: Date;
+  }): Promise<User>;
+  updateUserVerification(id: number, isVerified: boolean): Promise<User | undefined>;
   
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;

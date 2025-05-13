@@ -95,6 +95,16 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Username already exists" });
       }
 
+      // Check if email already exists
+      const existingEmail = await storage.getUserByEmail(email);
+      if (existingEmail) {
+        return res.status(400).json({ error: "Email address is already registered" });
+      }
+
+      // Generate verification token and expiration
+      const { generateVerificationToken, sendVerificationEmail } = await import('./email-service');
+      const { token, expires } = generateVerificationToken();
+
       // Hash the password and create the user
       const hashedPassword = await hashPassword(password);
       const user = await storage.createUser({
@@ -102,15 +112,22 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
         email,
         role,
-        phone
+        phone,
+        isVerified: false,
+        verificationToken: token,
+        verificationExpires: expires
       });
+
+      // Attempt to send verification email
+      await sendVerificationEmail(email, token, username)
+        .catch(error => console.error("Failed to send verification email:", error));
 
       // Log the user in
       req.login(user, (err) => {
         if (err) return next(err);
-        // Return user without password
-        const { password, ...userWithoutPassword } = user;
-        res.status(201).json(userWithoutPassword);
+        // Return user without password and verification token
+        const { password, verificationToken, ...userWithoutSensitiveData } = user;
+        res.status(201).json(userWithoutSensitiveData);
       });
     } catch (error) {
       next(error);

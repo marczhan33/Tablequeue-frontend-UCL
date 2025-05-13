@@ -10,6 +10,9 @@ export const users = pgTable("users", {
   email: text("email").notNull().unique(),
   role: text("role").notNull().default('customer'),
   phone: text("phone"), // For SMS notifications
+  isVerified: boolean("is_verified").notNull().default(false),
+  verificationToken: text("verification_token"),
+  verificationExpires: timestamp("verification_expires"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
