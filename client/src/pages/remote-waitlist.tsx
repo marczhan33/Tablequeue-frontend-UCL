@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { createGoogleMapsUrl } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -90,21 +91,12 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
           <Button 
             className="flex-1"
             onClick={() => {
-              // Try multiple formats for maximum compatibility
-              // First attempt - location-based query (works well on desktop)
-              const locationQuery = encodeURIComponent(`${restaurant.name}, ${restaurant.address}`);
-              const mapsLocationUrl = `https://www.google.com/maps/search/?api=1&query=${locationQuery}`;
-              
-              // Second attempt - directions API (works well on mobile)
-              const directionsUrl = `https://maps.google.com/?daddr=${restaurant.latitude},${restaurant.longitude}`;
-              
-              // Try to detect if user is on mobile
-              const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-              
-              // Use the appropriate URL based on device
-              const mapsUrl = isMobile ? directionsUrl : mapsLocationUrl;
-              
-              // Open in new tab
+              const mapsUrl = createGoogleMapsUrl(
+                restaurant.name,
+                restaurant.address,
+                restaurant.latitude,
+                restaurant.longitude
+              );
               window.open(mapsUrl, '_blank');
             }}
           >
