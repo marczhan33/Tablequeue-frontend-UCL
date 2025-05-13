@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,12 +10,21 @@ import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { Restaurant, WaitlistEntry } from '@shared/schema';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, Loader2, MapPin, QrCode, AlertTriangle } from 'lucide-react';
+import { CheckCircle, Loader2, MapPin, QrCode, AlertTriangle, Link as LinkIcon, Copy } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
 
 const checkinFormSchema = z.object({
   confirmationCode: z.string().min(5, "Please enter your confirmation code"),
-  verificationMethod: z.enum(['qrcode', 'location']).default('qrcode'),
+  verificationMethod: z.enum(['qrcode', 'location', 'manual']).default('location'),
 });
 
 type CheckinFormValues = z.infer<typeof checkinFormSchema>;
@@ -23,23 +32,35 @@ type CheckinFormValues = z.infer<typeof checkinFormSchema>;
 interface RemoteWaitlistCheckinProps {
   restaurant: Restaurant;
   onSuccess?: (data: WaitlistEntry) => void;
+  confirmationCode?: string; // Optional code for direct check-in
 }
 
-export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistCheckinProps) => {
+export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode }: RemoteWaitlistCheckinProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkInCompleted, setCheckInCompleted] = useState(false);
-  const [activeTab, setActiveTab] = useState('qrcode');
+  const [activeTab, setActiveTab] = useState('location'); // Default to location verification
   const [isVerified, setIsVerified] = useState(false);
   const [isNearRestaurant, setIsNearRestaurant] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [qrCodeLink, setQrCodeLink] = useState<string | null>(null);
+  const linkInputRef = useRef<HTMLInputElement>(null);
   
   const form = useForm<CheckinFormValues>({
     resolver: zodResolver(checkinFormSchema),
     defaultValues: {
-      confirmationCode: '',
-      verificationMethod: 'qrcode',
+      confirmationCode: confirmationCode || '',
+      verificationMethod: 'location',
     },
   });
+  
+  // Initialize QR code URL for the direct link option
+  useEffect(() => {
+    // In a real app, this would be a unique link to a verification page
+    // For demo purposes, we're creating a simple URL that would contain the confirmation code
+    if (confirmationCode) {
+      setQrCodeLink(`https://${window.location.host}/restaurants/${restaurant.id}/verify/${confirmationCode}`);
+    }
+  }, [confirmationCode, restaurant.id]);
 
   // Function to check if user is near the restaurant using geolocation
   const checkLocation = () => {
@@ -116,10 +137,33 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
     });
   };
 
+  // Function to copy link to clipboard
+  const copyLinkToClipboard = () => {
+    if (linkInputRef.current && qrCodeLink) {
+      linkInputRef.current.select();
+      document.execCommand('copy');
+      toast({
+        title: 'Link Copied',
+        description: 'The verification link has been copied to your clipboard'
+      });
+    }
+  };
+  
+  // Handle direct QR code link verification
+  const handleDirectLinkVerification = () => {
+    // In a real app, this would validate the link and token
+    // For demo purposes, we're just simulating verification
+    setIsVerified(true);
+    toast({
+      title: 'Link Verified',
+      description: 'Your link has been verified. You can now check in!',
+    });
+  };
+  
   const onSubmit = async (values: CheckinFormValues) => {
     try {
       // Check if user has verified their physical presence
-      if (!isVerified) {
+      if (!isVerified && values.verificationMethod !== 'manual') {
         toast({
           title: 'Verification Required',
           description: 'Please verify your presence at the restaurant first',
@@ -201,30 +245,23 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
         <div className="mb-6">
           <h3 className="text-lg font-medium mb-2">Step 1: Verify Your Presence</h3>
           
-          <Tabs defaultValue="qrcode" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="qrcode">
-                <QrCode className="h-4 w-4 mr-2" />
-                Scan QR Code
-              </TabsTrigger>
+          <Tabs defaultValue="location" value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="location">
                 <MapPin className="h-4 w-4 mr-2" />
                 Use Location
               </TabsTrigger>
+              <TabsTrigger value="qrcode">
+                <QrCode className="h-4 w-4 mr-2" />
+                Scan QR Code
+              </TabsTrigger>
+              <TabsTrigger value="link">
+                <LinkIcon className="h-4 w-4 mr-2" />
+                Direct Link
+              </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="qrcode" className="space-y-4 mt-4">
-              <div className="text-center p-6 border border-dashed rounded-md">
-                <QrCode className="h-20 w-20 mx-auto mb-4 text-primary" />
-                <p className="mb-4">Scan the QR code at the restaurant entrance</p>
-                
-                {/* This is a simplified simulation since we can't use the actual camera */}
-                <Button onClick={handleQRScan} variant="outline" disabled={isVerified}>
-                  {isVerified ? 'QR Code Verified' : 'Simulate QR Scan'}
-                </Button>
-              </div>
-            </TabsContent>
-            
+            {/* Location Tab - Primary Method */}
             <TabsContent value="location" className="space-y-4 mt-4">
               <div className="text-center p-6 border border-dashed rounded-md">
                 <MapPin className="h-20 w-20 mx-auto mb-4 text-primary" />
@@ -239,7 +276,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
                 )}
                 
                 {isNearRestaurant && (
-                  <Alert variant="success" className="mb-4 bg-green-50 text-green-800 border-green-200">
+                  <Alert className="mb-4 bg-green-50 text-green-800 border-green-200">
                     <CheckCircle className="h-4 w-4" />
                     <AlertTitle>Location Verified</AlertTitle>
                     <AlertDescription>You're at the restaurant!</AlertDescription>
@@ -264,6 +301,56 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
                 </Button>
               </div>
             </TabsContent>
+            
+            {/* QR Code Tab - Secondary Method */}
+            <TabsContent value="qrcode" className="space-y-4 mt-4">
+              <div className="text-center p-6 border border-dashed rounded-md">
+                <QrCode className="h-20 w-20 mx-auto mb-4 text-primary" />
+                <p className="mb-4">Scan the QR code at the restaurant entrance</p>
+                
+                {/* This is a simplified simulation since we can't use the actual camera */}
+                <Button onClick={handleQRScan} variant="outline" disabled={isVerified}>
+                  {isVerified ? 'QR Code Verified' : 'Simulate QR Scan'}
+                </Button>
+              </div>
+            </TabsContent>
+            
+            {/* Direct Link Tab - Tertiary Method */}
+            <TabsContent value="link" className="space-y-4 mt-4">
+              <div className="text-center p-6 border border-dashed rounded-md">
+                <LinkIcon className="h-20 w-20 mx-auto mb-4 text-primary" />
+                <p className="mb-4">Paste the QR code link if you're unable to scan</p>
+                
+                <div className="flex items-center space-x-2 mb-4">
+                  <Input 
+                    placeholder="https://example.com/verify/code123" 
+                    value={qrCodeLink || ''} 
+                    readOnly 
+                    ref={linkInputRef}
+                  />
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="outline"
+                    onClick={copyLinkToClipboard}
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <Button 
+                  onClick={handleDirectLinkVerification} 
+                  variant="outline" 
+                  disabled={isVerified || !qrCodeLink}
+                >
+                  Verify Link
+                </Button>
+                
+                <p className="mt-4 text-xs text-muted-foreground">
+                  You can open this link on your computer or any device
+                </p>
+              </div>
+            </TabsContent>
           </Tabs>
           
           {isVerified && (
@@ -278,6 +365,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
         {/* Confirmation Code Section */}
         <div>
           <h3 className="text-lg font-medium mb-2">Step 2: Enter Your Code</h3>
+          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField
@@ -301,10 +389,48 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess }: RemoteWaitlistC
                 )}
               />
               
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button 
+                    type="button" 
+                    className="w-full mb-2" 
+                    variant="outline"
+                  >
+                    Restaurant Staff Check-in
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Staff Check-in Option</DialogTitle>
+                    <DialogDescription>
+                      Restaurant staff can directly check you in with just your confirmation code,
+                      without requiring location or QR verification.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="p-4 border rounded-md">
+                    <p className="mb-4">Your confirmation code: <span className="font-bold">{form.getValues().confirmationCode}</span></p>
+                    <p className="text-sm text-muted-foreground">
+                      Show this code to restaurant staff to be checked in directly.
+                    </p>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      onClick={() => {
+                        form.setValue('verificationMethod', 'manual');
+                        form.handleSubmit(onSubmit)();
+                      }}
+                      disabled={isProcessing || !form.getValues().confirmationCode}
+                    >
+                      Process Manual Check-in
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+              
               <Button 
                 type="submit" 
                 className="w-full" 
-                disabled={isProcessing || !isVerified}
+                disabled={isProcessing || (!isVerified && form.getValues().verificationMethod !== 'manual')}
               >
                 {isProcessing ? (
                   <>
