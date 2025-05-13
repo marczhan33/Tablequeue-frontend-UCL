@@ -3,6 +3,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/hooks/use-auth";
+import { ProtectedRoute } from "@/components/auth/protected-route";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import CustomerView from "@/pages/customer-view";
@@ -10,6 +12,7 @@ import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import RestaurantDetails from "@/pages/restaurant-details";
 import HowItWorks from "@/pages/how-it-works";
 import WaitlistPage from "@/pages/waitlist";
+import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -17,9 +20,10 @@ function Router() {
     <Switch>
       <Route path="/" component={CustomerView} />
       <Route path="/restaurant/:id" component={RestaurantDetails} />
-      <Route path="/restaurant-dashboard" component={RestaurantDashboard} />
+      <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} ownerOnly={true} />
       <Route path="/how-it-works" component={HowItWorks} />
       <Route path="/waitlist/:qrCodeId" component={WaitlistPage} />
+      <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
   );
