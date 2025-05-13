@@ -101,26 +101,41 @@ export function setupAuth(app: Express) {
         return res.status(400).json({ error: "Email address is already registered" });
       }
 
-      // Generate verification token and expiration
-      const { generateVerificationToken, sendVerificationEmail } = await import('./email-service');
-      const { token, expires } = generateVerificationToken();
-
-      // Hash the password and create the user
+      // Hash the password
       const hashedPassword = await hashPassword(password);
+      
+      // For development, allow auto-verification without email
+      // In production, this should always be false
+      const autoVerify = !process.env.SENDGRID_API_KEY;
+      let token = null;
+      let expires = null;
+      
+      // Generate verification token and expiration if email verification is enabled
+      if (!autoVerify) {
+        const { generateVerificationToken, sendVerificationEmail } = await import('./email-service');
+        const verificationData = generateVerificationToken();
+        token = verificationData.token;
+        expires = verificationData.expires;
+      }
+
+      // Create user
       const user = await storage.createUser({
         username,
         password: hashedPassword,
         email,
         role,
         phone,
-        isVerified: false,
+        isVerified: autoVerify, // Auto-verify if no SendGrid API key
         verificationToken: token,
         verificationExpires: expires
       });
 
-      // Attempt to send verification email
-      await sendVerificationEmail(email, token, username)
-        .catch(error => console.error("Failed to send verification email:", error));
+      // Attempt to send verification email if verification is enabled
+      if (!autoVerify && token) {
+        const { sendVerificationEmail } = await import('./email-service');
+        await sendVerificationEmail(email, token, username)
+          .catch(error => console.error("Failed to send verification email:", error));
+      }
 
       // Log the user in
       req.login(user, (err) => {
