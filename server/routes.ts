@@ -40,6 +40,37 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // API Routes - all prefixed with /api
   const apiRouter = express.Router();
   
+  // Test email endpoint
+  apiRouter.post("/test-email", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ error: "Email is required" });
+      }
+      
+      // Import the email service
+      const { sendTestEmail } = await import('./email-service');
+      
+      // Send a test email
+      const result = await sendTestEmail(email);
+      
+      if (result) {
+        res.status(200).json({ success: true, message: "Test email sent successfully" });
+      } else {
+        res.status(500).json({ 
+          error: "Failed to send test email", 
+          message: process.env.SENDGRID_API_KEY ? 
+            "Error sending email. Check server logs for details." : 
+            "SendGrid API key not configured"
+        });
+      }
+    } catch (error) {
+      console.error("Test email error:", error);
+      res.status(500).json({ error: "Failed to send test email" });
+    }
+  });
+  
   // GET all restaurants
   apiRouter.get("/restaurants", async (req: Request, res: Response) => {
     try {

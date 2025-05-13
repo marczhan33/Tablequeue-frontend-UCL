@@ -96,8 +96,8 @@ The TableQueue Team`
         name: 'TableQueue'
       },
       subject: params.subject,
-      text: params.text,
-      html: params.html,
+      text: params.text || '',
+      html: params.html || '',
     });
     return true;
   } catch (error) {
