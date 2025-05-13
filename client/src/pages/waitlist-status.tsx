@@ -2,6 +2,7 @@ import React from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
+import { createGoogleMapsUrl } from '@/lib/utils';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -259,9 +260,13 @@ export default function WaitlistStatusPage() {
             <Button
               className="flex-1"
               onClick={() => {
-                // Use a simple address search
-                const searchQuery = encodeURIComponent(`${restaurant.name}, ${restaurant.address}`);
-                const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${searchQuery}`;
+                // Use our utility function to create a reliable Google Maps URL
+                const mapsUrl = createGoogleMapsUrl(
+                  restaurant.name,
+                  restaurant.address,
+                  restaurant.latitude,
+                  restaurant.longitude
+                );
                 window.open(mapsUrl, '_blank');
               }}
             >
