@@ -359,7 +359,7 @@ export class MemStorage implements IStorage {
       if (restaurant.avgSeatingTime) {
         // If restaurant has average seating time, use that
         estimatedWaitTime = restaurant.avgSeatingTime * queuePosition;
-      } else if (restaurant.customWaitTime > 0) {
+      } else if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
         // Otherwise use custom wait time per party
         estimatedWaitTime = restaurant.customWaitTime;
       } else {
@@ -368,6 +368,8 @@ export class MemStorage implements IStorage {
           case 'available': estimatedWaitTime = 0; break;
           case 'short': estimatedWaitTime = 15; break;
           case 'long': estimatedWaitTime = 45; break;
+          case 'very_long': estimatedWaitTime = 75; break;
+          case 'closed': estimatedWaitTime = 0; break;
           default: estimatedWaitTime = 30;
         }
       }

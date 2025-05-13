@@ -21,11 +21,26 @@ const statusConfig = {
     text: 'Long Wait',
     bgColor: 'bg-status-long',
     textColor: 'text-white',
+  },
+  very_long: {
+    text: 'Very Long Wait',
+    bgColor: 'bg-purple-600',
+    textColor: 'text-white',
+  },
+  closed: {
+    text: 'Closed',
+    bgColor: 'bg-gray-600',
+    textColor: 'text-white',
   }
 };
 
 const WaitTimeBadge = ({ status, className = '', size = 'sm' }: WaitTimeBadgeProps) => {
-  const config = statusConfig[status];
+  // Default config in case status is not recognized
+  const config = statusConfig[status] || {
+    text: 'Unknown',
+    bgColor: 'bg-gray-400',
+    textColor: 'text-white',
+  };
   
   const sizeClasses = {
     sm: 'px-3 py-1 text-xs font-semibold',

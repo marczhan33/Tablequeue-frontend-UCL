@@ -31,13 +31,21 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
 
   // Get formatted wait time text
   const getWaitTimeText = (restaurant: Restaurant) => {
+    if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
+      return `Approximately ${restaurant.customWaitTime} minutes wait`;
+    }
+    
     switch (restaurant.currentWaitStatus) {
       case 'available':
         return 'Available now - no wait time';
       case 'short':
-        return `${restaurant.customWaitTime || 15}-${(restaurant.customWaitTime || 15) + 10} minutes wait`;
+        return 'Short wait (15-30 minutes)';
       case 'long':
-        return `${restaurant.customWaitTime || 30}-${(restaurant.customWaitTime || 30) + 15} minutes wait`;
+        return 'Long wait (30-60 minutes)';
+      case 'very_long':
+        return 'Very long wait (60+ minutes)';
+      case 'closed':
+        return 'Restaurant is currently closed';
       default:
         return 'Wait time unavailable';
     }
@@ -52,6 +60,10 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
         return 'text-status-short';
       case 'long':
         return 'text-status-long';
+      case 'very_long':
+        return 'text-purple-600';
+      case 'closed':
+        return 'text-gray-600';
       default:
         return 'text-gray-500';
     }
