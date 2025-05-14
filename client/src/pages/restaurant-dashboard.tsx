@@ -130,11 +130,11 @@ const RestaurantDashboard = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="w-full grid grid-cols-4 mb-6">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-4 gap-1 mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="waitlist">Waitlist Management</TabsTrigger>
-          <TabsTrigger value="tables">Table Management</TabsTrigger>
-          <TabsTrigger value="qrcode">QR Code Generator</TabsTrigger>
+          <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
+          <TabsTrigger value="tables">Tables</TabsTrigger>
+          <TabsTrigger value="qrcode">QR Code</TabsTrigger>
         </TabsList>
         
         <TabsContent value="overview">
