@@ -1,7 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { turnoverDataService } from './turnover-data-service';
+import { storage } from '../storage';
 
-const analyticsRouter = Router();
+// Create an express router for analytics endpoints
+export const analyticsRouter = Router();
 
 /**
  * Get turnover analytics for a restaurant
@@ -13,42 +15,51 @@ analyticsRouter.get('/restaurants/:id/turnover-analytics', async (req: Request, 
       return res.status(400).json({ message: "Invalid restaurant ID" });
     }
     
-    // Get date range from query params
-    let startDate = new Date();
-    let endDate = new Date();
+    // Check if restaurant exists
+    const restaurant = await storage.getRestaurant(restaurantId);
+    if (!restaurant) {
+      return res.status(404).json({ message: "Restaurant not found" });
+    }
     
-    // Default to last 30 days if not specified
-    startDate.setDate(startDate.getDate() - 30);
+    // Verify user has access to this restaurant
+    if (req.user && req.user.id !== restaurant.userId) {
+      // If the user is not the restaurant owner and not an admin, reject the request
+      if (req.user.role !== 'admin') {
+        return res.status(403).json({ message: "Unauthorized access to restaurant data" });
+      }
+    }
     
+    // Get date range parameters with defaults (last 30 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 30);
+    
+    // Parse query parameters if provided
     if (req.query.startDate) {
-      startDate = new Date(req.query.startDate as string);
+      startDate.setTime(Date.parse(req.query.startDate as string));
+    }
+    if (req.query.endDate) {
+      endDate.setTime(Date.parse(req.query.endDate as string));
     }
     
-    if (req.query.endDate) {
-      endDate = new Date(req.query.endDate as string);
-    }
+    // Get seasonal trends
+    const seasonalTrends = await turnoverDataService.getSeasonalTrends(restaurantId);
     
     // Get industry comparison
-    const comparison = await turnoverDataService.getIndustryComparison(
-      restaurantId,
+    const industryComparison = await turnoverDataService.getIndustryComparison(
+      restaurantId, 
       startDate,
       endDate
     );
     
-    // Get seasonal trends
-    const trends = await turnoverDataService.getSeasonalTrends(restaurantId);
-    
-    return res.status(200).json({
-      industryComparison: comparison,
-      seasonalTrends: trends,
-      dateRange: {
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      }
+    // Return combined analytics data
+    res.json({
+      seasonalTrends,
+      industryComparison
     });
   } catch (error) {
-    console.error("Error getting turnover analytics:", error);
-    return res.status(500).json({ message: "Failed to get turnover analytics" });
+    console.error("Error fetching turnover analytics:", error);
+    res.status(500).json({ message: "Error fetching turnover analytics" });
   }
 });
 
@@ -57,47 +68,33 @@ analyticsRouter.get('/restaurants/:id/turnover-analytics', async (req: Request, 
  */
 analyticsRouter.get('/analytics/export-turnover-data', async (req: Request, res: Response) => {
   try {
-    // Check if user is admin - would use proper auth in production
-    if (req.query.key !== 'admin-export-key') {
-      return res.status(403).json({ message: "Unauthorized - Admin access required" });
+    // Ensure user is authenticated and has admin privileges
+    if (!req.user || !req.user.role || req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Unauthorized access to export data" });
     }
     
-    // Get date range from query params
-    let startDate = new Date();
-    let endDate = new Date();
+    // Get date range parameters with defaults (last 90 days)
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(endDate.getDate() - 90);
     
-    // Default to last 90 days if not specified
-    startDate.setDate(startDate.getDate() - 90);
-    
+    // Parse query parameters if provided
     if (req.query.startDate) {
-      startDate = new Date(req.query.startDate as string);
+      startDate.setTime(Date.parse(req.query.startDate as string));
     }
-    
     if (req.query.endDate) {
-      endDate = new Date(req.query.endDate as string);
+      endDate.setTime(Date.parse(req.query.endDate as string));
     }
-    
-    // Get format
-    const format = (req.query.format as string || 'json') as 'json' | 'csv';
     
     // Export data
     const data = await turnoverDataService.exportAnonymizedTurnoverData(
       startDate,
-      endDate,
-      format
+      endDate
     );
     
-    if (format === 'csv') {
-      res.setHeader('Content-Type', 'text/csv');
-      res.setHeader('Content-Disposition', 'attachment; filename="turnover-data.csv"');
-      return res.status(200).send(data);
-    }
-    
-    return res.status(200).json(data);
+    res.json(data);
   } catch (error) {
     console.error("Error exporting turnover data:", error);
-    return res.status(500).json({ message: "Failed to export turnover data" });
+    res.status(500).json({ message: "Error exporting turnover data" });
   }
 });
-
-export { analyticsRouter };

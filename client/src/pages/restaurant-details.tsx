@@ -8,12 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TrendingUp, Settings } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const RestaurantDetails = () => {
   const [_, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const restaurantId = params?.id;
   const [partySize, setPartySize] = useState(2);
+  const { user } = useAuth();
   
   // Fetch restaurant by ID with a simple try/catch for better error handling
   const [restaurant, setRestaurant] = useState<Restaurant | null>(null);
@@ -115,6 +118,18 @@ const RestaurantDetails = () => {
           </svg>
           Join Remote Waitlist
         </Button>
+        
+        {user && (user.role === 'owner' || user.role === 'admin') && (
+          <Button 
+            className="w-full md:w-auto" 
+            size="lg"
+            variant="outline"
+            onClick={() => setLocation(`/restaurants/${restaurant.id}/analytics`)}
+          >
+            <TrendingUp className="h-5 w-5 mr-2" />
+            View Analytics
+          </Button>
+        )}
         
         <div className="text-sm text-muted-foreground text-center md:text-left">
           Join the waitlist before you arrive and get notified when your table is almost ready!

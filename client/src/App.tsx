@@ -13,6 +13,7 @@ import Footer from "@/components/layout/footer";
 import CustomerView from "@/pages/customer-view";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import RestaurantDetails from "@/pages/restaurant-details";
+import RestaurantAnalytics from "@/pages/restaurant-analytics";
 import HowItWorks from "@/pages/how-it-works";
 import WaitlistPage from "@/pages/waitlist";
 import RemoteWaitlistPage from "@/pages/remote-waitlist";
@@ -73,6 +74,9 @@ function Router() {
       </Route>
       <Route path="/restaurant/:id">
         <RestaurantDetails />
+      </Route>
+      <Route path="/restaurants/:id/analytics">
+        <RestaurantAnalytics />
       </Route>
       <Route path="/restaurant-dashboard">
         <RestaurantDashboard />

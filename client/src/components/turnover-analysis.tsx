@@ -1,216 +1,259 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { TableType, WaitlistEntry } from "@shared/schema";
-import { analyzeTurnoverTimes, getTurnoverAnalysisDescription, generateTurnoverSummary } from "@/lib/turnover-analyzer";
-import { Loader2, RefreshCw, Clock, CheckCircle2, Wand2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useParams } from 'wouter';
+import { Loader2, TrendingUp, Clock } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
+import { useQuery } from '@tanstack/react-query';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  LineChart,
+  Line
+} from 'recharts';
 
-interface TurnoverAnalysisProps {
+interface TurnoverAnalyticsProps {
   restaurantId: number;
 }
 
-export default function TurnoverAnalysis({ restaurantId }: TurnoverAnalysisProps) {
-  const [showDetails, setShowDetails] = useState(false);
+interface TurnoverAnalytics {
+  seasonalTrends: {
+    byMonth: { month: string; averageTurnover: number }[];
+    byDayOfWeek: { day: string; averageTurnover: number }[];
+    byHourOfDay: { hour: string; averageTurnover: number }[];
+  };
+  industryComparison: {
+    restaurantAverage: number;
+    industryAverage: number;
+    regionalAverage: number;
+    percentileBenchmark: number;
+    similarRestaurants: { 
+      name: string;
+      turnoverTime: number;
+      location: string;
+    }[];
+  };
+}
+
+export function TurnoverAnalysis({ restaurantId }: TurnoverAnalyticsProps) {
   const { toast } = useToast();
   
-  // Fetch table types
-  const { data: tableTypes, isLoading: isLoadingTableTypes } = useQuery<TableType[]>({
-    queryKey: [`/api/restaurants/${restaurantId}/table-types`],
+  const {
+    data: analytics,
+    isLoading,
+    error
+  } = useQuery<TurnoverAnalytics>({
+    queryKey: [`/api/restaurants/${restaurantId}/turnover-analytics`],
+    enabled: !!restaurantId
   });
   
-  // Fetch waitlist history
-  const { data: waitlistHistory, isLoading: isLoadingWaitlist } = useQuery<WaitlistEntry[]>({
-    queryKey: [`/api/restaurants/${restaurantId}/waitlist`],
-  });
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   
-  // Only proceed if we have both data sets
-  const isLoading = isLoadingTableTypes || isLoadingWaitlist;
-  const hasData = !isLoading && tableTypes && tableTypes.length > 0 && waitlistHistory && waitlistHistory.length > 0;
+  if (error) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Turnover Analytics</CardTitle>
+          <CardDescription>Error loading analytics data</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-destructive">Failed to load turnover analytics. Please try again later.</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
-  // Generate analysis if data is available
-  const analysis = hasData 
-    ? analyzeTurnoverTimes(tableTypes!, waitlistHistory!) 
-    : [];
-    
-  const summary = analysis.length > 0 
-    ? generateTurnoverSummary(analysis)
-    : null;
-  
-  // Check if we have any recommendations
-  const hasRecommendations = analysis.some(item => item.recommendation);
-  
-  // Mutation for applying recommendations
-  const applyRecommendations = useMutation({
-    mutationFn: async () => {
-      // Format recommendations for the API
-      const recommendations = analysis
-        .filter(item => item.recommendation)
-        .map(item => ({
-          tableTypeId: item.tableTypeId,
-          suggestedTime: item.recommendation?.suggestedTime
-        }));
-      
-      return await apiRequest({
-        url: `/api/restaurants/${restaurantId}/apply-turnover-recommendations`,
-        method: "POST",
-        body: { recommendations }
-      });
-    },
-    onSuccess: () => {
-      // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurantId}/table-types`] });
-      
-      toast({
-        title: "Recommendations Applied",
-        description: "Table turnover times have been updated with the recommended values.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: `Failed to apply recommendations: ${(error as Error).message}`,
-        variant: "destructive",
-      });
-    }
-  });
+  if (!analytics) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Turnover Analytics</CardTitle>
+          <CardDescription>Not enough data available</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <p className="text-muted-foreground">Start tracking more customer seating data to see analytics here.</p>
+        </CardContent>
+      </Card>
+    );
+  }
   
   return (
-    <div className="bg-white border rounded-lg shadow-sm p-4 mb-6">
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Table Turnover Analysis</h3>
-        <Button variant="outline" size="sm" onClick={() => setShowDetails(!showDetails)}>
-          {showDetails ? 'Hide Details' : 'Show Details'}
-        </Button>
-      </div>
-      
-      {isLoading ? (
-        <div className="flex justify-center py-6">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        </div>
-      ) : !hasData ? (
-        <div className="text-center py-6 text-gray-500">
-          <Clock className="h-12 w-12 mx-auto mb-2 text-gray-400" />
-          <p>Not enough data yet to analyze turnover times.</p>
-          <p className="text-sm mt-1">Analysis will appear as more customers are seated.</p>
-        </div>
-      ) : (
-        <>
-          {summary && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500">Tables Analyzed</p>
-                <p className="text-2xl font-semibold">{summary.totalTablesAnalyzed}</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500">Avg. Turnover Time</p>
-                <p className="text-2xl font-semibold">{summary.averageTurnoverTime} min</p>
-              </div>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-500">Tables Needing Adjustment</p>
-                <p className="text-2xl font-semibold">{summary.tablesNeedingAdjustment}</p>
-              </div>
-            </div>
-          )}
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <TrendingUp className="h-5 w-5" />
+          Turnover Analytics
+        </CardTitle>
+        <CardDescription>
+          Analyze table turnover data to optimize your restaurant operations
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs defaultValue="seasonal">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="seasonal">Seasonal Trends</TabsTrigger>
+            <TabsTrigger value="comparison">Industry Comparison</TabsTrigger>
+          </TabsList>
           
-          {hasRecommendations && (
-            <div className="mb-4 p-4 bg-blue-50 border border-blue-100 rounded-lg">
-              <div className="flex items-start">
-                <div className="flex-shrink-0">
-                  <RefreshCw className="h-5 w-5 text-blue-600" />
-                </div>
-                <div className="ml-3 flex-grow">
-                  <h3 className="text-sm font-medium text-blue-800">Turnover Time Recommendations Available</h3>
-                  <div className="mt-1 text-sm text-blue-700">
-                    Based on actual seating data, we suggest adjusting turnover times for {summary?.tablesNeedingAdjustment} table types.
+          <TabsContent value="seasonal" className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Monthly trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Monthly Trends</CardTitle>
+                  <CardDescription>Average turnover time by month</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.seasonalTrends.byMonth}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="month" />
+                        <YAxis name="Minutes" />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="averageTurnover" name="Avg. Minutes" fill="#8884d8" />
+                      </BarChart>
+                    </ResponsiveContainer>
                   </div>
-                </div>
-                <div className="flex-shrink-0">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => applyRecommendations.mutate()}
-                    disabled={applyRecommendations.isPending}
-                    className="flex items-center text-xs"
-                  >
-                    {applyRecommendations.isPending ? (
-                      <>
-                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
-                        Applying...
-                      </>
-                    ) : (
-                      <>
-                        <Wand2 className="mr-1 h-3 w-3" />
-                        Apply All Recommendations
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
+              
+              {/* Day of week trends */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Day of Week Trends</CardTitle>
+                  <CardDescription>Average turnover time by day</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-64">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={analytics.seasonalTrends.byDayOfWeek}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="day" />
+                        <YAxis name="Minutes" />
+                        <Tooltip />
+                        <Legend />
+                        <Bar dataKey="averageTurnover" name="Avg. Minutes" fill="#82ca9d" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
+            
+            {/* Hourly trends */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Hourly Trends</CardTitle>
+                <CardDescription>Average turnover time throughout the day</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={analytics.seasonalTrends.byHourOfDay}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="hour" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Line 
+                        type="monotone" 
+                        dataKey="averageTurnover" 
+                        name="Avg. Minutes" 
+                        stroke="#ff7300" 
+                        strokeWidth={2} 
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
           
-          {showDetails && (
-            <div className="border rounded-lg overflow-hidden">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Table Type</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual Time</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Sample Size</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Confidence</th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {analysis.map((item) => {
-                    const tableType = tableTypes?.find(t => t.id === item.tableTypeId);
-                    return (
-                      <tr key={item.tableTypeId} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.tableName}</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.actualTurnoverTime} min</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.sampleSize} uses</td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          <span className={`inline-flex px-2 py-1 text-xs rounded-full ${
-                            item.confidence === 'high' ? 'bg-green-100 text-green-800' :
-                            item.confidence === 'medium' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
-                          }`}>
-                            {item.confidence === 'high' ? 'High' : 
-                             item.confidence === 'medium' ? 'Medium' : 'Low'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                          {item.recommendation ? (
-                            <div className="text-amber-600 flex items-center">
-                              <RefreshCw className="h-4 w-4 mr-1" />
-                              <span>
-                                Update to {item.recommendation.suggestedTime} min 
-                                ({item.recommendation.percentDifference > 0 ? '+' : ''}{item.recommendation.percentDifference}%)
-                              </span>
-                            </div>
-                          ) : (
-                            <div className="text-green-600 flex items-center">
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              <span>Accurate</span>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+          <TabsContent value="comparison">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              <Card>
+                <CardHeader className="p-4">
+                  <CardTitle className="text-lg">Your Average</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center">
+                    <Clock className="h-8 w-8 text-primary mb-2" />
+                    <span className="text-3xl font-bold">{analytics.industryComparison.restaurantAverage}</span>
+                    <span className="text-sm text-muted-foreground">minutes</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="p-4">
+                  <CardTitle className="text-lg">Industry Average</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center">
+                    <Clock className="h-8 w-8 text-amber-500 mb-2" />
+                    <span className="text-3xl font-bold">{analytics.industryComparison.industryAverage}</span>
+                    <span className="text-sm text-muted-foreground">minutes</span>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader className="p-4">
+                  <CardTitle className="text-lg">Your Percentile</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center">
+                    <TrendingUp className="h-8 w-8 text-green-500 mb-2" />
+                    <span className="text-3xl font-bold">{analytics.industryComparison.percentileBenchmark}%</span>
+                    <span className="text-sm text-muted-foreground">industry ranking</span>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          )}
-        </>
-      )}
-      
-      <div className="mt-4 text-sm text-gray-500">
-        <p>This analysis compares your estimated turnover times with actual usage data from your restaurant's history.</p>
-        <p className="mt-1">Accurate turnover times help provide better wait time predictions for your customers.</p>
-      </div>
-    </div>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Regional Comparison</CardTitle>
+                <CardDescription>How you compare to restaurants in your area</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart 
+                      data={[
+                        { name: 'Your Restaurant', value: analytics.industryComparison.restaurantAverage },
+                        { name: 'Regional Avg.', value: analytics.industryComparison.regionalAverage },
+                        { name: 'Industry Avg.', value: analytics.industryComparison.industryAverage },
+                      ]}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="value" name="Turnover Time (min)" fill="#8884d8" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 }
