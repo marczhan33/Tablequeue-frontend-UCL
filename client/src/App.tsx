@@ -21,6 +21,34 @@ import WaitlistStatusPage from "@/pages/waitlist-status";
 import AuthPage from "@/pages/auth-page";
 import NotFound from "@/pages/not-found";
 
+function AuthNavItem({ path, label }: { path: string, label: string }) {
+  const { user } = useAuth();
+  const [location] = useLocation();
+  
+  // Function to determine if a route is active
+  const isActive = (path: string) => {
+    return location === path || (path !== '/' && location.startsWith(path));
+  };
+  
+  // Only show for restaurant owners
+  if (!user || user.role !== 'owner') {
+    return null;
+  }
+  
+  return (
+    <Link
+      href={path}
+      className={`whitespace-nowrap px-3 py-2 font-medium ${
+        isActive(path) 
+          ? "text-primary border-b-2 border-primary" 
+          : "text-gray-500 hover:text-primary"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
 function ProtectedRoute({ path, component: Component, ownerOnly = false }: { path: string, component: React.ComponentType, ownerOnly?: boolean }) {
   const { user, isLoading } = useAuth();
   const [, setLocation] = useLocation();
@@ -78,9 +106,7 @@ function Router() {
       <Route path="/restaurants/:id/analytics">
         <RestaurantAnalytics />
       </Route>
-      <Route path="/restaurant-dashboard">
-        <RestaurantDashboard />
-      </Route>
+      <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} ownerOnly={true} />
       <Route path="/how-it-works">
         <HowItWorks />
       </Route>
@@ -106,16 +132,6 @@ function Router() {
 function App() {
   const [location] = useLocation();
   
-  // Function to determine if a route is active
-  const isActive = (path: string) => {
-    // Special case for the restaurant details page
-    if (path === '/' && (location.startsWith('/restaurant/') || location.startsWith('/restaurants/'))) {
-      return false;
-    }
-    // For other pages, exact match or startsWith for the base route
-    return location === path || (path !== '/' && location.startsWith(path));
-  };
-  
   // Don't show navigation tabs on authentication or restaurant details pages
   const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth';
   
@@ -133,41 +149,19 @@ function App() {
                   <div className="flex space-x-8 overflow-x-auto py-2 text-sm">
                     <Link
                       href="/"
-                      className={`whitespace-nowrap px-3 py-2 font-medium ${
-                        isActive('/') 
-                          ? "text-primary border-b-2 border-primary" 
-                          : "text-gray-500 hover:text-primary"
-                      }`}
+                      className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
                     >
                       Customer View
                     </Link>
                     <Link
-                      href="/restaurant-dashboard"
-                      className={`whitespace-nowrap px-3 py-2 font-medium ${
-                        isActive('/restaurant-dashboard') 
-                          ? "text-primary border-b-2 border-primary" 
-                          : "text-gray-500 hover:text-primary"
-                      }`}
-                    >
-                      Restaurant Dashboard
-                    </Link>
-                    <Link
                       href="/how-it-works"
-                      className={`whitespace-nowrap px-3 py-2 font-medium ${
-                        isActive('/how-it-works') 
-                          ? "text-primary border-b-2 border-primary" 
-                          : "text-gray-500 hover:text-primary"
-                      }`}
+                      className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
                     >
                       How It Works
                     </Link>
                     <Link
                       href="/auth"
-                      className={`whitespace-nowrap px-3 py-2 font-medium ${
-                        isActive('/auth') 
-                          ? "text-primary border-b-2 border-primary" 
-                          : "text-gray-500 hover:text-primary"
-                      }`}
+                      className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
                     >
                       Login / Register
                     </Link>
