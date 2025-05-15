@@ -15,6 +15,7 @@ import { setupAuth } from "./auth";
 import { setupGoogleAuth } from "./auth-routes";
 import { analyticsRouter } from "./analytics/routes";
 import { processTableTurnover, initializeAnalytics } from "./analytics";
+import { generateRestaurantQrCode, generateConfirmationQrCode, generateConfirmationCode } from "./qr-service";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -26,10 +27,41 @@ function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
 
 // Middleware to ensure user is restaurant owner
 function ensureRestaurantOwner(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && req.user.role === 'owner') {
+  if (req.isAuthenticated() && req.user && req.user.role === 'owner') {
     return next();
   }
   res.status(403).json({ error: "Forbidden - Restaurant owner access required" });
+}
+
+/**
+ * Calculate estimated wait time based on restaurant status and queue length
+ * @param restaurant Restaurant data
+ * @param queueLength Current number of parties in queue
+ * @returns Estimated wait time in minutes
+ */
+function calculateEstimatedWaitTime(restaurant: any, queueLength: number): number {
+  if (restaurant.currentWaitStatus === 'available') {
+    return 0;
+  }
+  
+  if (restaurant.currentWaitStatus === 'short') {
+    return Math.max(15, queueLength * 10); // At least 15 min, 10 min per party
+  }
+  
+  if (restaurant.currentWaitStatus === 'long') {
+    return Math.max(30, queueLength * 15); // At least 30 min, 15 min per party
+  }
+  
+  if (restaurant.currentWaitStatus === 'very_long') {
+    return Math.max(60, queueLength * 20); // At least 60 min, 20 min per party
+  }
+  
+  if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
+    return restaurant.customWaitTime;
+  }
+  
+  // Default fallback
+  return queueLength * 15;
 }
 
 // Function to check if a user owns a specific restaurant
