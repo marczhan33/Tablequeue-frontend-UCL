@@ -61,11 +61,14 @@ export default function JoinWaitlist() {
   });
 
   const joinWaitlistMutation = useMutation({
-    mutationFn: async (data: FormValues) => {
-      const restaurantId = data.restaurant?.id;
-      if (!restaurantId) throw new Error("Restaurant ID is required");
+    mutationFn: async (formData: FormValues) => {
+      if (!data?.restaurant?.id) throw new Error("Restaurant ID is required");
+      const restaurantId = data.restaurant.id;
 
-      return apiRequest("POST", `/api/restaurants/${restaurantId}/waitlist`, data);
+      return apiRequest(`/api/restaurants/${restaurantId}/waitlist`, { 
+        method: "POST", 
+        body: formData 
+      });
     },
     onSuccess: () => {
       setJoinStatus("success");
@@ -94,10 +97,7 @@ export default function JoinWaitlist() {
     }
 
     setJoinStatus("submitting");
-    joinWaitlistMutation.mutate({
-      ...values,
-      restaurantId: data.restaurant.id
-    });
+    joinWaitlistMutation.mutate(values);
   };
 
   if (isLoading) {

@@ -25,8 +25,8 @@ export default function ConfirmArrival() {
       
       try {
         const response = await apiRequest(
-          "POST", 
-          `/api/restaurants/${restaurantId}/remote-waitlist/${confirmationCode}/confirm`
+          `/api/restaurants/${restaurantId}/remote-waitlist/${confirmationCode}/confirm`,
+          { method: "POST" }
         );
         const data = await response.json();
         if (data.restaurant?.name) {

@@ -19,7 +19,10 @@ export function QRCodeGenerator({ restaurantId, restaurantName }: QRCodeGenerato
 
   const generateQrMutation = useMutation({
     mutationFn: async () => {
-      const response = await apiRequest('POST', `/api/restaurants/${restaurantId}/qr-code`);
+      const response = await apiRequest(
+        `/api/restaurants/${restaurantId}/qr-code`, 
+        { method: 'POST' }
+      );
       return response.json();
     },
     onSuccess: (data) => {

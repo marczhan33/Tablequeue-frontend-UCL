@@ -418,7 +418,9 @@ const RestaurantDashboard = () => {
             </ol>
           </div>
           
-          <QRCodeGenerator restaurantId={RESTAURANT_ID} restaurantName={restaurant.name} />
+          {restaurant && (
+            <QRCodeGenerator restaurantId={RESTAURANT_ID} restaurantName={restaurant.name} />
+          )}
         </TabsContent>
       </Tabs>
     </div>
