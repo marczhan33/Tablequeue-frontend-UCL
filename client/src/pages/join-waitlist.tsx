@@ -256,7 +256,7 @@ export default function JoinWaitlist() {
                             <SelectValue placeholder="Select table type" />
                           </SelectTrigger>
                           <SelectContent>
-                            {data.tableTypes.map((type) => (
+                            {data.tableTypes.map((type: { id: number, name: string, capacity: number }) => (
                               <SelectItem key={type.id} value={type.id.toString()}>
                                 {type.name} (Seats {type.capacity})
                               </SelectItem>

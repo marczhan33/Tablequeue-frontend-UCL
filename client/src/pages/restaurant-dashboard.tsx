@@ -28,11 +28,13 @@ const RestaurantDashboard = () => {
   // Update wait time mutation
   const updateWaitTime = useMutation({
     mutationFn: async ({ status, customTime }: { status: WaitStatus, customTime?: number }) => {
-      return await apiRequest({
-        url: `/api/restaurants/${RESTAURANT_ID}/wait-time`,
-        method: "POST",
-        body: { status, customTime }
-      });
+      return await apiRequest(
+        `/api/restaurants/${RESTAURANT_ID}/wait-time`,
+        {
+          method: "POST",
+          body: { status, customTime }
+        }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}`] });
@@ -53,11 +55,13 @@ const RestaurantDashboard = () => {
   // Update restaurant info mutation
   const updateRestaurant = useMutation({
     mutationFn: async (data: Partial<Restaurant>) => {
-      return await apiRequest({
-        url: `/api/restaurants/${RESTAURANT_ID}`,
-        method: "PATCH",
-        body: data
-      });
+      return await apiRequest(
+        `/api/restaurants/${RESTAURANT_ID}`,
+        {
+          method: "PATCH",
+          body: data
+        }
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}`] });
