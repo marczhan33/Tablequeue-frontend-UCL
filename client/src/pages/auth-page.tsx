@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { GoogleSignInButton } from "@/components/ui/google-sign-in-button";
+import { useToast } from "@/hooks/use-toast";
 import {
   Form,
   FormControl,
@@ -45,6 +46,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { user, registerMutation, loginWithGoogle } = useAuth();
+  const { toast } = useToast();
   // We're moving away from traditional login in favor of Google sign-in
   const [location, setLocation] = useLocation();
   const hasRedirected = useRef(false);
@@ -89,6 +91,20 @@ export default function AuthPage() {
     // Redirect users to use Google sign-in instead
   };
 
+  // Handle role change
+  const handleRoleChange = (value: string, onChange: (value: string) => void) => {
+    // Update the form value
+    onChange(value);
+    
+    // Show toast for restaurant owners
+    if (value === "owner") {
+      toast({
+        title: "Restaurant Owner Selected",
+        description: "After registration, you'll be able to add your restaurant details and set up your waitlist management."
+      });
+    }
+  };
+  
   // Handle registration submission
   const onRegisterSubmit = (values: RegisterFormValues) => {
     registerMutation.mutate(values);
@@ -221,17 +237,35 @@ export default function AuthPage() {
                         <FormLabel>Account Type</FormLabel>
                         <FormControl>
                           <RadioGroup
-                            onValueChange={field.onChange}
+                            onValueChange={(value) => handleRoleChange(value, field.onChange)}
                             defaultValue={field.value}
-                            className="flex flex-col space-y-1"
+                            className="grid grid-cols-2 gap-2"
                           >
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="customer" id="customer" />
-                              <Label htmlFor="customer">Customer</Label>
+                            <div className="flex flex-col items-center p-4 border rounded-lg hover:border-primary cursor-pointer">
+                              <RadioGroupItem value="customer" id="customer" className="sr-only" />
+                              <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-full bg-primary/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                                  <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                                  <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                              </div>
+                              <Label htmlFor="customer" className="font-medium">Customer</Label>
+                              <span className="text-xs text-center mt-1 text-gray-500">Find restaurants and join waitlists</span>
                             </div>
-                            <div className="flex items-center space-x-2">
-                              <RadioGroupItem value="owner" id="owner" />
-                              <Label htmlFor="owner">Restaurant Owner</Label>
+                            
+                            <div className="flex flex-col items-center p-4 border rounded-lg hover:border-primary cursor-pointer">
+                              <RadioGroupItem value="owner" id="owner" className="sr-only" />
+                              <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-full bg-primary/10">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
+                                  <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z"></path>
+                                  <path d="M3 9V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3"></path>
+                                  <path d="M9 14v2"></path>
+                                  <path d="M12 14v2"></path>
+                                  <path d="M15 14v2"></path>
+                                </svg>
+                              </div>
+                              <Label htmlFor="owner" className="font-medium">Restaurant Owner</Label>
+                              <span className="text-xs text-center mt-1 text-gray-500">Manage your restaurant waitlist</span>
                             </div>
                           </RadioGroup>
                         </FormControl>
@@ -247,8 +281,18 @@ export default function AuthPage() {
                       <FormItem>
                         <FormLabel>Phone Number (Optional)</FormLabel>
                         <FormControl>
-                          <Input placeholder="+1 (555) 123-4567" {...field} />
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400">
+                                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+                              </svg>
+                            </div>
+                            <Input placeholder="+1 (555) 123-4567" className="pl-10" {...field} />
+                          </div>
                         </FormControl>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          We'll use this for waitlist notifications and important updates
+                        </p>
                         <FormMessage />
                       </FormItem>
                     )}

@@ -30,18 +30,19 @@ export function GoogleSignInButton({
     <Button
       type="button"
       variant="outline"
-      className={`flex items-center justify-center gap-2 w-full ${className}`}
+      className={`relative flex items-center justify-center gap-3 w-full py-6 shadow-sm hover:shadow-md transition-all ${className}`}
       onClick={handleClick}
       disabled={isLoading}
     >
       {isLoading ? (
-        <Loader2 className="h-4 w-4 animate-spin" />
+        <Loader2 className="h-5 w-5 animate-spin" />
       ) : (
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          width="18"
-          height="18"
+          width="20"
+          height="20"
           viewBox="0 0 48 48"
+          className="absolute left-4"
         >
           <path
             fill="#FFC107"
@@ -61,7 +62,7 @@ export function GoogleSignInButton({
           ></path>
         </svg>
       )}
-      <span>{isLoading ? "Signing in..." : text}</span>
+      <span className="text-base font-medium">{isLoading ? "Signing in..." : text}</span>
     </Button>
   );
 }
