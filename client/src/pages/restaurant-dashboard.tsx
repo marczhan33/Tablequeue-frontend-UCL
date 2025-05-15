@@ -4,7 +4,7 @@ import { Restaurant, WaitStatus } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import GoogleMap from "@/components/ui/google-map";
 import { useToast } from "@/hooks/use-toast";
-import QRCodeGenerator from "@/components/qr-code-generator";
+import { QRCodeGenerator } from "@/components/ui/qr-code-generator";
 import WaitlistManagement from "@/components/waitlist-management";
 import RemoteWaitlistManager from "@/components/remote-waitlist-manager";
 import TableTypeManager from "@/components/table-type-manager";
