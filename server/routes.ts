@@ -339,7 +339,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Generate or get existing QR code
       const qrCodeId = await storage.generateRestaurantQrCode(id);
       
-      res.json({ qrCodeId });
+      // Generate actual QR code image as data URL
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      const qrCodeDataUrl = await generateRestaurantQrCode(baseUrl, qrCodeId);
+      
+      res.json({ 
+        qrCodeId,
+        qrCodeImage: qrCodeDataUrl,
+        qrCodeUrl: `${baseUrl}/join-waitlist/${qrCodeId}`
+      });
     } catch (error) {
       console.error("Error generating QR code:", error);
       res.status(500).json({ message: "Error generating QR code" });
@@ -356,7 +364,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "Invalid QR code" });
       }
       
-      res.json(restaurant);
+      // Get table types for the restaurant
+      const tableTypes = await storage.getTableTypes(restaurant.id);
+      
+      // Get current waitlist entries to calculate queue positions
+      const waitlistEntries = await storage.getWaitlistEntries(restaurant.id);
+      const activeEntries = waitlistEntries.filter(entry => 
+        entry.status === 'waiting' || 
+        entry.status === 'notified' || 
+        entry.status === 'remote_pending' || 
+        entry.status === 'remote_confirmed'
+      );
+      
+      res.json({
+        restaurant,
+        tableTypes,
+        queueLength: activeEntries.length,
+        waitStatus: restaurant.currentWaitStatus,
+        estimatedWaitTime: calculateEstimatedWaitTime(restaurant, activeEntries.length)
+      });
     } catch (error) {
       console.error("Error getting restaurant by QR code:", error);
       res.status(500).json({ message: "Error retrieving restaurant information" });
