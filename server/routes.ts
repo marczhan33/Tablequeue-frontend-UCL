@@ -16,6 +16,7 @@ import { setupGoogleAuth } from "./auth-routes";
 import { analyticsRouter } from "./analytics/routes";
 import { processTableTurnover, initializeAnalytics } from "./analytics";
 import { generateRestaurantQrCode, generateConfirmationQrCode, generateConfirmationCode } from "./qr-service";
+import { sendCustomerNotification, generateTableReadyMessage } from "./notification-service";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -673,6 +674,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const entry = await storage.updateWaitlistEntry(entryId, req.body);
       if (!entry) {
         return res.status(404).json({ message: "Waitlist entry not found" });
+      }
+      
+      // If the status is changing to 'notified', send a WhatsApp/SMS notification
+      if (req.body.status === 'notified' && entry.phoneNumber) {
+        const message = generateTableReadyMessage(
+          restaurant.name,
+          entry.customerName,
+          entry.partySize
+        );
+        
+        try {
+          const notificationSent = await sendCustomerNotification({
+            to: entry.phoneNumber,
+            message
+          });
+          
+          console.log(`Notification to ${entry.customerName} ${notificationSent ? 'sent' : 'failed'}`);
+          
+          // Add notification status to the entry
+          if (notificationSent) {
+            await storage.updateWaitlistEntry(entry.id, {
+              notificationSent: true
+            });
+          }
+        } catch (error) {
+          console.error("Error sending notification:", error);
+          // Non-blocking - continue even if notification fails
+        }
       }
       
       // If the customer is being seated, process turnover data for analytics
