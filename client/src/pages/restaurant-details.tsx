@@ -3,7 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { Restaurant } from "@shared/schema";
 import LocationWaitTime from "@/components/location-wait-time";
 import { GoogleMapsWaitTime } from "@/components/ui/google-maps-wait-time";
-import { DigitalQueue } from "@/components/ui/digital-queue";
+
 import { SmartCapacityDisplay } from "@/components/smart-capacity-display";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -181,18 +181,7 @@ const RestaurantDetails = () => {
             </Card>
           </div>
           
-          <div>
-            <DigitalQueue 
-              restaurant={restaurant} 
-              partySize={partySize}
-              onQueueJoin={() => {
-                toast({
-                  title: "Successfully joined queue",
-                  description: "You'll receive updates via text message about your position in line.",
-                });
-              }}
-            />
-          </div>
+          {/* Digital Queue component has been removed */}
         </div>
         
         <div className="bg-primary/5 rounded-lg p-6 mt-8">
