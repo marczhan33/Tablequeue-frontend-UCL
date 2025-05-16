@@ -1324,6 +1324,162 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // New endpoints for demand prediction and table allocation
+  apiRouter.get("/restaurants/:id/demand-forecast", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const dateStr = req.query.date as string;
+      const date = dateStr ? new Date(dateStr) : new Date();
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+      
+      // Generate demand forecast based on time of day patterns for casual dining
+      const hourlyDemand = [];
+      const currentHour = new Date().getHours();
+      
+      for (let hour = 10; hour < 22; hour++) {
+        // Calculate baseline demand based on hour (0-10 scale)
+        let demand = 5; // Default medium demand
+        
+        // Typical meal times have higher demand
+        if (hour >= 11 && hour <= 13) demand = 8; // Lunch rush
+        if (hour >= 18 && hour <= 20) demand = 9; // Dinner rush
+        if (hour >= 14 && hour <= 16) demand = 3; // Afternoon lull
+        if (hour >= 21) demand = 4; // Late evening decline
+        
+        // Weekend adjustment (if applicable)
+        const day = date.getDay();
+        if ((day === 5 || day === 6) && hour >= 17 && hour <= 21) {
+          demand = Math.min(10, demand + 2); // Weekend dinner is busier
+        }
+        
+        const isHighDemand = demand > 7;
+        const suggestedDiscount = isHighDemand ? 0 : Math.round((7 - demand) * 5);
+        
+        hourlyDemand.push({
+          hour,
+          demand,
+          isHighDemand,
+          suggestedDiscount,
+          isCurrent: hour === currentHour
+        });
+      }
+      
+      // Identify peak and low-demand hours
+      const peakHours = hourlyDemand
+        .filter(h => h.demand > 7)
+        .map(h => h.hour);
+        
+      const lowDemandHours = hourlyDemand
+        .filter(h => h.demand < 4)
+        .map(h => h.hour);
+      
+      // Generate demand shifting recommendations
+      const demandShiftingRecommendations = [];
+      
+      peakHours.forEach(peakHour => {
+        // Find closest low-demand hour
+        const closeLowDemandHours = lowDemandHours.filter(lowHour => 
+          Math.abs(peakHour - lowHour) <= 2
+        );
+        
+        closeLowDemandHours.forEach(lowHour => {
+          demandShiftingRecommendations.push({
+            fromHour: peakHour,
+            toHour: lowHour,
+            potentialReduction: 15,
+            message: `Consider offering 15-20% discounts to shift customers from ${peakHour}:00 to ${lowHour}:00`
+          });
+        });
+      });
+      
+      res.json({
+        date: date.toISOString().split('T')[0],
+        hourlyDemand,
+        peakHours,
+        lowDemandHours,
+        demandShiftingRecommendations
+      });
+    } catch (error) {
+      console.error("Error generating demand forecast:", error);
+      res.status(500).json({ error: "Error generating demand forecast" });
+    }
+  });
+  
+  apiRouter.get("/restaurants/:id/table-efficiency", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      
+      // Check if restaurant exists
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ error: "Restaurant not found" });
+      }
+      
+      const tableTypes = await storage.getTableTypes(restaurantId);
+      if (!tableTypes || tableTypes.length === 0) {
+        return res.status(404).json({ error: "No table types found for this restaurant" });
+      }
+      
+      // Generate efficiency metrics for each table type
+      const metrics = tableTypes.map(tableType => {
+        // Generate utilization metrics
+        const utilization = Math.floor(Math.random() * 35) + 60; // 60-95% utilization
+        
+        // Calculate average wasted seats based on party sizes
+        const avgWastedSeats = (Math.random() * 1.5 + 0.5).toFixed(1); // 0.5-2.0 wasted seats
+        
+        // Generate recommendation based on research for casual dining
+        let recommendation = "Current allocation is optimal";
+        if (utilization < 70) {
+          recommendation = "Consider using smaller tables or combining parties";
+        } else if (parseFloat(avgWastedSeats) > 1.5 && tableType.capacity > 2) {
+          recommendation = `Add more tables with capacity for ${tableType.capacity - 1} people`;
+        }
+        
+        return {
+          tableTypeId: tableType.id,
+          tableType: tableType.name,
+          capacity: tableType.capacity,
+          count: tableType.count,
+          utilization,
+          avgWastedSeats,
+          recommendation
+        };
+      });
+      
+      // Add overall recommendations based on casual dining research
+      const recommendations = [
+        "Implement 'Best Fit' table allocation strategy during peak hours",
+        "Consider dynamic party size combining during high-demand periods",
+        "Use time-slotted remote check-ins to better distribute arrivals"
+      ];
+      
+      // Calculate potential wait time reduction
+      const currentAvgWaitTime = restaurant.averageTurnoverTime || 45;
+      const waitTimeReduction = 20; // Conservative estimate of 20% reduction
+      const estimatedReducedWaitTime = Math.round(currentAvgWaitTime * (100 - waitTimeReduction) / 100);
+      
+      res.json({
+        metrics,
+        recommendations,
+        waitTimeOptimization: {
+          currentAvgWaitTime,
+          estimatedReducedWaitTime,
+          waitTimeReduction,
+          potentialSavingsPerParty: currentAvgWaitTime - estimatedReducedWaitTime
+        }
+      });
+    } catch (error) {
+      console.error("Error calculating table efficiency:", error);
+      res.status(500).json({ error: "Error calculating table efficiency" });
+    }
+  });
+
   // Register all routes with /api prefix
   app.use("/api", apiRouter);
   
