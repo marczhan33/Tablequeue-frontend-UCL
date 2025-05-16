@@ -12,6 +12,7 @@ import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
 import CustomerView from "@/pages/customer-view";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
+import DemoDashboard from "@/pages/demo-dashboard";
 import RestaurantDetails from "@/pages/restaurant-details";
 import RestaurantAnalytics from "@/pages/restaurant-analytics";
 import HowItWorks from "@/pages/how-it-works";
@@ -108,6 +109,9 @@ function Router() {
       <Route path="/restaurants/:id/analytics">
         <RestaurantAnalytics />
       </Route>
+      <Route path="/demo-dashboard">
+        <DemoDashboard />
+      </Route>
       <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} ownerOnly={true} />
       <Route path="/how-it-works">
         <HowItWorks />
@@ -166,6 +170,12 @@ function App() {
                       className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
                     >
                       How It Works
+                    </Link>
+                    <Link
+                      href="/demo-dashboard"
+                      className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
+                    >
+                      Restaurant Dashboard Demo
                     </Link>
                     <Link
                       href="/auth"
