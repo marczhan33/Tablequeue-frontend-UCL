@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { TrendingUp, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
+import DigitalQueueButton from "@/components/digital-queue-button";
 
 const RestaurantDetails = () => {
   const [_, setLocation] = useLocation();
@@ -109,20 +110,10 @@ const RestaurantDetails = () => {
       </div>
       
       <div className="mt-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-center">
-        <Button 
-          className="w-full md:w-auto" 
-          size="lg"
-          onClick={() => setLocation(`/restaurants/${restaurant.id}/remote-waitlist`)}
-        >
-          <svg className="h-5 w-5 mr-2 text-red-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="2" />
-            <path d="M12 8V12L14.5 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <path d="M7 5C6 4 4.5 4 3.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <path d="M17 5C18 4 19.5 4 20.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-            <circle cx="12" cy="12" r="1" fill="currentColor" />
-          </svg>
-          Digital Queue System
-        </Button>
+        <DigitalQueueButton 
+          restaurantId={restaurant.id} 
+          className="w-full md:w-auto"
+        />
         
         {user && (user.role === 'owner' || user.role === 'admin') && (
           <Button 
