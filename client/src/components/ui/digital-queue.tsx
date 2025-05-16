@@ -156,9 +156,11 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
       <Card className="shadow-md border-0">
         <CardHeader className="bg-primary/5 pb-2">
           <CardTitle className="flex items-center text-primary">
-            <div className="bg-red-500 text-white p-1 rounded-full mr-2">
-              <Clock className="h-4 w-4" />
-            </div>
+            <svg className="h-5 w-5 mr-2 text-red-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M5.7 19.7L4.3 18.3C2.9 16.9 2 15 2 13C2 7.5 6.5 3 12 3C17.5 3 22 7.5 22 13C22 16.9 19.1 19.9 15.7 21.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M9 17H15M9 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
             Digital Queue System
           </CardTitle>
           <CardDescription>

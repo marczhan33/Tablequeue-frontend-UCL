@@ -114,12 +114,11 @@ const RestaurantDetails = () => {
           size="lg"
           onClick={() => setLocation(`/restaurants/${restaurant.id}/remote-waitlist`)}
         >
-          <div className="bg-white text-red-500 p-1 rounded-full mr-2 flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10"></circle>
-              <polyline points="12 6 12 12 16 14"></polyline>
-            </svg>
-          </div>
+          <svg className="h-5 w-5 mr-2 text-red-500" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 6V12L16 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M5.7 19.7L4.3 18.3C2.9 16.9 2 15 2 13C2 7.5 6.5 3 12 3C17.5 3 22 7.5 22 13C22 16.9 19.1 19.9 15.7 21.1" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M9 17H15M9 21H15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
           Digital Queue System
         </Button>
         
