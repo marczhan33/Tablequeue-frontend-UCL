@@ -82,11 +82,21 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
             <h2 className="text-xl font-bold font-heading">{restaurant.name}</h2>
             <p className="text-gray-600 text-sm">{restaurant.cuisine} • {restaurant.priceRange}</p>
           </div>
-          <WaitTimeBadge 
-            status={restaurant.currentWaitStatus as WaitStatus} 
-            size="lg" 
-            className="mt-2 md:mt-0"
-          />
+          <div className="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium mt-2 md:mt-0 inline-flex items-center">
+            <svg 
+              xmlns="http://www.w3.org/2000/svg" 
+              className="h-4 w-4 mr-1 text-status-short" 
+              viewBox="0 0 20 20" 
+              fill="currentColor"
+            >
+              <path 
+                fillRule="evenodd" 
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" 
+                clipRule="evenodd" 
+              />
+            </svg>
+            {restaurant.customWaitTime ? `${restaurant.customWaitTime} minutes` : getWaitTimeText(restaurant)}
+          </div>
         </div>
       </div>
 
@@ -128,7 +138,24 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-gray-500 mr-2 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                   <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
                 </svg>
-                <span>{restaurant.address}</span>
+                <button 
+                  className="text-left hover:text-primary flex items-center group"
+                  onClick={() => {
+                    navigator.clipboard.writeText(restaurant.address);
+                    alert("Address copied to clipboard");
+                  }}
+                >
+                  <span>{restaurant.address}</span>
+                  <svg 
+                    xmlns="http://www.w3.org/2000/svg" 
+                    className="h-4 w-4 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" 
+                    viewBox="0 0 20 20" 
+                    fill="currentColor"
+                  >
+                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                  </svg>
+                </button>
               </div>
               
               <div className="flex">
@@ -193,6 +220,10 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
               </svg>
               Call Restaurant
             </a>
+          </div>
+          
+          <div className="text-red-600 text-sm text-center mt-3">
+            Wait times in Google Maps are updated in real-time by the restaurant
           </div>
           
           <div className="mt-4">

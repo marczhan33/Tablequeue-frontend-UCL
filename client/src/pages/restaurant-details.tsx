@@ -104,13 +104,8 @@ const RestaurantDetails = () => {
         </button>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2">
-          <LocationWaitTime restaurant={restaurant} />
-        </div>
-        <div>
-          <GoogleMapsWaitTime restaurant={restaurant} />
-        </div>
+      <div>
+        <LocationWaitTime restaurant={restaurant} />
       </div>
       
       <div className="mt-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-center">
