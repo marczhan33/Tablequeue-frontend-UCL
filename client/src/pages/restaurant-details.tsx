@@ -109,26 +109,30 @@ const RestaurantDetails = () => {
         <LocationWaitTime restaurant={restaurant} />
       </div>
       
-      <div className="mt-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-center">
-        <DigitalQueueButton 
-          restaurantId={restaurant.id} 
-          className="w-full md:w-auto"
-        />
-        
-        {user && (user.role === 'owner' || user.role === 'admin') && (
-          <Button 
-            className="w-full md:w-auto" 
-            size="lg"
-            variant="outline"
-            onClick={() => setLocation(`/restaurants/${restaurant.id}/analytics`)}
-          >
-            <TrendingUp className="h-5 w-5 mr-2" />
-            View Analytics
-          </Button>
-        )}
-        
-        <div className="text-sm text-muted-foreground text-center md:text-left">
-          Join the waitlist in advance and spend less time waiting
+      <div className="mt-6 mb-8 w-full">
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="flex flex-col sm:flex-row items-center w-full gap-4">
+            <DigitalQueueButton 
+              restaurantId={restaurant.id} 
+              className="w-full text-lg py-6"
+            />
+            
+            {user && (user.role === 'owner' || user.role === 'admin') && (
+              <Button 
+                className="w-full sm:w-auto" 
+                size="lg"
+                variant="outline"
+                onClick={() => setLocation(`/restaurants/${restaurant.id}/analytics`)}
+              >
+                <TrendingUp className="h-5 w-5 mr-2" />
+                View Analytics
+              </Button>
+            )}
+          </div>
+          
+          <div className="text-sm text-muted-foreground text-center md:text-left px-1">
+            Join the waitlist in advance and spend less time waiting
+          </div>
         </div>
       </div>
       
