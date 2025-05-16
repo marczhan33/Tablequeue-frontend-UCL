@@ -96,8 +96,15 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
         <CardTitle className="text-xl font-bold">{restaurant.name} Digital Queue</CardTitle>
-        {isScheduled && (
-          <CardDescription className="space-y-4">
+        <CardDescription className="space-y-2">
+          {!isScheduled && (
+            <>
+              <p>Join the waitlist in advance and spend less time waiting</p>
+              <p className="text-primary font-medium">Secure your spot in line now! Your position is reserved from the moment you submit this form.</p>
+              <p className="text-amber-600 font-medium">⚠️ Important: You must check in physically within 15 minutes of your arrival time or your reservation will be automatically cancelled.</p>
+            </>
+          )}
+          {isScheduled && (
             <div className="mt-4">
               <h3 className="text-lg font-medium mb-3">Choose Arrival Time</h3>
               <div className="grid grid-cols-3 gap-2">
@@ -119,8 +126,8 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
                 ))}
               </div>
             </div>
-          </CardDescription>
-        )}
+          )}
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
