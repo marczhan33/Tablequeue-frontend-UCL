@@ -121,8 +121,8 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
   };
   
   return (
-    <Card className="w-full">
-      <CardHeader>
+    <Card className="w-full overflow-hidden shadow-sm">
+      <CardHeader className="pb-4">
         <CardTitle className="flex items-center">
           Smart Wait Prediction
           <Badge 
@@ -138,13 +138,13 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
         </CardDescription>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="space-y-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div className="flex flex-col">
             <span className="text-sm text-muted-foreground">Estimated Wait</span>
-            <div className="flex items-center mt-1">
-              <Clock className="h-4 w-4 mr-1.5 text-primary" />
-              <span className="text-2xl font-semibold">
+            <div className="flex items-center mt-2">
+              <Clock className="h-5 w-5 mr-2 text-primary" />
+              <span className="text-3xl font-semibold">
                 {formatWaitTime(capacityData.estimatedWaitTime)}
               </span>
             </div>
@@ -152,29 +152,19 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
           
           <div className="flex flex-col">
             <span className="text-sm text-muted-foreground">Available Tables</span>
-            <div className="flex items-center mt-1">
-              <Users className="h-4 w-4 mr-1.5 text-primary" />
-              <span className="text-2xl font-semibold">
+            <div className="flex items-center mt-2">
+              <Users className="h-5 w-5 mr-2 text-primary" />
+              <span className="text-3xl font-semibold">
                 {capacityData.availableTables}
               </span>
             </div>
           </div>
-        </div>
-        
-        <div>
-          <div className="flex justify-between mb-1">
-            <span className="text-sm text-muted-foreground">Current Capacity</span>
-            <span className="text-sm font-medium">{capacityData.busyLevel}%</span>
-          </div>
-          <Progress value={capacityData.busyLevel} className="h-2" />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4 pt-2">
+          
           <div className="flex flex-col">
             <span className="text-sm text-muted-foreground">Est. Seating Time</span>
-            <div className="flex items-center mt-1">
-              <CalendarClock className="h-4 w-4 mr-1.5 text-primary" />
-              <span className="text-lg font-medium">
+            <div className="flex items-center mt-2">
+              <CalendarClock className="h-5 w-5 mr-2 text-primary" />
+              <span className="text-xl font-medium">
                 {formatTime(capacityData.nextAvailableTime)}
               </span>
             </div>
@@ -183,18 +173,26 @@ export function SmartCapacityDisplay({ restaurantId, partySize }: SmartCapacityD
           {capacityData.recommendedArrivalTime && (
             <div className="flex flex-col">
               <span className="text-sm text-muted-foreground">Recommended Arrival</span>
-              <div className="flex items-center mt-1">
-                <Calendar className="h-4 w-4 mr-1.5 text-primary" />
-                <span className="text-lg font-medium">
+              <div className="flex items-center mt-2">
+                <Calendar className="h-5 w-5 mr-2 text-primary" />
+                <span className="text-xl font-medium">
                   {formatTime(capacityData.recommendedArrivalTime)}
                 </span>
               </div>
             </div>
           )}
         </div>
+        
+        <div>
+          <div className="flex justify-between mb-2">
+            <span className="text-sm text-muted-foreground">Current Capacity</span>
+            <span className="text-sm font-medium">{capacityData.busyLevel}%</span>
+          </div>
+          <Progress value={capacityData.busyLevel} className="h-3" />
+        </div>
       </CardContent>
       
-      <CardFooter className="text-xs text-muted-foreground">
+      <CardFooter className="text-xs text-muted-foreground border-t pt-4">
         Wait times are estimated and may vary based on actual restaurant conditions.
       </CardFooter>
     </Card>

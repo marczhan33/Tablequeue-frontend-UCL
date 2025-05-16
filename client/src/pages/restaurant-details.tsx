@@ -135,53 +135,49 @@ const RestaurantDetails = () => {
       <div className="mt-8 mb-4">
         <h2 className="text-2xl font-bold mb-4">Smart Wait Management</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div>
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Advanced Wait Time Prediction</CardTitle>
-                <CardDescription>
-                  Get personalized wait time estimates based on your party size
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <Label htmlFor="partySize">Party Size</Label>
-                    <div className="flex items-center mt-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setPartySize(Math.max(1, partySize - 1))}
-                        disabled={partySize <= 1}
-                        className="px-3"
-                      >
-                        -
-                      </Button>
-                      <div className="mx-3 w-10 text-center font-medium">{partySize}</div>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => setPartySize(partySize + 1)}
-                        className="px-3"
-                      >
-                        +
-                      </Button>
-                    </div>
+        <div className="w-full">
+          <Card className="h-full border shadow-sm">
+            <CardHeader>
+              <CardTitle>Advanced Wait Time Prediction</CardTitle>
+              <CardDescription>
+                Get personalized wait time estimates based on your party size
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="max-w-4xl mx-auto">
+                <div className="mb-6">
+                  <Label htmlFor="partySize" className="text-base">Party Size</Label>
+                  <div className="flex items-center mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setPartySize(Math.max(1, partySize - 1))}
+                      disabled={partySize <= 1}
+                      className="px-3 h-9 w-9"
+                    >
+                      -
+                    </Button>
+                    <div className="mx-4 w-10 text-center font-medium text-lg">{partySize}</div>
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setPartySize(partySize + 1)}
+                      className="px-3 h-9 w-9"
+                    >
+                      +
+                    </Button>
                   </div>
-                  
-                  {restaurantId && (
-                    <SmartCapacityDisplay 
-                      restaurantId={parseInt(restaurantId)} 
-                      partySize={partySize} 
-                    />
-                  )}
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Digital Queue component has been removed */}
+                
+                {restaurantId && (
+                  <SmartCapacityDisplay 
+                    restaurantId={parseInt(restaurantId)} 
+                    partySize={partySize} 
+                  />
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
         
         <div className="bg-primary/5 rounded-lg p-6 mt-8">
