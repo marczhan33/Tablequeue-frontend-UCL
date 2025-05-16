@@ -17,6 +17,7 @@ import { analyticsRouter } from "./analytics/routes";
 import { processTableTurnover, initializeAnalytics } from "./analytics";
 import { generateRestaurantQrCode, generateConfirmationQrCode, generateConfirmationCode } from "./qr-service";
 import { sendCustomerNotification, generateTableReadyMessage } from "./notification-service";
+import { updateGoogleMapsWaitTime, generateGoogleMapsUrl } from "./maps-integration";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -304,7 +305,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { status, customTime } = waitStatusSchema.parse(req.body);
       
       const updatedRestaurant = await storage.updateWaitTime(id, status, customTime);
-      return res.json(updatedRestaurant);
+      
+      // Update Google Maps wait time information
+      try {
+        const mapsUpdated = await updateGoogleMapsWaitTime(updatedRestaurant);
+        console.log(`Google Maps update for ${updatedRestaurant.name}: ${mapsUpdated ? 'Success' : 'Failed'}`);
+      } catch (mapsError) {
+        console.error("Google Maps update error:", mapsError);
+        // Non-blocking - we don't fail the API if Google Maps update fails
+      }
+      
+      // Include Google Maps URLs in the response
+      return res.json({
+        ...updatedRestaurant,
+        mapsUrl: generateGoogleMapsUrl(updatedRestaurant, false),
+        mobileMapUrl: generateGoogleMapsUrl(updatedRestaurant, true)
+      });
     } catch (error) {
       if (error instanceof z.ZodError) {
         return res.status(400).json({ 

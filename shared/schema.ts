@@ -74,6 +74,7 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   confirmationCode: text("confirmation_code"), // Code for remote guests to confirm arrival
   createdAt: timestamp("created_at").defaultNow(),
   notifiedAt: timestamp("notified_at"), // When SMS was sent
+  notificationSent: boolean("notification_sent").default(false), // Track if notification was successfully sent
   seatedAt: timestamp("seated_at"),
   arrivedAt: timestamp("arrived_at"), // When guest arrived at restaurant
   notes: text("notes"),
