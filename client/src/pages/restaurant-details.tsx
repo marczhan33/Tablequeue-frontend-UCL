@@ -110,16 +110,36 @@ const RestaurantDetails = () => {
       </div>
       
       <div className="mt-6 mb-8 w-full">
-        <div className="flex flex-col gap-4 mb-4">
-          <div className="flex flex-col sm:flex-row items-center w-full gap-4">
-            <DigitalQueueButton 
-              restaurantId={restaurant.id} 
-              className="w-full text-lg py-6"
-            />
+        <div className="w-full mb-4">
+          <div className="flex flex-col md:flex-row items-center w-full gap-4">
+            <div className="w-full md:w-1/3 lg:w-1/4">
+              <DigitalQueueButton 
+                restaurantId={restaurant.id} 
+                className="w-full text-lg py-6"
+              />
+            </div>
+            
+            <div className="w-full md:w-2/3 lg:w-3/4 flex items-center">
+              <p className="text-base md:text-lg text-muted-foreground">
+                Join the waitlist in advance and spend less time waiting
+              </p>
+              
+              {user && (user.role === 'owner' || user.role === 'admin') && (
+                <Button 
+                  className="ml-auto hidden md:flex" 
+                  size="lg"
+                  variant="outline"
+                  onClick={() => setLocation(`/restaurants/${restaurant.id}/analytics`)}
+                >
+                  <TrendingUp className="h-5 w-5 mr-2" />
+                  View Analytics
+                </Button>
+              )}
+            </div>
             
             {user && (user.role === 'owner' || user.role === 'admin') && (
               <Button 
-                className="w-full sm:w-auto" 
+                className="w-full md:hidden" 
                 size="lg"
                 variant="outline"
                 onClick={() => setLocation(`/restaurants/${restaurant.id}/analytics`)}
@@ -128,10 +148,6 @@ const RestaurantDetails = () => {
                 View Analytics
               </Button>
             )}
-          </div>
-          
-          <div className="text-sm text-muted-foreground text-center md:text-left px-1">
-            Join the waitlist in advance and spend less time waiting
           </div>
         </div>
       </div>
