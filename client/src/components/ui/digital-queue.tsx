@@ -63,18 +63,18 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
     const currentMinute = now.getMinutes();
     
     // Round to next 15-minute increment
-    const startMinute = Math.ceil(currentMinute / 15) * 15;
-    let startHour = currentHour;
-    if (startMinute === 60) {
-      startHour += 1;
-      startMinute = 0;
+    let minuteIncrement = Math.ceil(currentMinute / 15) * 15;
+    let hourToUse = currentHour;
+    if (minuteIncrement === 60) {
+      hourToUse += 1;
+      minuteIncrement = 0;
     }
     
     // Generate slots
-    for (let hour = startHour; hour < startHour + 3; hour++) {
+    for (let hour = hourToUse; hour < hourToUse + 3; hour++) {
       for (let minute = 0; minute < 60; minute += 15) {
         // Skip past time slots
-        if (hour === startHour && minute < startMinute) continue;
+        if (hour === hourToUse && minute < minuteIncrement) continue;
         
         const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
         slots.push(timeString);

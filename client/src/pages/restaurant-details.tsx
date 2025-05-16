@@ -3,20 +3,23 @@ import { useParams, useLocation } from "wouter";
 import { Restaurant } from "@shared/schema";
 import LocationWaitTime from "@/components/location-wait-time";
 import { GoogleMapsWaitTime } from "@/components/ui/google-maps-wait-time";
+import { DigitalQueue } from "@/components/ui/digital-queue";
 import { SmartCapacityDisplay } from "@/components/smart-capacity-display";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { TrendingUp, Settings } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
+import { useToast } from "@/hooks/use-toast";
 
 const RestaurantDetails = () => {
   const [_, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const restaurantId = params?.id;
   const [partySize, setPartySize] = useState(2);
+  const { toast } = useToast();
   const { user } = useAuth();
   
   // Fetch restaurant by ID with a simple try/catch for better error handling
@@ -145,53 +148,109 @@ const RestaurantDetails = () => {
       </div>
       
       <div className="mt-8 mb-4">
-        <h2 className="text-2xl font-bold mb-4">Smart Wait Time Prediction</h2>
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Check Specific Wait Time</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="partySize">Party Size</Label>
-                <div className="flex items-center mt-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setPartySize(Math.max(1, partySize - 1))}
-                    disabled={partySize <= 1}
-                    className="px-3"
-                  >
-                    -
-                  </Button>
-                  <div className="mx-3 w-10 text-center font-medium">{partySize}</div>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => setPartySize(partySize + 1)}
-                    className="px-3"
-                  >
-                    +
-                  </Button>
-                </div>
-              </div>
-              
-              <div className="col-span-2">
-                <p className="text-sm text-gray-500 mb-2">
-                  Get a more accurate wait time prediction based on your party size, current reservations, and historical data.
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <h2 className="text-2xl font-bold mb-4">Smart Wait Management</h2>
         
-        {/* Display the prediction results */}
-        {restaurantId && (
-          <SmartCapacityDisplay 
-            restaurantId={parseInt(restaurantId)} 
-            partySize={partySize} 
-          />
-        )}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <div>
+            <Card className="h-full">
+              <CardHeader>
+                <CardTitle>Advanced Wait Time Prediction</CardTitle>
+                <CardDescription>
+                  Get personalized wait time estimates based on your party size
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="partySize">Party Size</Label>
+                    <div className="flex items-center mt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setPartySize(Math.max(1, partySize - 1))}
+                        disabled={partySize <= 1}
+                        className="px-3"
+                      >
+                        -
+                      </Button>
+                      <div className="mx-3 w-10 text-center font-medium">{partySize}</div>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setPartySize(partySize + 1)}
+                        className="px-3"
+                      >
+                        +
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  {restaurantId && (
+                    <SmartCapacityDisplay 
+                      restaurantId={parseInt(restaurantId)} 
+                      partySize={partySize} 
+                    />
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div>
+            <DigitalQueue 
+              restaurant={restaurant} 
+              partySize={partySize}
+              onQueueJoin={() => {
+                toast({
+                  title: "Successfully joined queue",
+                  description: "You'll receive updates via text message about your position in line.",
+                });
+              }}
+            />
+          </div>
+        </div>
+        
+        <div className="bg-primary/5 rounded-lg p-6 mt-8">
+          <h3 className="text-lg font-semibold mb-3">Optimize Your Dining Experience</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Our smart wait system uses demand prediction technology to help you find the best times to dine with shorter waits.
+          </p>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <Card className="bg-white/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Schedule For Off-Peak</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Dining between 2-5pm or after 8:30pm typically has 60% shorter wait times and offers special discounts.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Remote Check-In</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Join our waitlist before leaving home and arrive just in time for your table.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card className="bg-white/60">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium">Table Optimization</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-xs text-muted-foreground">
+                  Our smart system matches your party size to the right table to reduce unnecessary waiting.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
       
       {/* Additional content like reviews could be added here */}
