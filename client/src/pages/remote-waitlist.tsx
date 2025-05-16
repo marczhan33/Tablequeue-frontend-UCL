@@ -215,13 +215,18 @@ export default function RemoteWaitlistPage() {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-lg mx-auto">
-        <TabsList className="grid grid-cols-2 w-full mb-6">
+        <TabsList className="grid grid-cols-3 w-full mb-6">
           <TabsTrigger value="join">Join Waitlist</TabsTrigger>
+          <TabsTrigger value="schedule">Schedule For Later</TabsTrigger>
           <TabsTrigger value="checkin">Check In</TabsTrigger>
         </TabsList>
         
         <TabsContent value="join">
           <RemoteWaitlistForm restaurant={restaurant} onSuccess={handleWaitlistSuccess} />
+        </TabsContent>
+        
+        <TabsContent value="schedule">
+          <RemoteWaitlistForm restaurant={restaurant} onSuccess={handleWaitlistSuccess} isScheduled={true} />
         </TabsContent>
         
         <TabsContent value="checkin">

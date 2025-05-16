@@ -32,9 +32,10 @@ type RemoteWaitlistFormValues = z.infer<typeof remoteWaitlistFormSchema>;
 interface RemoteWaitlistFormProps {
   restaurant: Restaurant;
   onSuccess?: (data: any) => void;
+  isScheduled?: boolean;
 }
 
-export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistFormProps) => {
+export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false }: RemoteWaitlistFormProps) => {
   const form = useForm<RemoteWaitlistFormValues>({
     resolver: zodResolver(remoteWaitlistFormSchema),
     defaultValues: {
@@ -95,9 +96,9 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
   return (
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
-        <CardTitle className="text-xl font-bold">{restaurant.name} Remote Waitlist</CardTitle>
+        <CardTitle className="text-xl font-bold">{restaurant.name} Digital Queue</CardTitle>
         <CardDescription className="space-y-2">
-          <p>Join the waitlist before you arrive and skip the wait when you get here</p>
+          <p>Join the waitlist in advance and spend less time waiting</p>
           <p className="text-primary font-medium">Secure your spot in line now! Your position is reserved from the moment you submit this form.</p>
           <p className="text-amber-600 font-medium">⚠️ Important: You must check in physically within 15 minutes of your arrival time or your reservation will be automatically cancelled.</p>
         </CardDescription>
@@ -213,7 +214,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
                     <Input placeholder="Required for remote waitlist" {...field} />
                   </FormControl>
                   <FormDescription>
-                    We'll text you when your table is ready
+                    You'll receive text updates about your position in line
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -274,18 +275,12 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
             />
             
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Join Remote Waitlist'}
+              {isSubmitting ? 'Submitting...' : 'Join Queue Now'}
             </Button>
           </form>
         </Form>
       </CardContent>
-      <CardFooter className="flex flex-col">
-        <p className="text-sm text-muted-foreground text-center">
-          Current wait time: {restaurant.customWaitTime && restaurant.customWaitTime > 0 
-            ? `Approximately ${restaurant.customWaitTime} minutes` 
-            : getWaitTimeText(restaurant.currentWaitStatus)}
-        </p>
-      </CardFooter>
+
     </Card>
   );
 };

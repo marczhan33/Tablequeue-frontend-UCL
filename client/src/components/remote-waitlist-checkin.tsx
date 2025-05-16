@@ -371,30 +371,10 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
           )}
         </div>
         
-        {/* Confirmation Code Section */}
+        {/* Check-in Section */}
         <div>          
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="confirmationCode"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Confirmation Code</FormLabel>
-                    <FormControl>
-                      <Input 
-                        placeholder="Enter your confirmation code" 
-                        className="text-center text-lg tracking-wider" 
-                        {...field} 
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      You received this code when you joined the remote waitlist
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
               
               <Dialog>
                 <DialogTrigger asChild>
