@@ -25,12 +25,6 @@ const remoteWaitlistFormSchema = z.object({
   email: z.string().email('Valid email required for confirmation').optional(),
   dietaryRequirements: z.string().optional(),
   notes: z.string().optional(),
-  expectedArrivalDate: z.date({
-    required_error: "Please select a date",
-  }),
-  expectedArrivalTime: z.string({
-    required_error: "Please select a time",
-  }),
 });
 
 type RemoteWaitlistFormValues = z.infer<typeof remoteWaitlistFormSchema>;
@@ -50,8 +44,6 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
       email: '',
       dietaryRequirements: '',
       notes: '',
-      expectedArrivalDate: new Date(),
-      expectedArrivalTime: '18:00',
     },
   });
 
@@ -59,22 +51,12 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess }: RemoteWaitlistForm
 
   const onSubmit = async (values: RemoteWaitlistFormValues) => {
     try {
-      // Combine date and time into ISO string
-      const { expectedArrivalDate, expectedArrivalTime, ...otherValues } = values;
-      const [hours, minutes] = expectedArrivalTime.split(':').map(Number);
-      
-      const expectedArrival = new Date(expectedArrivalDate);
-      expectedArrival.setHours(hours, minutes);
-      
       // Submit remote waitlist entry
-      const response = await apiRequest({
-        url: `/api/restaurants/${restaurant.id}/remote-waitlist`,
-        method: 'POST',
-        body: {
-          ...otherValues,
-          expectedArrivalTime: expectedArrival.toISOString()
-        }
-      });
+      const response = await apiRequest(
+        `POST`,
+        `/api/restaurants/${restaurant.id}/remote-waitlist`,
+        values
+      );
 
       const data = await response.json();
       toast({

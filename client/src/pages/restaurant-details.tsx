@@ -115,14 +115,10 @@ const RestaurantDetails = () => {
           onClick={() => setLocation(`/restaurants/${restaurant.id}/remote-waitlist`)}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
-            <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
-            <path d="M12 11h4"></path>
-            <path d="M12 16h4"></path>
-            <path d="M8 11h.01"></path>
-            <path d="M8 16h.01"></path>
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
           </svg>
-          Join Remote Waitlist
+          Digital Queue System
         </Button>
         
         {user && (user.role === 'owner' || user.role === 'admin') && (
@@ -138,7 +134,7 @@ const RestaurantDetails = () => {
         )}
         
         <div className="text-sm text-muted-foreground text-center md:text-left">
-          Join the waitlist before you arrive and get notified when your table is almost ready!
+          Join the waitlist in advance and spend less time waiting
         </div>
       </div>
       
