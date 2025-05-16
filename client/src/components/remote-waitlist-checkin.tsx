@@ -177,14 +177,16 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
       setIsProcessing(true);
       
       // Submit check-in request with verification method
-      const response = await apiRequest({
-        url: `/api/restaurants/${restaurant.id}/remote-waitlist/checkin`,
-        method: 'POST',
-        body: {
-          confirmationCode: values.confirmationCode,
-          verificationMethod: values.verificationMethod
+      const response = await apiRequest(
+        `/api/restaurants/${restaurant.id}/remote-waitlist/checkin`,
+        {
+          method: 'POST',
+          body: {
+            confirmationCode: values.confirmationCode,
+            verificationMethod: values.verificationMethod
+          }
         }
-      });
+      );
 
       const data = await response.json();
       

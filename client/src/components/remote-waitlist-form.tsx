@@ -54,9 +54,8 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     try {
       // Submit remote waitlist entry
       const response = await apiRequest(
-        `POST`,
         `/api/restaurants/${restaurant.id}/remote-waitlist`,
-        values
+        { method: 'POST', body: values }
       );
 
       const data = await response.json();
@@ -101,6 +100,14 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
           <p>Join the waitlist in advance and spend less time waiting</p>
           <p className="text-primary font-medium">Secure your spot in line now! Your position is reserved from the moment you submit this form.</p>
           <p className="text-amber-600 font-medium">⚠️ Important: You must check in physically within 15 minutes of your arrival time or your reservation will be automatically cancelled.</p>
+          {isScheduled && (
+            <p className="text-blue-600 font-medium">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
+              </svg>
+              Schedule for later: We'll send your confirmation code to your email
+            </p>
+          )}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -137,72 +144,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
               )}
             />
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="expectedArrivalDate"
-                render={({ field }) => (
-                  <FormItem className="flex flex-col">
-                    <FormLabel>Expected Arrival Date</FormLabel>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <FormControl>
-                          <Button
-                            variant={"outline"}
-                            className={cn(
-                              "w-full pl-3 text-left font-normal",
-                              !field.value && "text-muted-foreground"
-                            )}
-                          >
-                            {field.value ? (
-                              format(field.value, "PPP")
-                            ) : (
-                              <span>Pick a date</span>
-                            )}
-                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                          </Button>
-                        </FormControl>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="start">
-                        <Calendar
-                          mode="single"
-                          selected={field.value}
-                          onSelect={field.onChange}
-                          disabled={(date) => date < new Date()}
-                          initialFocus
-                        />
-                      </PopoverContent>
-                    </Popover>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
 
-              <FormField
-                control={form.control}
-                name="expectedArrivalTime"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Expected Arrival Time</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a time" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {timeOptions.map((time) => (
-                          <SelectItem key={time} value={time}>
-                            {time}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
             
             <FormField
               control={form.control}
@@ -226,7 +168,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address</FormLabel>
+                  <FormLabel>{isScheduled && <span className="text-red-500 mr-1">*</span>}Email Address</FormLabel>
                   <FormControl>
                     <Input placeholder="For confirmation details" {...field} />
                   </FormControl>
@@ -275,7 +217,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
             />
             
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : 'Join Queue Now'}
+              {isSubmitting ? 'Submitting...' : isScheduled ? 'Schedule For Later' : 'Join Queue Now'}
             </Button>
           </form>
         </Form>
