@@ -195,24 +195,7 @@ export default function RemoteWaitlistPage() {
         </Button>
       </div>
       
-      <h1 className="text-2xl font-bold mb-2 text-center">{restaurant.name} Digital Queue</h1>
-      <div className="flex justify-center mb-6">
-        <div className="rounded-full bg-amber-100 px-3 py-1.5 text-sm font-medium inline-flex items-center">
-          <svg 
-            xmlns="http://www.w3.org/2000/svg" 
-            className="h-4 w-4 mr-1 text-amber-600" 
-            viewBox="0 0 20 20" 
-            fill="currentColor"
-          >
-            <path 
-              fillRule="evenodd" 
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" 
-              clipRule="evenodd" 
-            />
-          </svg>
-          Current wait time: 45 minutes
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold mb-6 text-center">{restaurant.name} Digital Queue</h1>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-lg mx-auto">
         <TabsList className="grid grid-cols-3 w-full mb-6">

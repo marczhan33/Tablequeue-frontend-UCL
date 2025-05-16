@@ -96,19 +96,31 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     <Card className="w-full max-w-lg mx-auto">
       <CardHeader>
         <CardTitle className="text-xl font-bold">{restaurant.name} Digital Queue</CardTitle>
-        <CardDescription className="space-y-2">
-          <p>Join the waitlist in advance and spend less time waiting</p>
-          <p className="text-primary font-medium">Secure your spot in line now! Your position is reserved from the moment you submit this form.</p>
-          <p className="text-amber-600 font-medium">⚠️ Important: You must check in physically within 15 minutes of your arrival time or your reservation will be automatically cancelled.</p>
-          {isScheduled && (
-            <p className="text-blue-600 font-medium">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-              </svg>
-              Schedule for later: We'll send your confirmation code to your email
-            </p>
-          )}
-        </CardDescription>
+        {isScheduled && (
+          <CardDescription className="space-y-4">
+            <div className="mt-4">
+              <h3 className="text-lg font-medium mb-3">Choose Arrival Time</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { time: '23:15', discount: '5% OFF' },
+                  { time: '23:30', discount: '15% OFF' },
+                  { time: '23:45', discount: '13% OFF' },
+                  { time: '24:00', discount: '16% OFF' },
+                  { time: '24:15', discount: '13% OFF' },
+                  { time: '24:30', discount: '9% OFF' },
+                  { time: '24:45', discount: '9% OFF' },
+                  { time: '25:00', discount: '15% OFF' },
+                  { time: '25:15', discount: '13% OFF' }
+                ].map((slot) => (
+                  <div key={slot.time} className="border rounded-md p-2 text-center cursor-pointer hover:border-primary">
+                    <div>{slot.time}</div>
+                    <div className="text-green-600 text-sm font-medium">{slot.discount}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
         <Form {...form}>
@@ -217,8 +229,13 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
             />
             
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? 'Submitting...' : isScheduled ? 'Schedule For Later' : 'Join Queue Now'}
+              {isSubmitting ? 'Submitting...' : isScheduled ? 'Schedule Arrival' : 'Join Queue Now'}
             </Button>
+            {isScheduled && (
+              <p className="text-center text-sm text-muted-foreground mt-2">
+                Schedule a future arrival to reduce your wait time and get special offers
+              </p>
+            )}
           </form>
         </Form>
       </CardContent>

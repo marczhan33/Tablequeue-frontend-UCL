@@ -156,7 +156,9 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
       <Card className="shadow-md border-0">
         <CardHeader className="bg-primary/5 pb-2">
           <CardTitle className="flex items-center text-primary">
-            <AlarmClock className="h-5 w-5 mr-2" />
+            <div className="bg-red-500 text-white p-1 rounded-full mr-2">
+              <Clock className="h-4 w-4" />
+            </div>
             Digital Queue System
           </CardTitle>
           <CardDescription>

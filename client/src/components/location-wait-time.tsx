@@ -55,7 +55,7 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
   const getStatusColorClass = (status: WaitStatus): string => {
     switch (status) {
       case 'available':
-        return 'text-status-available';
+        return 'text-green-600';
       case 'short':
         return 'text-status-short';
       case 'long':
