@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useLocation } from "wouter";
 import { Restaurant } from "@shared/schema";
 import LocationWaitTime from "@/components/location-wait-time";
+import { GoogleMapsWaitTime } from "@/components/ui/google-maps-wait-time";
 import { SmartCapacityDisplay } from "@/components/smart-capacity-display";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
@@ -100,7 +101,14 @@ const RestaurantDetails = () => {
         </button>
       </div>
       
-      <LocationWaitTime restaurant={restaurant} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="md:col-span-2">
+          <LocationWaitTime restaurant={restaurant} />
+        </div>
+        <div>
+          <GoogleMapsWaitTime restaurant={restaurant} />
+        </div>
+      </div>
       
       <div className="mt-6 mb-8 flex flex-col md:flex-row gap-4 items-center justify-center">
         <Button 
