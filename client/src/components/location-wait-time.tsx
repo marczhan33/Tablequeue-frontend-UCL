@@ -85,7 +85,7 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
           <div className="rounded-full bg-gray-100 px-3 py-1.5 text-sm font-medium mt-2 md:mt-0 inline-flex items-center">
             <svg 
               xmlns="http://www.w3.org/2000/svg" 
-              className="h-4 w-4 mr-1 text-status-short" 
+              className={`h-4 w-4 mr-1 ${getStatusColorClass(restaurant.currentWaitStatus as WaitStatus)}`}
               viewBox="0 0 20 20" 
               fill="currentColor"
             >
