@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Restaurant, WaitStatus } from "@shared/schema";
 import SearchBar from "@/components/search-bar";
 import RestaurantCard from "@/components/restaurant-card";
 import FeaturedRestaurant from "@/components/featured-restaurant";
 import { useToast } from "@/hooks/use-toast";
 import { RestaurantFilters, FilterState } from "@/components/restaurant-filters";
+import { calculateDistance } from "@/utils/geo-utils";
 
 const CustomerView = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -14,7 +15,12 @@ const CustomerView = () => {
     cuisine: null,
     nearMe: false
   });
+  const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [locationError, setLocationError] = useState<string | null>(null);
   const { toast } = useToast();
+  
+  // Reference to track if geolocation is already being requested
+  const isRequestingLocation = useRef(false);
   
   // Fetch all restaurants
   const { data: restaurants, isLoading, error } = useQuery<Restaurant[]>({
@@ -31,8 +37,77 @@ const CustomerView = () => {
     });
   };
   
+  // Function to get user's location
+  const getUserLocation = () => {
+    // Don't request location multiple times simultaneously
+    if (isRequestingLocation.current) return;
+    
+    setLocationError(null);
+    isRequestingLocation.current = true;
+    
+    if (!navigator.geolocation) {
+      setLocationError("Geolocation is not supported by your browser");
+      isRequestingLocation.current = false;
+      toast({
+        title: "Location Error",
+        description: "Geolocation is not supported by your browser",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        // Store user's current location
+        setUserLocation({
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        });
+        isRequestingLocation.current = false;
+        toast({
+          title: "Location Found",
+          description: "Showing restaurants within 700 meters of your location",
+        });
+      },
+      (error) => {
+        isRequestingLocation.current = false;
+        let errorMessage = "Unable to retrieve your location";
+        
+        // Provide more specific error messages
+        switch(error.code) {
+          case error.PERMISSION_DENIED:
+            errorMessage = "Location access was denied. Please enable location permissions in your browser.";
+            break;
+          case error.POSITION_UNAVAILABLE:
+            errorMessage = "Location information is unavailable.";
+            break;
+          case error.TIMEOUT:
+            errorMessage = "The request to get your location timed out.";
+            break;
+        }
+        
+        setLocationError(errorMessage);
+        toast({
+          title: "Location Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000, // 10 seconds
+        maximumAge: 0 // don't use cached position
+      }
+    );
+  };
+  
   // Handle filter changes
   const handleFilterChange = (newFilters: FilterState) => {
+    // If "Near Me" filter was just turned on, get the user's location
+    if (newFilters.nearMe && !filters.nearMe) {
+      getUserLocation();
+    }
+    
     setFilters(newFilters);
   };
   
