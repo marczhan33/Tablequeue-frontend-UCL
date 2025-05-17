@@ -357,7 +357,10 @@ export class DatabaseStorage implements IStorage {
   async createDailyAnalytics(data: InsertDailyAnalytics): Promise<DailyAnalytics> {
     const result = await db
       .insert(dailyAnalytics)
-      .values(data)
+      .values({
+        ...data,
+        createdAt: new Date(),
+      })
       .returning();
     return result[0];
   }
@@ -365,7 +368,10 @@ export class DatabaseStorage implements IStorage {
   async createHourlyAnalytics(data: InsertHourlyAnalytics): Promise<HourlyAnalytics> {
     const result = await db
       .insert(hourlyAnalytics)
-      .values(data)
+      .values({
+        ...data,
+        createdAt: new Date(),
+      })
       .returning();
     return result[0];
   }
@@ -373,7 +379,10 @@ export class DatabaseStorage implements IStorage {
   async createTableAnalytics(data: InsertTableAnalytics): Promise<TableAnalytics> {
     const result = await db
       .insert(tableAnalytics)
-      .values(data)
+      .values({
+        ...data,
+        createdAt: new Date(),
+      })
       .returning();
     return result[0];
   }

@@ -252,3 +252,71 @@ export type HourlyAnalytics = typeof hourlyAnalytics.$inferSelect;
 
 export type InsertTableAnalytics = z.infer<typeof insertTableAnalyticsSchema>;
 export type TableAnalytics = typeof tableAnalytics.$inferSelect;
+
+// --------- Define Table Relationships ---------
+
+// User relations
+export const usersRelations = relations(users, ({ many }) => ({
+  restaurants: many(restaurants),
+}));
+
+// Restaurant relations
+export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
+  owner: one(users, {
+    fields: [restaurants.userId],
+    references: [users.id]
+  }),
+  tableTypes: many(tableTypes),
+  waitlistEntries: many(waitlistEntries),
+  dailyAnalytics: many(dailyAnalytics),
+  hourlyAnalytics: many(hourlyAnalytics),
+  tableAnalytics: many(tableAnalytics),
+}));
+
+// Table type relations
+export const tableTypesRelations = relations(tableTypes, ({ one, many }) => ({
+  restaurant: one(restaurants, {
+    fields: [tableTypes.restaurantId],
+    references: [restaurants.id]
+  }),
+  waitlistEntries: many(waitlistEntries),
+  tableAnalytics: many(tableAnalytics),
+}));
+
+// Waitlist entry relations
+export const waitlistEntriesRelations = relations(waitlistEntries, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [waitlistEntries.restaurantId],
+    references: [restaurants.id]
+  }),
+  tableType: one(tableTypes, {
+    fields: [waitlistEntries.tableTypeId],
+    references: [tableTypes.id]
+  }),
+}));
+
+// Analytics relations
+export const dailyAnalyticsRelations = relations(dailyAnalytics, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [dailyAnalytics.restaurantId],
+    references: [restaurants.id]
+  }),
+}));
+
+export const hourlyAnalyticsRelations = relations(hourlyAnalytics, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [hourlyAnalytics.restaurantId],
+    references: [restaurants.id]
+  }),
+}));
+
+export const tableAnalyticsRelations = relations(tableAnalytics, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [tableAnalytics.restaurantId],
+    references: [restaurants.id]
+  }),
+  tableType: one(tableTypes, {
+    fields: [tableAnalytics.tableTypeId],
+    references: [tableTypes.id]
+  }),
+}));
