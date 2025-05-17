@@ -9,7 +9,7 @@ import {
   type WaitStatus, type WaitlistStatus
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, or } from "drizzle-orm";
+import { eq, like, or, gte, lte } from "drizzle-orm";
 
 // Define the storage interface
 export interface IStorage {
@@ -71,6 +71,7 @@ export interface IStorage {
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
+  // User operations
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
     return result[0];
@@ -80,12 +81,52 @@ export class DatabaseStorage implements IStorage {
     const result = await db.select().from(users).where(eq(users.username, username));
     return result[0];
   }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const result = await db.insert(users).values(insertUser).returning();
+  
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.email, email));
+    return result[0];
+  }
+  
+  async getUserByVerificationToken(token: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.verificationToken, token));
     return result[0];
   }
 
+  async createUser(insertUser: InsertUser & { 
+    isVerified?: boolean;
+    verificationToken?: string;
+    verificationExpires?: Date;
+  }): Promise<User> {
+    const result = await db.insert(users).values(insertUser).returning();
+    return result[0];
+  }
+  
+  async updateUserVerification(
+    id: number, 
+    isVerified: boolean, 
+    verificationToken?: string | null,
+    verificationExpires?: Date | null
+  ): Promise<User | undefined> {
+    const updateData: any = { isVerified };
+    
+    if (verificationToken !== undefined) {
+      updateData.verificationToken = verificationToken;
+    }
+    
+    if (verificationExpires !== undefined) {
+      updateData.verificationExpires = verificationExpires;
+    }
+    
+    const result = await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+      
+    return result[0];
+  }
+
+  // Restaurant operations
   async getRestaurant(id: number): Promise<Restaurant | undefined> {
     const result = await db.select().from(restaurants).where(eq(restaurants.id, id));
     return result[0];
@@ -140,6 +181,334 @@ export class DatabaseStorage implements IStorage {
         )
       );
   }
+  
+  // Table type operations
+  async getTableTypes(restaurantId: number): Promise<TableType[]> {
+    return db
+      .select()
+      .from(tableTypes)
+      .where(eq(tableTypes.restaurantId, restaurantId));
+  }
+  
+  async getTableType(id: number): Promise<TableType | undefined> {
+    const result = await db
+      .select()
+      .from(tableTypes)
+      .where(eq(tableTypes.id, id));
+    return result[0];
+  }
+  
+  async createTableType(tableType: InsertTableType): Promise<TableType> {
+    const result = await db
+      .insert(tableTypes)
+      .values(tableType)
+      .returning();
+    return result[0];
+  }
+  
+  async updateTableType(id: number, data: Partial<TableType>): Promise<TableType | undefined> {
+    const result = await db
+      .update(tableTypes)
+      .set(data)
+      .where(eq(tableTypes.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async deleteTableType(id: number): Promise<boolean> {
+    const result = await db
+      .delete(tableTypes)
+      .where(eq(tableTypes.id, id))
+      .returning();
+    return result.length > 0;
+  }
+  
+  // Waitlist operations
+  async getWaitlistEntries(restaurantId: number): Promise<WaitlistEntry[]> {
+    return db
+      .select()
+      .from(waitlistEntries)
+      .where(eq(waitlistEntries.restaurantId, restaurantId));
+  }
+  
+  async getWaitlistEntry(id: number): Promise<WaitlistEntry | undefined> {
+    const result = await db
+      .select()
+      .from(waitlistEntries)
+      .where(eq(waitlistEntries.id, id));
+    return result[0];
+  }
+  
+  async getWaitlistEntryByConfirmationCode(code: string): Promise<WaitlistEntry | undefined> {
+    const result = await db
+      .select()
+      .from(waitlistEntries)
+      .where(eq(waitlistEntries.confirmationCode, code));
+    return result[0];
+  }
+  
+  async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {
+    const result = await db
+      .insert(waitlistEntries)
+      .values(entry)
+      .returning();
+    return result[0];
+  }
+  
+  async updateWaitlistEntry(id: number, data: Partial<WaitlistEntry>): Promise<WaitlistEntry | undefined> {
+    const result = await db
+      .update(waitlistEntries)
+      .set(data)
+      .where(eq(waitlistEntries.id, id))
+      .returning();
+    return result[0];
+  }
+  
+  async createRemoteWaitlistEntry(entry: InsertWaitlistEntry & { isRemote: true, expectedArrivalTime: Date }): Promise<WaitlistEntry> {
+    const result = await db
+      .insert(waitlistEntries)
+      .values(entry)
+      .returning();
+    return result[0];
+  }
+  
+  async confirmRemoteArrival(confirmationCode: string): Promise<WaitlistEntry | undefined> {
+    const entry = await this.getWaitlistEntryByConfirmationCode(confirmationCode);
+    
+    if (!entry) {
+      return undefined;
+    }
+    
+    return this.updateWaitlistEntry(entry.id, {
+      status: 'remote_confirmed',
+      arrivedAt: new Date()
+    });
+  }
+  
+  // QR code operations
+  async generateRestaurantQrCode(restaurantId: number): Promise<string> {
+    // Generate a unique QR code ID for this restaurant
+    const qrCodeId = `r-${restaurantId}-${Date.now()}`;
+    
+    // Update the restaurant with this QR code ID
+    await db
+      .update(restaurants)
+      .set({ qrCodeId })
+      .where(eq(restaurants.id, restaurantId));
+    
+    return qrCodeId;
+  }
+  
+  async getRestaurantByQrCodeId(qrCodeId: string): Promise<Restaurant | undefined> {
+    const result = await db
+      .select()
+      .from(restaurants)
+      .where(eq(restaurants.qrCodeId, qrCodeId));
+    return result[0];
+  }
+  
+  // Analytics operations
+  async getDailyAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<DailyAnalytics[]> {
+    let query = db
+      .select()
+      .from(dailyAnalytics)
+      .where(eq(dailyAnalytics.restaurantId, restaurantId));
+    
+    if (startDate) {
+      query = query.where(gte(dailyAnalytics.date, startDate.toISOString().split('T')[0]));
+    }
+    
+    if (endDate) {
+      query = query.where(lte(dailyAnalytics.date, endDate.toISOString().split('T')[0]));
+    }
+    
+    return query;
+  }
+  
+  async getHourlyAnalytics(restaurantId: number, date: Date): Promise<HourlyAnalytics[]> {
+    const formattedDate = date.toISOString().split('T')[0];
+    
+    return db
+      .select()
+      .from(hourlyAnalytics)
+      .where(eq(hourlyAnalytics.restaurantId, restaurantId))
+      .where(eq(hourlyAnalytics.date, formattedDate));
+  }
+  
+  async getTableAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<TableAnalytics[]> {
+    let query = db
+      .select()
+      .from(tableAnalytics)
+      .where(eq(tableAnalytics.restaurantId, restaurantId));
+    
+    if (startDate) {
+      query = query.where(gte(tableAnalytics.date, startDate.toISOString().split('T')[0]));
+    }
+    
+    if (endDate) {
+      query = query.where(lte(tableAnalytics.date, endDate.toISOString().split('T')[0]));
+    }
+    
+    return query;
+  }
+  
+  async createDailyAnalytics(data: InsertDailyAnalytics): Promise<DailyAnalytics> {
+    const result = await db
+      .insert(dailyAnalytics)
+      .values(data)
+      .returning();
+    return result[0];
+  }
+  
+  async createHourlyAnalytics(data: InsertHourlyAnalytics): Promise<HourlyAnalytics> {
+    const result = await db
+      .insert(hourlyAnalytics)
+      .values(data)
+      .returning();
+    return result[0];
+  }
+  
+  async createTableAnalytics(data: InsertTableAnalytics): Promise<TableAnalytics> {
+    const result = await db
+      .insert(tableAnalytics)
+      .values(data)
+      .returning();
+    return result[0];
+  }
+  
+  async generateAnalyticsFromWaitlist(restaurantId: number, date: Date): Promise<boolean> {
+    // Get all waitlist entries for this restaurant on this date
+    const formattedDate = date.toISOString().split('T')[0];
+    const startOfDay = new Date(formattedDate);
+    const endOfDay = new Date(formattedDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    
+    const entries = await db
+      .select()
+      .from(waitlistEntries)
+      .where(eq(waitlistEntries.restaurantId, restaurantId))
+      .where(gte(waitlistEntries.createdAt, startOfDay))
+      .where(lte(waitlistEntries.createdAt, endOfDay));
+    
+    if (entries.length === 0) {
+      return false;
+    }
+    
+    // Process data for daily analytics
+    const totalCustomers = entries.reduce((sum, entry) => sum + entry.partySize, 0);
+    const totalParties = entries.length;
+    const averagePartySize = totalParties > 0 ? totalCustomers / totalParties : 0;
+    const waitTimes = entries.map(entry => entry.estimatedWaitTime);
+    const averageWaitTime = waitTimes.length > 0 
+      ? waitTimes.reduce((sum, time) => sum + time, 0) / waitTimes.length 
+      : 0;
+    const peakWaitTime = waitTimes.length > 0 ? Math.max(...waitTimes) : 0;
+    const cancelledWaitlist = entries.filter(entry => entry.status === 'cancelled').length;
+    
+    // Create daily analytics record
+    await this.createDailyAnalytics({
+      restaurantId,
+      date: formattedDate,
+      totalCustomers,
+      averageWaitTime,
+      peakWaitTime,
+      totalParties,
+      averagePartySize: averagePartySize.toFixed(2),
+      cancelledWaitlist,
+      turnoverRate: totalParties > 0 ? (totalParties / 12).toFixed(2) : null, // Assuming 12 hours of operation
+      revenue: null // Revenue data would come from POS system integration
+    });
+    
+    // Process data for hourly analytics
+    const hourCounts = new Array(24).fill(0);
+    const hourlyWaitTimes = Array(24).fill(0).map(() => []);
+    const hourlySeated = Array(24).fill(0);
+    
+    entries.forEach(entry => {
+      if (entry.createdAt) {
+        const hour = new Date(entry.createdAt).getHours();
+        hourCounts[hour] += entry.partySize;
+        hourlyWaitTimes[hour].push(entry.estimatedWaitTime);
+        
+        if (entry.status === 'seated' && entry.seatedAt) {
+          const seatedHour = new Date(entry.seatedAt).getHours();
+          hourlySeated[seatedHour]++;
+        }
+      }
+    });
+    
+    // Create hourly analytics records
+    for (let hour = 0; hour < 24; hour++) {
+      if (hourCounts[hour] > 0) {
+        const avgWaitTime = hourlyWaitTimes[hour].length > 0
+          ? hourlyWaitTimes[hour].reduce((sum, time) => sum + time, 0) / hourlyWaitTimes[hour].length
+          : 0;
+          
+        await this.createHourlyAnalytics({
+          restaurantId,
+          date: formattedDate,
+          hour,
+          customers: hourCounts[hour],
+          averageWaitTime: Math.round(avgWaitTime),
+          partiesSeated: hourlySeated[hour]
+        });
+      }
+    }
+    
+    // Process data for table analytics
+    const tableTypeUsage = new Map<number, number>();
+    const tableTurnoverTimes = new Map<number, number[]>();
+    
+    entries.forEach(entry => {
+      if (entry.tableTypeId && entry.status === 'seated') {
+        // Count usage of this table type
+        const currentCount = tableTypeUsage.get(entry.tableTypeId) || 0;
+        tableTypeUsage.set(entry.tableTypeId, currentCount + 1);
+        
+        // Calculate turnover time if we have both arrival and seating times
+        if (entry.arrivedAt && entry.seatedAt) {
+          const turnoverMinutes = Math.round(
+            (new Date(entry.seatedAt).getTime() - new Date(entry.arrivedAt).getTime()) / 60000
+          );
+          
+          const times = tableTurnoverTimes.get(entry.tableTypeId) || [];
+          times.push(turnoverMinutes);
+          tableTurnoverTimes.set(entry.tableTypeId, times);
+        }
+      }
+    });
+    
+    // Get all table types for this restaurant
+    const tableTypesData = await this.getTableTypes(restaurantId);
+    
+    // Create table analytics records for each table type
+    for (const type of tableTypesData) {
+      const usage = tableTypeUsage.get(type.id) || 0;
+      const turnoverTimes = tableTurnoverTimes.get(type.id) || [];
+      const avgTurnover = turnoverTimes.length > 0
+        ? turnoverTimes.reduce((sum, time) => sum + time, 0) / turnoverTimes.length
+        : type.estimatedTurnoverTime; // Use default if no data
+      
+      // Calculate utilization as percentage of time tables were occupied
+      // Assuming 12-hour operating day
+      const totalTablesMinutes = type.count * 12 * 60; // total available minutes
+      const usedMinutes = usage * avgTurnover; // minutes tables were in use
+      const utilization = totalTablesMinutes > 0 
+        ? (usedMinutes / totalTablesMinutes) * 100
+        : 0;
+      
+      await this.createTableAnalytics({
+        restaurantId,
+        tableTypeId: type.id,
+        date: formattedDate,
+        totalUsage: usage,
+        averageTurnoverTime: Math.round(avgTurnover),
+        utilization: utilization.toFixed(2)
+      });
+    }
+    
+    return true;
+  }
 
   // Initialize database with sample data if needed
   async initSampleData() {
@@ -181,7 +550,8 @@ export class DatabaseStorage implements IStorage {
           },
           features: ["Outdoor Seating", "Full Bar", "Takeout", "Delivery"],
           rating: "4.7",
-          reviewCount: 324
+          reviewCount: 324,
+          useAdvancedQueue: true
         },
         {
           userId: restaurantOwner.id,
@@ -206,7 +576,8 @@ export class DatabaseStorage implements IStorage {
           },
           features: ["Kid Friendly", "Full Bar", "Takeout"],
           rating: "4.2",
-          reviewCount: 187
+          reviewCount: 187,
+          useAdvancedQueue: false
         },
         {
           userId: restaurantOwner.id,
@@ -231,7 +602,8 @@ export class DatabaseStorage implements IStorage {
           },
           features: ["Omakase", "Full Bar", "Reservations Recommended"],
           rating: "4.9",
-          reviewCount: 512
+          reviewCount: 512,
+          useAdvancedQueue: true
         },
         {
           userId: restaurantOwner.id,
@@ -256,7 +628,8 @@ export class DatabaseStorage implements IStorage {
           },
           features: ["Outdoor Seating", "Full Bar", "Dinner", "Waterfront"],
           rating: "4.8",
-          reviewCount: 746
+          reviewCount: 746,
+          useAdvancedQueue: true
         }
       ];
       
@@ -269,8 +642,8 @@ export class DatabaseStorage implements IStorage {
 // Initialize database storage and seed if needed
 const dbStorage = new DatabaseStorage();
 
-// For compatibility, we'll keep using the in-memory storage for now
-// until we have a proper database setup
+// Keeping the in-memory storage implementation for reference
+// We're now using the database implementation
 export class MemStorage implements IStorage {
   private users: Map<number, User>;
   private restaurants: Map<number, Restaurant>;
@@ -1257,4 +1630,4 @@ export class MemStorage implements IStorage {
 
 // Use in-memory storage for now since we don't have a proper database connection
 // TODO: Switch to database storage when we have a proper database setup
-export const storage = new MemStorage();
+export const storage = dbStorage;
