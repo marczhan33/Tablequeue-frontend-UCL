@@ -277,7 +277,7 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
                   <Label>Choose Arrival Time</Label>
                   <div className="grid grid-cols-3 gap-2 mt-2">
                     {timeSlots.map((time) => {
-                      const discount = getTimeSlotIncentive(time);
+                      const discount = getTimeSlotDiscount(time);
                       return (
                         <div
                           key={time}
@@ -291,7 +291,7 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
                           <div className="font-medium">{time}</div>
                           {discount > 0 && (
                             <div className="text-xs text-green-600 font-semibold mt-1">
-                              {discount}% Off
+                              {discount}% OFF
                             </div>
                           )}
                         </div>
