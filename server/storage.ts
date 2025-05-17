@@ -9,7 +9,7 @@ import {
   type WaitStatus, type WaitlistStatus
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, like, or, gte, lte } from "drizzle-orm";
+import { eq, like, or, gte, lte, and, sql } from "drizzle-orm";
 
 // Define the storage interface
 export interface IStorage {
@@ -309,20 +309,20 @@ export class DatabaseStorage implements IStorage {
   
   // Analytics operations
   async getDailyAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<DailyAnalytics[]> {
-    let query = db
-      .select()
-      .from(dailyAnalytics)
-      .where(eq(dailyAnalytics.restaurantId, restaurantId));
+    let conditions = [eq(dailyAnalytics.restaurantId, restaurantId)];
     
     if (startDate) {
-      query = query.where(gte(dailyAnalytics.date, startDate.toISOString().split('T')[0]));
+      conditions.push(gte(dailyAnalytics.date, startDate.toISOString().split('T')[0]));
     }
     
     if (endDate) {
-      query = query.where(lte(dailyAnalytics.date, endDate.toISOString().split('T')[0]));
+      conditions.push(lte(dailyAnalytics.date, endDate.toISOString().split('T')[0]));
     }
     
-    return query;
+    return db
+      .select()
+      .from(dailyAnalytics)
+      .where(and(...conditions));
   }
   
   async getHourlyAnalytics(restaurantId: number, date: Date): Promise<HourlyAnalytics[]> {
@@ -331,25 +331,27 @@ export class DatabaseStorage implements IStorage {
     return db
       .select()
       .from(hourlyAnalytics)
-      .where(eq(hourlyAnalytics.restaurantId, restaurantId))
-      .where(eq(hourlyAnalytics.date, formattedDate));
+      .where(and(
+        eq(hourlyAnalytics.restaurantId, restaurantId),
+        eq(hourlyAnalytics.date, formattedDate)
+      ));
   }
   
   async getTableAnalytics(restaurantId: number, startDate?: Date, endDate?: Date): Promise<TableAnalytics[]> {
-    let query = db
-      .select()
-      .from(tableAnalytics)
-      .where(eq(tableAnalytics.restaurantId, restaurantId));
+    let conditions = [eq(tableAnalytics.restaurantId, restaurantId)];
     
     if (startDate) {
-      query = query.where(gte(tableAnalytics.date, startDate.toISOString().split('T')[0]));
+      conditions.push(gte(tableAnalytics.date, startDate.toISOString().split('T')[0]));
     }
     
     if (endDate) {
-      query = query.where(lte(tableAnalytics.date, endDate.toISOString().split('T')[0]));
+      conditions.push(lte(tableAnalytics.date, endDate.toISOString().split('T')[0]));
     }
     
-    return query;
+    return db
+      .select()
+      .from(tableAnalytics)
+      .where(and(...conditions));
   }
   
   async createDailyAnalytics(data: InsertDailyAnalytics): Promise<DailyAnalytics> {
@@ -386,24 +388,26 @@ export class DatabaseStorage implements IStorage {
     const entries = await db
       .select()
       .from(waitlistEntries)
-      .where(eq(waitlistEntries.restaurantId, restaurantId))
-      .where(gte(waitlistEntries.createdAt, startOfDay))
-      .where(lte(waitlistEntries.createdAt, endOfDay));
+      .where(and(
+        eq(waitlistEntries.restaurantId, restaurantId),
+        gte(sql`${waitlistEntries.createdAt}`, startOfDay),
+        lte(sql`${waitlistEntries.createdAt}`, endOfDay)
+      ));
     
     if (entries.length === 0) {
       return false;
     }
     
     // Process data for daily analytics
-    const totalCustomers = entries.reduce((sum, entry) => sum + entry.partySize, 0);
+    const totalCustomers = entries.reduce((sum: number, entry: WaitlistEntry) => sum + entry.partySize, 0);
     const totalParties = entries.length;
     const averagePartySize = totalParties > 0 ? totalCustomers / totalParties : 0;
-    const waitTimes = entries.map(entry => entry.estimatedWaitTime);
+    const waitTimes = entries.map((entry: WaitlistEntry) => entry.estimatedWaitTime);
     const averageWaitTime = waitTimes.length > 0 
-      ? waitTimes.reduce((sum, time) => sum + time, 0) / waitTimes.length 
+      ? waitTimes.reduce((sum: number, time: number) => sum + time, 0) / waitTimes.length 
       : 0;
     const peakWaitTime = waitTimes.length > 0 ? Math.max(...waitTimes) : 0;
-    const cancelledWaitlist = entries.filter(entry => entry.status === 'cancelled').length;
+    const cancelledWaitlist = entries.filter((entry: WaitlistEntry) => entry.status === 'cancelled').length;
     
     // Create daily analytics record
     await this.createDailyAnalytics({

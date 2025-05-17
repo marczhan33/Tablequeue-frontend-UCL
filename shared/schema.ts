@@ -1,4 +1,5 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time, primaryKey } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -15,6 +16,8 @@ export const users = pgTable("users", {
   verificationExpires: timestamp("verification_expires"),
   createdAt: timestamp("created_at").defaultNow(),
 });
+
+// Relations will be defined after all tables
 
 // Table types for restaurants
 export const tableTypes = pgTable("table_types", {
