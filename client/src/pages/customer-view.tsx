@@ -142,8 +142,38 @@ const CustomerView = () => {
         return false;
       }
       
-      // Near Me filter would require user's location - for now, just passing through
-      // In a real implementation, we would get user's location and filter by distance
+      // Apply Near Me filter - show restaurants within 700 meters (0.7 km)
+      if (filters.nearMe && userLocation) {
+        try {
+          const restaurantLat = parseFloat(restaurant.latitude);
+          const restaurantLng = parseFloat(restaurant.longitude);
+          
+          // Check for valid coordinates
+          if (isNaN(restaurantLat) || isNaN(restaurantLng)) {
+            console.warn(`Invalid coordinates for restaurant ${restaurant.name}`);
+            return false;
+          }
+          
+          // Calculate distance between user and restaurant
+          const distance = calculateDistance(
+            userLocation.lat, 
+            userLocation.lng, 
+            restaurantLat, 
+            restaurantLng
+          );
+          
+          // Only show restaurants within 0.7 km (700 meters)
+          if (distance > 0.7) {
+            return false;
+          }
+          
+          // Add distance info to restaurant for display purposes
+          (restaurant as any).distance = distance;
+        } catch (error) {
+          console.error("Error calculating distance:", error);
+          return false;
+        }
+      }
       
       return true;
     });

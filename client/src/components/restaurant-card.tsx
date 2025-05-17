@@ -10,11 +10,22 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
   // Format price range to display correct number of $ symbols
   const getPriceRangeSymbols = (priceRange: string) => priceRange;
   
-  // Format distance (in a real app, would calculate based on user location)
+  // Format distance based on calculated distance (when available)
   const getFormattedDistance = (restaurant: Restaurant) => {
-    // This would be calculated based on user's location
-    // For demo purposes, return a random distance
-    return `${(Math.random() * 2).toFixed(1)} miles away`;
+    // Check if distance property has been added by the "Near Me" filter
+    const distance = (restaurant as any).distance;
+    
+    if (typeof distance === 'number') {
+      // Convert kilometers to meters for distances less than 1km
+      if (distance < 1) {
+        return `${Math.round(distance * 1000)} meters away`;
+      }
+      // Otherwise show in kilometers with 1 decimal place
+      return `${distance.toFixed(1)} km away`;
+    }
+    
+    // If no distance available, don't show distance
+    return "";
   };
   
   // Get formatted wait time text
@@ -61,7 +72,8 @@ const RestaurantCard = ({ restaurant }: RestaurantCardProps) => {
           <WaitTimeBadge status={restaurant.currentWaitStatus as any} />
         </div>
         <p className="text-gray-600 text-sm mb-3">
-          {restaurant.cuisine} • {getPriceRangeSymbols(restaurant.priceRange)} • {getFormattedDistance(restaurant)}
+          {restaurant.cuisine} • {getPriceRangeSymbols(restaurant.priceRange)} 
+          {getFormattedDistance(restaurant) && ` • ${getFormattedDistance(restaurant)}`}
         </p>
         <div className="flex items-center text-sm text-gray-500 mb-4">
           <svg 
