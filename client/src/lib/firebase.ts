@@ -21,17 +21,22 @@ console.log('Firebase config status:', {
   appIdExists: !!appId
 });
 
-if (!apiKey || !projectId || !appId) {
-  console.error('Firebase configuration is missing required values. Please check environment variables.');
+// Flag to determine if we're using demo mode (when Firebase credentials are missing)
+export const isDemoMode = !apiKey || !projectId || !appId;
+
+// Warn about missing configuration but don't block app functionality
+if (isDemoMode) {
+  console.warn('Firebase configuration is incomplete. The app will run in demo mode with simulated authentication.');
 }
 
 const firebaseConfig = {
-  apiKey,
-  authDomain: `${projectId}.firebaseapp.com`,
-  projectId,
-  storageBucket: `${projectId}.appspot.com`,
-  messagingSenderId: "", // Optional, will be added later if needed
-  appId,
+  // Use provided values or fallbacks for demo mode
+  apiKey: apiKey || 'demo-api-key',
+  authDomain: projectId ? `${projectId}.firebaseapp.com` : 'demo-project.firebaseapp.com',
+  projectId: projectId || 'demo-project-id',
+  storageBucket: projectId ? `${projectId}.appspot.com` : 'demo-project.appspot.com',
+  messagingSenderId: "",
+  appId: appId || 'demo-app-id',
 };
 
 // Initialize Firebase - handle potential duplicate app errors
