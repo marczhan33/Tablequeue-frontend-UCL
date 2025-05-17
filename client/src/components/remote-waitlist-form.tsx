@@ -55,8 +55,13 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
 
   const onSubmit = async (values: RemoteWaitlistFormValues) => {
     try {
-      // Add expected arrival time for scheduled entries
-      let formattedValues = { ...values };
+      // Add expected arrival time and estimated wait time for entries
+      let formattedValues = { 
+        ...values,
+        partySize: Number(values.partySize),
+        // Add estimatedWaitTime to meet database requirement
+        estimatedWaitTime: getEstimatedWaitTimeMinutes(restaurant.currentWaitStatus)
+      };
       
       // If this is a scheduled entry, set the expected arrival time
       if (isScheduled && selectedTime) {
@@ -319,6 +324,21 @@ function getWaitTimeText(status: string): string {
       return '60+ minutes';
     default:
       return 'Unknown';
+  }
+}
+
+function getEstimatedWaitTimeMinutes(status: string): number {
+  switch (status) {
+    case 'available':
+      return 5;
+    case 'short':
+      return 20;
+    case 'long':
+      return 45;
+    case 'very_long':
+      return 75;
+    default:
+      return 15; // Default 15 minute wait
   }
 }
 
