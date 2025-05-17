@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -142,21 +142,27 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     }
   };
 
-  // Generate time options with fixed discounts
-  const generateTimeOptionsWithDiscount = () => {
-    // Default times with pre-calculated discounts
+  // Fetch promotional offers for time slots
+  const fetchPromotionalOffers = useCallback(() => {
+    // In a real app, this would fetch from restaurant.promotionalOffers or an API
+    // For now, we'll generate consistent offers based on the time slot
     const timesWithDiscount = [];
     
     // Morning/early afternoon (off-peak, higher discounts)
     for (let hour = 11; hour <= 15; hour++) {
-      timesWithDiscount.push({ time: `${hour}:00`, discount: Math.floor(Math.random() * 10) + 10 }); // 10-20% off
-      timesWithDiscount.push({ time: `${hour}:30`, discount: Math.floor(Math.random() * 10) + 10 });
+      // Generate a stable discount based on hour to prevent random changes
+      const morningDiscount = hour < 13 ? (hour * 2) % 10 + 12 : ((hour * 3) % 8) + 12;
+      const noonDiscount = hour < 13 ? (hour * 3) % 8 + 10 : ((hour * 2) % 7) + 15;
+      
+      timesWithDiscount.push({ time: `${hour}:00`, discount: morningDiscount });
+      timesWithDiscount.push({ time: `${hour}:30`, discount: noonDiscount });
     }
     
-    // Peak dinner hours (lower or no discounts)
+    // Peak dinner hours (lower discounts)
     for (let hour = 16; hour <= 20; hour++) {
-      const earlyDiscount = hour < 18 ? Math.floor(Math.random() * 5) : 0; // Early dinner might have small discount
-      const lateDiscount = hour > 19 ? Math.floor(Math.random() * 5) : 0;  // Late dinner might have small discount
+      // Peak hours have lower but consistent discounts
+      const earlyDiscount = hour === 16 ? 3 : hour === 17 ? 2 : 0; 
+      const lateDiscount = hour === 19 ? 2 : hour === 20 ? 3 : 0;
       
       timesWithDiscount.push({ time: `${hour}:00`, discount: earlyDiscount });
       timesWithDiscount.push({ time: `${hour}:30`, discount: lateDiscount });
@@ -164,15 +170,18 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     
     // Late night (higher discounts again)
     for (let hour = 21; hour <= 22; hour++) {
-      timesWithDiscount.push({ time: `${hour}:00`, discount: Math.floor(Math.random() * 10) + 5 }); // 5-15% off
-      timesWithDiscount.push({ time: `${hour}:30`, discount: Math.floor(Math.random() * 10) + 5 });
+      const lateDiscount = hour === 21 ? 9 : 8;
+      const veryLateDiscount = hour === 21 ? 5 : 8;
+      
+      timesWithDiscount.push({ time: `${hour}:00`, discount: lateDiscount });
+      timesWithDiscount.push({ time: `${hour}:30`, discount: veryLateDiscount });
     }
     
     return timesWithDiscount;
-  };
+  }, []);
 
-  // Generate time options and their discounts once when component mounts
-  const [timeOptions] = useState(generateTimeOptionsWithDiscount());
+  // Generate time options with their discounts
+  const [timeOptions] = useState(fetchPromotionalOffers());
 
   return (
     <Card className="w-full max-w-lg mx-auto">
