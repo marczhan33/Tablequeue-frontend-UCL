@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -25,6 +25,7 @@ const remoteWaitlistFormSchema = z.object({
   email: z.string().email('Valid email required for confirmation').optional(),
   dietaryRequirements: z.string().optional(),
   notes: z.string().optional(),
+  expectedArrivalTime: z.string().optional(),
 });
 
 type RemoteWaitlistFormValues = z.infer<typeof remoteWaitlistFormSchema>;
@@ -36,6 +37,7 @@ interface RemoteWaitlistFormProps {
 }
 
 export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false }: RemoteWaitlistFormProps) => {
+  const [selectedTime, setSelectedTime] = useState<string>('');
   const form = useForm<RemoteWaitlistFormValues>({
     resolver: zodResolver(remoteWaitlistFormSchema),
     defaultValues: {
@@ -45,6 +47,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
       email: '',
       dietaryRequirements: '',
       notes: '',
+      expectedArrivalTime: '',
     },
   });
 
@@ -52,11 +55,34 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
 
   const onSubmit = async (values: RemoteWaitlistFormValues) => {
     try {
+      // Add expected arrival time for scheduled entries
+      let formattedValues = { ...values };
+      
+      // If this is a scheduled entry, set the expected arrival time
+      if (isScheduled && selectedTime) {
+        // Create a date object for today with the selected time
+        const today = new Date();
+        const [hours, minutes] = selectedTime.split(':').map(Number);
+        
+        today.setHours(hours, minutes, 0, 0);
+        formattedValues.expectedArrivalTime = today.toISOString();
+      } else {
+        // For immediate entries, set expected arrival time to now + 15 minutes
+        const arrivalTime = new Date();
+        arrivalTime.setMinutes(arrivalTime.getMinutes() + 15);
+        formattedValues.expectedArrivalTime = arrivalTime.toISOString();
+      }
+      
       // Submit remote waitlist entry
       const response = await apiRequest(
         `/api/restaurants/${restaurant.id}/remote-waitlist`,
-        { method: 'POST', body: values }
+        { method: 'POST', body: formattedValues }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to join waitlist');
+      }
 
       const data = await response.json();
       toast({
@@ -70,12 +96,12 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
       
       form.reset();
     } catch (error) {
+      console.error('Error submitting remote waitlist form:', error);
       toast({
         title: 'Error',
-        description: 'An error occurred while joining the waitlist',
+        description: error instanceof Error ? error.message : 'An error occurred while joining the waitlist',
         variant: 'destructive',
       });
-      console.error('Error submitting remote waitlist form:', error);
     }
   };
 
@@ -108,22 +134,31 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
             <div className="mt-4">
               <h3 className="text-lg font-medium mb-3">Choose Arrival Time</h3>
               <div className="grid grid-cols-3 gap-2">
-                {[
-                  { time: '23:15', discount: '5% OFF' },
-                  { time: '23:30', discount: '15% OFF' },
-                  { time: '23:45', discount: '13% OFF' },
-                  { time: '24:00', discount: '16% OFF' },
-                  { time: '24:15', discount: '13% OFF' },
-                  { time: '24:30', discount: '9% OFF' },
-                  { time: '24:45', discount: '9% OFF' },
-                  { time: '25:00', discount: '15% OFF' },
-                  { time: '25:15', discount: '13% OFF' }
-                ].map((slot) => (
-                  <div key={slot.time} className="border rounded-md p-2 text-center cursor-pointer hover:border-primary">
-                    <div>{slot.time}</div>
-                    <div className="text-green-600 text-sm font-medium">{slot.discount}</div>
-                  </div>
-                ))}
+                {timeOptions.map((time) => {
+                  // Calculate discount as an example
+                  // In a real app, this would come from the demand prediction algorithm
+                  const hour = parseInt(time.split(':')[0]);
+                  const discount = hour < 17 || hour > 20 ? Math.floor(Math.random() * 15) + 5 : 0;
+                  
+                  return (
+                    <div 
+                      key={time} 
+                      onClick={() => setSelectedTime(time)}
+                      className={`border rounded-md p-2 text-center cursor-pointer transition-colors ${
+                        selectedTime === time 
+                          ? "border-primary bg-primary/10" 
+                          : "hover:border-primary/50"
+                      }`}
+                    >
+                      <div className="font-medium">{time}</div>
+                      {discount > 0 && (
+                        <div className="text-green-600 text-xs font-semibold mt-1">
+                          {discount}% OFF
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}
@@ -235,9 +270,18 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
               )}
             />
             
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button 
+              type="submit" 
+              className="w-full" 
+              disabled={isSubmitting || (isScheduled && !selectedTime)}
+            >
               {isSubmitting ? 'Submitting...' : isScheduled ? 'Schedule Arrival' : 'Join Queue Now'}
             </Button>
+            {isScheduled && !selectedTime && (
+              <p className="text-center text-xs text-red-500 mt-2">
+                Please select an arrival time above
+              </p>
+            )}
             {isScheduled && (
               <p className="text-center text-sm text-muted-foreground mt-2">
                 Schedule a future arrival to reduce your wait time and get special offers
