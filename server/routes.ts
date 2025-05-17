@@ -1504,6 +1504,75 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Time slot promotions API endpoints
+  apiRouter.get("/restaurants/:id/promotions", async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const promotions = await storage.getTimeSlotPromotions(restaurantId);
+      res.json(promotions);
+    } catch (error) {
+      console.error("Error getting time slot promotions:", error);
+      res.status(500).json({ error: "Failed to get promotional offers" });
+    }
+  });
+  
+  apiRouter.post("/restaurants/:id/promotions", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      // Check if user is authorized to manage this restaurant
+      if (!req.user) {
+        return res.status(401).json({ error: "Not authenticated" });
+      }
+      
+      if (req.user.role !== 'admin') {
+        const isOwner = await isRestaurantOwner(req.user.id, restaurantId);
+        if (!isOwner) {
+          return res.status(403).json({ error: "Unauthorized to manage this restaurant's promotions" });
+        }
+      }
+      
+      // Validate request body
+      const schema = z.object({
+        promotions: z.array(
+          z.object({
+            time: z.string(), // Format: "HH:MM"
+            discount: z.number().min(0).max(100)
+          })
+        )
+      });
+      
+      const validated = schema.parse(req.body);
+      
+      // Format the promotions for storage
+      const formattedPromotions = validated.promotions.map(p => ({
+        timeSlot: p.time,
+        discount: p.discount
+      }));
+      
+      // Create/update the promotions
+      const savedPromotions = await storage.createTimeSlotPromotions(restaurantId, formattedPromotions);
+      
+      res.json({
+        success: true,
+        promotions: savedPromotions
+      });
+    } catch (error) {
+      console.error("Error saving time slot promotions:", error);
+      res.status(400).json({ 
+        error: "Failed to save promotional offers",
+        details: error instanceof Error ? error.message : "Unknown error"
+      });
+    }
+  });
+
   // Register all routes with /api prefix
   app.use("/api", apiRouter);
   

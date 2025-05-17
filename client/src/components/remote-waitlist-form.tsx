@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -143,16 +143,35 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
   };
 
   // Fetch promotional offers for time slots
-  const fetchPromotionalOffers = useCallback(() => {
-    // In a real app, this would fetch from restaurant.promotionalOffers or an API
-    // For now, we'll generate consistent offers based on the time slot
+  const fetchPromotionalOffers = useCallback(async () => {
+    try {
+      // Try to get real promotional offers from the API
+      const response = await fetch(`/api/restaurants/${restaurant.id}/promotions`);
+      
+      if (response.ok) {
+        const promotions = await response.json();
+        
+        // If we have real promotions, use them
+        if (promotions && promotions.length > 0) {
+          return promotions.map((p: {timeSlot: string, discount: number}) => ({
+            time: p.timeSlot,
+            discount: p.discount
+          }));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching promotional offers:", error);
+    }
+    
+    // Fallback to consistent default promotional offers if API fails
+    // or there are no configured promotions for this restaurant
     const timesWithDiscount = [];
     
     // Morning/early afternoon (off-peak, higher discounts)
     for (let hour = 11; hour <= 15; hour++) {
-      // Generate a stable discount based on hour to prevent random changes
-      const morningDiscount = hour < 13 ? (hour * 2) % 10 + 12 : ((hour * 3) % 8) + 12;
-      const noonDiscount = hour < 13 ? (hour * 3) % 8 + 10 : ((hour * 2) % 7) + 15;
+      // Generate consistent discounts based on hour
+      const morningDiscount = 15; // 15% discount for morning slots
+      const noonDiscount = hour >= 12 && hour <= 13 ? 5 : 15; // Lower discount during lunch rush
       
       timesWithDiscount.push({ time: `${hour}:00`, discount: morningDiscount });
       timesWithDiscount.push({ time: `${hour}:30`, discount: noonDiscount });
@@ -160,9 +179,9 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     
     // Peak dinner hours (lower discounts)
     for (let hour = 16; hour <= 20; hour++) {
-      // Peak hours have lower but consistent discounts
-      const earlyDiscount = hour === 16 ? 3 : hour === 17 ? 2 : 0; 
-      const lateDiscount = hour === 19 ? 2 : hour === 20 ? 3 : 0;
+      // Peak hours have lower discounts
+      const earlyDiscount = hour === 16 ? 5 : hour === 17 ? 0 : 0; 
+      const lateDiscount = hour === 19 ? 0 : hour === 20 ? 5 : 0;
       
       timesWithDiscount.push({ time: `${hour}:00`, discount: earlyDiscount });
       timesWithDiscount.push({ time: `${hour}:30`, discount: lateDiscount });
@@ -170,18 +189,27 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     
     // Late night (higher discounts again)
     for (let hour = 21; hour <= 22; hour++) {
-      const lateDiscount = hour === 21 ? 9 : 8;
-      const veryLateDiscount = hour === 21 ? 5 : 8;
+      const lateDiscount = 10; // 10% discount for late night
       
       timesWithDiscount.push({ time: `${hour}:00`, discount: lateDiscount });
-      timesWithDiscount.push({ time: `${hour}:30`, discount: veryLateDiscount });
+      timesWithDiscount.push({ time: `${hour}:30`, discount: lateDiscount });
     }
     
     return timesWithDiscount;
   }, []);
 
-  // Generate time options with their discounts
-  const [timeOptions] = useState(fetchPromotionalOffers());
+  // State for time options with their discounts  
+  const [timeOptions, setTimeOptions] = useState<{time: string, discount: number}[]>([]);
+  
+  // Load time options on component mount
+  useEffect(() => {
+    const loadTimeOptions = async () => {
+      const options = await fetchPromotionalOffers();
+      setTimeOptions(options);
+    };
+    
+    loadTimeOptions();
+  }, [fetchPromotionalOffers]);
 
   return (
     <Card className="w-full max-w-lg mx-auto">
