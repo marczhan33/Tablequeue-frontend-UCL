@@ -52,9 +52,33 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [timeSlotPromotions, setTimeSlotPromotions] = useState<{ timeSlot: string; discount: number }[]>([]);
+  const [isLoadingPromotions, setIsLoadingPromotions] = useState(false);
   const { toast } = useToast();
 
-  // Generate available time slots in 15-minute increments
+  // Fetch time slot promotions from the API
+  React.useEffect(() => {
+    const fetchPromotions = async () => {
+      setIsLoadingPromotions(true);
+      try {
+        const response = await fetch(`/api/restaurants/${restaurant.id}/promotions`);
+        if (response.ok) {
+          const data = await response.json();
+          setTimeSlotPromotions(data);
+        } else {
+          console.error("Failed to fetch promotions:", await response.text());
+        }
+      } catch (error) {
+        console.error("Error fetching promotions:", error);
+      } finally {
+        setIsLoadingPromotions(false);
+      }
+    };
+
+    fetchPromotions();
+  }, [restaurant.id]);
+
+  // Generate available time slots in 30-minute increments
   // starting from current time, for the next 2 hours
   const generateTimeSlots = () => {
     const slots = [];
@@ -62,8 +86,8 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     
-    // Round to next 15-minute increment
-    let minuteIncrement = Math.ceil(currentMinute / 15) * 15;
+    // Round to next 30-minute increment
+    let minuteIncrement = Math.ceil(currentMinute / 30) * 30;
     let hourToUse = currentHour;
     if (minuteIncrement === 60) {
       hourToUse += 1;
@@ -72,7 +96,7 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
     
     // Generate slots
     for (let hour = hourToUse; hour < hourToUse + 3; hour++) {
-      for (let minute = 0; minute < 60; minute += 15) {
+      for (let minute = 0; minute < 60; minute += 30) {
         // Skip past time slots
         if (hour === hourToUse && minute < minuteIncrement) continue;
         
@@ -139,16 +163,13 @@ export function DigitalQueue({ restaurant, partySize = 2, onQueueJoin }: Digital
     }
   };
 
-  // Calculate discounts or incentives based on time slot
-  // (This would normally come from the demand shifting algorithm)
-  const getTimeSlotIncentive = (timeSlot: string) => {
-    const hour = parseInt(timeSlot.split(":")[0]);
+  // Get the discount for a specific time slot from our fetched promotions
+  const getTimeSlotDiscount = (timeSlot: string) => {
+    // Find the matching promotion for this time slot
+    const promotion = timeSlotPromotions.find(p => p.timeSlot === timeSlot);
     
-    // Example logic - off-peak hours get discounts
-    if (hour < 17 || hour > 20) { // Before 5pm or after 8pm
-      return Math.floor(Math.random() * 15) + 5; // 5-20% discount
-    }
-    return 0;
+    // Return the discount percentage if found, otherwise 0
+    return promotion ? promotion.discount : 0;
   };
 
   return (
