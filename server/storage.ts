@@ -759,6 +759,64 @@ const dbStorage = new DatabaseStorage();
 // Keeping the in-memory storage implementation for reference
 // We're now using the database implementation
 export class MemStorage implements IStorage {
+  // Time slot promotion operations
+  async getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]> {
+    const promotions: TimeSlotPromotion[] = [];
+    
+    for (const promo of this.timeSlotPromotionsData.values()) {
+      if (promo.restaurantId === restaurantId) {
+        promotions.push(promo);
+      }
+    }
+    
+    return promotions;
+  }
+  
+  async updateTimeSlotPromotion(restaurantId: number, timeSlot: string, discount: number): Promise<TimeSlotPromotion> {
+    // Try to find existing promotion
+    let existingPromo: TimeSlotPromotion | undefined;
+    
+    for (const promo of this.timeSlotPromotionsData.values()) {
+      if (promo.restaurantId === restaurantId && promo.timeSlot === timeSlot) {
+        existingPromo = promo;
+        break;
+      }
+    }
+    
+    if (existingPromo) {
+      // Update existing promotion
+      const updatedPromo = {
+        ...existingPromo,
+        discount
+      };
+      this.timeSlotPromotionsData.set(existingPromo.id, updatedPromo);
+      return updatedPromo;
+    } else {
+      // Create new promotion
+      const id = this.timeSlotPromotionCurrentId++;
+      const newPromo: TimeSlotPromotion = {
+        id,
+        restaurantId,
+        timeSlot,
+        discount,
+        isActive: true,
+        createdAt: new Date()
+      };
+      this.timeSlotPromotionsData.set(id, newPromo);
+      return newPromo;
+    }
+  }
+  
+  async createTimeSlotPromotions(restaurantId: number, promotions: {timeSlot: string, discount: number}[]): Promise<TimeSlotPromotion[]> {
+    const result: TimeSlotPromotion[] = [];
+    
+    for (const { timeSlot, discount } of promotions) {
+      const promo = await this.updateTimeSlotPromotion(restaurantId, timeSlot, discount);
+      result.push(promo);
+    }
+    
+    return result;
+  }
   private users: Map<number, User>;
   private restaurants: Map<number, Restaurant>;
   private tableTypes: Map<number, TableType>;
@@ -768,6 +826,7 @@ export class MemStorage implements IStorage {
   private dailyAnalyticsData: Map<number, DailyAnalytics>;
   private hourlyAnalyticsData: Map<number, HourlyAnalytics>;
   private tableAnalyticsData: Map<number, TableAnalytics>;
+  private timeSlotPromotionsData: Map<number, TimeSlotPromotion>; // Store time slot promotions
   
   private userCurrentId: number;
   private restaurantCurrentId: number;
@@ -776,6 +835,7 @@ export class MemStorage implements IStorage {
   private dailyAnalyticsCurrentId: number;
   private hourlyAnalyticsCurrentId: number;
   private tableAnalyticsCurrentId: number;
+  private timeSlotPromotionCurrentId: number;
 
   constructor() {
     this.users = new Map();
@@ -787,6 +847,7 @@ export class MemStorage implements IStorage {
     this.dailyAnalyticsData = new Map();
     this.hourlyAnalyticsData = new Map();
     this.tableAnalyticsData = new Map();
+    this.timeSlotPromotionsData = new Map();
     
     this.userCurrentId = 1;
     this.restaurantCurrentId = 1;
@@ -795,6 +856,7 @@ export class MemStorage implements IStorage {
     this.dailyAnalyticsCurrentId = 1;
     this.hourlyAnalyticsCurrentId = 1;
     this.tableAnalyticsCurrentId = 1;
+    this.timeSlotPromotionCurrentId = 1;
     
     // Initialize with some sample data
     this.initSampleData();
