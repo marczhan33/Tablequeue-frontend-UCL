@@ -105,18 +105,37 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
     }
   };
 
-  // Generate time options from restaurant opening hours
-  const generateTimeOptions = () => {
-    // Default times if no operating hours available
-    const times = [];
-    for (let hour = 11; hour <= 22; hour++) {
-      times.push(`${hour}:00`);
-      times.push(`${hour}:30`);
+  // Generate time options with fixed discounts
+  const generateTimeOptionsWithDiscount = () => {
+    // Default times with pre-calculated discounts
+    const timesWithDiscount = [];
+    
+    // Morning/early afternoon (off-peak, higher discounts)
+    for (let hour = 11; hour <= 15; hour++) {
+      timesWithDiscount.push({ time: `${hour}:00`, discount: Math.floor(Math.random() * 10) + 10 }); // 10-20% off
+      timesWithDiscount.push({ time: `${hour}:30`, discount: Math.floor(Math.random() * 10) + 10 });
     }
-    return times;
+    
+    // Peak dinner hours (lower or no discounts)
+    for (let hour = 16; hour <= 20; hour++) {
+      const earlyDiscount = hour < 18 ? Math.floor(Math.random() * 5) : 0; // Early dinner might have small discount
+      const lateDiscount = hour > 19 ? Math.floor(Math.random() * 5) : 0;  // Late dinner might have small discount
+      
+      timesWithDiscount.push({ time: `${hour}:00`, discount: earlyDiscount });
+      timesWithDiscount.push({ time: `${hour}:30`, discount: lateDiscount });
+    }
+    
+    // Late night (higher discounts again)
+    for (let hour = 21; hour <= 22; hour++) {
+      timesWithDiscount.push({ time: `${hour}:00`, discount: Math.floor(Math.random() * 10) + 5 }); // 5-15% off
+      timesWithDiscount.push({ time: `${hour}:30`, discount: Math.floor(Math.random() * 10) + 5 });
+    }
+    
+    return timesWithDiscount;
   };
 
-  const timeOptions = generateTimeOptions();
+  // Generate time options and their discounts once when component mounts
+  const [timeOptions] = useState(generateTimeOptionsWithDiscount());
 
   return (
     <Card className="w-full max-w-lg mx-auto">
@@ -134,31 +153,24 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
             <div className="mt-4">
               <h3 className="text-lg font-medium mb-3">Choose Arrival Time</h3>
               <div className="grid grid-cols-3 gap-2">
-                {timeOptions.map((time) => {
-                  // Calculate discount as an example
-                  // In a real app, this would come from the demand prediction algorithm
-                  const hour = parseInt(time.split(':')[0]);
-                  const discount = hour < 17 || hour > 20 ? Math.floor(Math.random() * 15) + 5 : 0;
-                  
-                  return (
-                    <div 
-                      key={time} 
-                      onClick={() => setSelectedTime(time)}
-                      className={`border rounded-md p-2 text-center cursor-pointer transition-colors ${
-                        selectedTime === time 
-                          ? "border-primary bg-primary/10" 
-                          : "hover:border-primary/50"
-                      }`}
-                    >
-                      <div className="font-medium">{time}</div>
-                      {discount > 0 && (
-                        <div className="text-green-600 text-xs font-semibold mt-1">
-                          {discount}% OFF
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {timeOptions.map((slot) => (
+                  <div 
+                    key={slot.time} 
+                    onClick={() => setSelectedTime(slot.time)}
+                    className={`border rounded-md p-2 text-center cursor-pointer transition-colors ${
+                      selectedTime === slot.time 
+                        ? "border-primary bg-primary/10" 
+                        : "hover:border-primary/50"
+                    }`}
+                  >
+                    <div className="font-medium">{slot.time}</div>
+                    {slot.discount > 0 && (
+                      <div className="text-green-600 text-xs font-semibold mt-1">
+                        {slot.discount}% OFF
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

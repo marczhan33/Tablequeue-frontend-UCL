@@ -513,12 +513,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Convert expected arrival time to Date
       const expectedArrivalTime = new Date(req.body.expectedArrivalTime);
       
+      // Calculate estimated wait time based on current restaurant status
+      let estimatedWaitTime = 15; // Default 15 minutes
+      
+      if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
+        estimatedWaitTime = restaurant.customWaitTime;
+      } else {
+        // Use wait status to estimate wait time
+        switch (restaurant.currentWaitStatus) {
+          case "available":
+            estimatedWaitTime = 5;
+            break;
+          case "short":
+            estimatedWaitTime = 20;
+            break;
+          case "long":
+            estimatedWaitTime = 45;
+            break;
+          case "very_long":
+            estimatedWaitTime = 75;
+            break;
+        }
+      }
+      
       // Create remote waitlist entry
       const entry = await storage.createRemoteWaitlistEntry({
         ...req.body,
         restaurantId: id,
         isRemote: true,
-        expectedArrivalTime
+        expectedArrivalTime,
+        estimatedWaitTime
       });
       
       res.status(201).json(entry);
