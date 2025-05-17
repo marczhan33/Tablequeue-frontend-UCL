@@ -3,6 +3,7 @@ import { WaitStatus } from "@shared/schema";
 import GoogleMap from "@/components/ui/google-map";
 import { DemandForecastDisplay } from "@/components/restaurant/demand-forecast-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RestaurantPromoManager } from "@/components/restaurant-promo-manager";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -148,10 +149,11 @@ const DemoDashboard = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="w-full grid grid-cols-2 md:grid-cols-5 gap-1 mb-6">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 gap-1 mb-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
           <TabsTrigger value="tables">Tables</TabsTrigger>
+          <TabsTrigger value="promotions">Promotions</TabsTrigger>
           <TabsTrigger value="optimization">Wait Optimization</TabsTrigger>
           <TabsTrigger value="qrcode">QR Code</TabsTrigger>
         </TabsList>
@@ -494,6 +496,28 @@ const DemoDashboard = () => {
           
           {/* Demand Forecast and Table Optimization */}
           <DemandForecastDisplay restaurantId={DEMO_RESTAURANT.id} />
+        </TabsContent>
+        
+        <TabsContent value="promotions">
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Promotional Time Slot Offers</h3>
+            <p className="mb-4 text-gray-600">
+              Set percentage discounts for different time slots to encourage customers to book during off-peak hours. 
+              This helps balance demand throughout the day and maximize your restaurant's capacity.
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm mb-6">
+              <h4 className="font-medium text-blue-800 mb-1">Promotion Strategy Tips</h4>
+              <ul className="list-disc list-inside text-blue-700 space-y-1">
+                <li>Offer higher discounts (15-20%) during traditionally slow periods</li>
+                <li>Consider small discounts (5-10%) during shoulder periods just before or after peak times</li>
+                <li>Promotions automatically appear to customers when they book through the remote waitlist</li>
+                <li>Track the impact of promotions by monitoring customer distribution across time slots</li>
+              </ul>
+            </div>
+            
+            <RestaurantPromoManager restaurantId={DEMO_RESTAURANT.id} />
+          </div>
         </TabsContent>
         
         <TabsContent value="qrcode">
