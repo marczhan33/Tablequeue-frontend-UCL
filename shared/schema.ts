@@ -31,6 +31,16 @@ export const tableTypes = pgTable("table_types", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Time slot promotion table for restaurants
+export const timeSlotPromotions = pgTable("time_slot_promotions", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull(),
+  timeSlot: text("time_slot").notNull(), // Format: "HH:MM"
+  discount: integer("discount").notNull().default(0), // Percentage discount (0-100)
+  isActive: boolean("is_active").notNull().default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Restaurant table
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
@@ -261,6 +271,13 @@ export const usersRelations = relations(users, ({ many }) => ({
 }));
 
 // Restaurant relations
+export const timeSlotPromotionsRelations = relations(timeSlotPromotions, ({ one }) => ({
+  restaurant: one(restaurants, {
+    fields: [timeSlotPromotions.restaurantId],
+    references: [restaurants.id]
+  })
+}));
+
 export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   owner: one(users, {
     fields: [restaurants.userId],
@@ -271,6 +288,7 @@ export const restaurantsRelations = relations(restaurants, ({ one, many }) => ({
   dailyAnalytics: many(dailyAnalytics),
   hourlyAnalytics: many(hourlyAnalytics),
   tableAnalytics: many(tableAnalytics),
+  timeSlotPromotions: many(timeSlotPromotions),
 }));
 
 // Table type relations

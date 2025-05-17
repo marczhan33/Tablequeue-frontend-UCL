@@ -3,6 +3,7 @@ import {
   restaurants, type Restaurant, type InsertRestaurant,
   waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
   tableTypes, type TableType, type InsertTableType,
+  timeSlotPromotions,
   dailyAnalytics, type DailyAnalytics, type InsertDailyAnalytics,
   hourlyAnalytics, type HourlyAnalytics, type InsertHourlyAnalytics,
   tableAnalytics, type TableAnalytics, type InsertTableAnalytics,
@@ -12,6 +13,10 @@ import { db } from "./db";
 import { eq, like, or, gte, lte, and, sql } from "drizzle-orm";
 
 // Define the storage interface
+// Define TimeSlotPromotion type from schema
+type TimeSlotPromotion = typeof timeSlotPromotions.$inferSelect;
+type InsertTimeSlotPromotion = typeof timeSlotPromotions.$inferInsert;
+
 export interface IStorage {
   // User operations
   getUser(id: number): Promise<User | undefined>;
@@ -29,6 +34,11 @@ export interface IStorage {
     verificationToken?: string | null,
     verificationExpires?: Date | null
   ): Promise<User | undefined>;
+  
+  // Time slot promotion operations
+  getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]>;
+  updateTimeSlotPromotion(restaurantId: number, timeSlot: string, discount: number): Promise<TimeSlotPromotion>;
+  createTimeSlotPromotions(restaurantId: number, promotions: {timeSlot: string, discount: number}[]): Promise<TimeSlotPromotion[]>;
   
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;
@@ -71,6 +81,64 @@ export interface IStorage {
 
 // Database storage implementation
 export class DatabaseStorage implements IStorage {
+  // Time slot promotion operations
+  async getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]> {
+    return await db
+      .select()
+      .from(timeSlotPromotions)
+      .where(eq(timeSlotPromotions.restaurantId, restaurantId));
+  }
+  
+  async updateTimeSlotPromotion(restaurantId: number, timeSlot: string, discount: number): Promise<TimeSlotPromotion> {
+    // First check if it exists
+    const [existing] = await db
+      .select()
+      .from(timeSlotPromotions)
+      .where(
+        and(
+          eq(timeSlotPromotions.restaurantId, restaurantId),
+          eq(timeSlotPromotions.timeSlot, timeSlot)
+        )
+      );
+    
+    if (existing) {
+      // Update existing promotion
+      const [updated] = await db
+        .update(timeSlotPromotions)
+        .set({ discount })
+        .where(
+          and(
+            eq(timeSlotPromotions.restaurantId, restaurantId),
+            eq(timeSlotPromotions.timeSlot, timeSlot)
+          )
+        )
+        .returning();
+      return updated;
+    } else {
+      // Create new promotion
+      const [created] = await db
+        .insert(timeSlotPromotions)
+        .values({
+          restaurantId,
+          timeSlot,
+          discount
+        })
+        .returning();
+      return created;
+    }
+  }
+  
+  async createTimeSlotPromotions(restaurantId: number, promotions: {timeSlot: string, discount: number}[]): Promise<TimeSlotPromotion[]> {
+    const createdPromotions: TimeSlotPromotion[] = [];
+    
+    // Process each promotion
+    for (const { timeSlot, discount } of promotions) {
+      const promotion = await this.updateTimeSlotPromotion(restaurantId, timeSlot, discount);
+      createdPromotions.push(promotion);
+    }
+    
+    return createdPromotions;
+  }
   // User operations
   async getUser(id: number): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.id, id));
