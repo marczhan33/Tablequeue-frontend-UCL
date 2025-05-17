@@ -74,7 +74,7 @@ export const waitlistEntries = pgTable("waitlist_entries", {
   tableTypeId: integer("table_type_id"), // Link to specific table type
   isRemote: boolean("is_remote").default(false), // Whether they joined remotely
   expectedArrivalTime: timestamp("expected_arrival_time"), // When they expect to arrive (for remote guests)
-  confirmationCode: text("confirmation_code"), // Code for remote guests to confirm arrival
+  confirmationCode: text("confirmation_code").notNull().default(() => Math.random().toString(36).substring(2, 8).toUpperCase()), // Code for remote guests to confirm arrival
   createdAt: timestamp("created_at").defaultNow(),
   notifiedAt: timestamp("notified_at"), // When SMS was sent
   notificationSent: boolean("notification_sent").default(false), // Track if notification was successfully sent

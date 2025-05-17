@@ -231,6 +231,13 @@ export class DatabaseStorage implements IStorage {
       .where(eq(waitlistEntries.restaurantId, restaurantId));
   }
   
+  async getWaitlistEntriesByRestaurantId(restaurantId: number): Promise<WaitlistEntry[]> {
+    return db
+      .select()
+      .from(waitlistEntries)
+      .where(eq(waitlistEntries.restaurantId, restaurantId));
+  }
+  
   async getWaitlistEntry(id: number): Promise<WaitlistEntry | undefined> {
     const result = await db
       .select()
@@ -248,6 +255,13 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createWaitlistEntry(entry: InsertWaitlistEntry): Promise<WaitlistEntry> {
+    // Ensure required fields are present
+    if (!entry.queuePosition) {
+      // Get current queue position if not provided
+      const entries = await this.getWaitlistEntriesByRestaurantId(entry.restaurantId);
+      entry.queuePosition = entries.length + 1;
+    }
+    
     const result = await db
       .insert(waitlistEntries)
       .values(entry)
@@ -265,6 +279,18 @@ export class DatabaseStorage implements IStorage {
   }
   
   async createRemoteWaitlistEntry(entry: InsertWaitlistEntry & { isRemote: true, expectedArrivalTime: Date }): Promise<WaitlistEntry> {
+    // Ensure required fields are present
+    if (!entry.queuePosition) {
+      // Get current queue position if not provided
+      const entries = await this.getWaitlistEntriesByRestaurantId(entry.restaurantId);
+      entry.queuePosition = entries.length + 1;
+    }
+    
+    // Generate confirmation code if not provided
+    if (!entry.confirmationCode) {
+      entry.confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    }
+    
     const result = await db
       .insert(waitlistEntries)
       .values(entry)

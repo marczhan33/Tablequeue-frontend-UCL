@@ -21,17 +21,29 @@ console.log('Firebase config status:', {
   appIdExists: !!appId
 });
 
+if (!apiKey || !projectId || !appId) {
+  console.error('Firebase configuration is missing required values. Please check environment variables.');
+}
+
 const firebaseConfig = {
-  apiKey: apiKey,
+  apiKey,
   authDomain: `${projectId}.firebaseapp.com`,
-  projectId: projectId,
+  projectId,
   storageBucket: `${projectId}.appspot.com`,
-  appId: appId,
+  messagingSenderId: "", // Optional, will be added later if needed
+  appId,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Initialize Firebase - handle potential duplicate app errors
+let app;
+try {
+  app = initializeApp(firebaseConfig);
+} catch (error) {
+  // If app already exists, get the existing one
+  console.log("Using existing Firebase app instance");
+}
+
+const auth = getAuth();
 const googleProvider = new GoogleAuthProvider();
 
 // Google sign-in function

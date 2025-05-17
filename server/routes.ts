@@ -536,22 +536,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
       
-      // Get current queue position (number of people in line + 1)
-      const waitlistEntries = await storage.getWaitlistEntriesByRestaurantId(id);
-      const queuePosition = waitlistEntries.length + 1;
-      
-      // Create random confirmation code
-      const confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-      
-      // Create remote waitlist entry
+      // Create remote waitlist entry - storage layer will handle required fields
       const entry = await storage.createRemoteWaitlistEntry({
         ...req.body,
         restaurantId: id,
         isRemote: true,
         expectedArrivalTime,
-        estimatedWaitTime,
-        queuePosition,
-        confirmationCode
+        estimatedWaitTime
       });
       
       res.status(201).json(entry);
