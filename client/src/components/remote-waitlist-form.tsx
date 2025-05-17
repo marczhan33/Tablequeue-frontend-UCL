@@ -17,6 +17,38 @@ import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { Restaurant } from '@shared/schema';
 
+// Helper function to convert wait status to estimated minutes
+function getEstimatedWaitTimeMinutes(status: string): number {
+  switch (status) {
+    case 'available':
+      return 5;
+    case 'short':
+      return 20;
+    case 'long':
+      return 45;
+    case 'very_long':
+      return 75;
+    default:
+      return 15; // Default 15 minute wait
+  }
+}
+
+// Helper function to get text description of wait status
+function getWaitTimeText(status: string): string {
+  switch (status) {
+    case 'available':
+      return 'No wait time';
+    case 'short':
+      return '15-30 minutes';
+    case 'long':
+      return '30+ minutes';
+    case 'very_long':
+      return '60+ minutes';
+    default:
+      return 'Unknown';
+  }
+}
+
 // Form schema for remote waitlist entry
 const remoteWaitlistFormSchema = z.object({
   customerName: z.string().min(2, 'Name is required'),
@@ -312,34 +344,6 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
   );
 };
 
-function getWaitTimeText(status: string): string {
-  switch (status) {
-    case 'available':
-      return 'No wait time';
-    case 'short':
-      return '15-30 minutes';
-    case 'long':
-      return '30+ minutes';
-    case 'very_long':
-      return '60+ minutes';
-    default:
-      return 'Unknown';
-  }
-}
 
-function getEstimatedWaitTimeMinutes(status: string): number {
-  switch (status) {
-    case 'available':
-      return 5;
-    case 'short':
-      return 20;
-    case 'long':
-      return 45;
-    case 'very_long':
-      return 75;
-    default:
-      return 15; // Default 15 minute wait
-  }
-}
 
 export default RemoteWaitlistForm;
