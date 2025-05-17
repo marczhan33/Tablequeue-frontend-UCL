@@ -4,6 +4,15 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 
 export function setupGoogleAuth(app: Express) {
+  // Debug Google auth issues
+  app.get("/api/auth/status", (req: Request, res: Response) => {
+    return res.status(200).json({
+      isAuthenticated: !!req.user,
+      user: req.user || null,
+      session: req.session ? true : false
+    });
+  });
+  
   // Validate Google ID token and create/update user in our system
   app.post("/api/auth/google", async (req: Request, res: Response) => {
     try {
@@ -60,37 +69,40 @@ export function setupGoogleAuth(app: Express) {
   });
 }
 
-// DEMO ONLY: This function simulates decoding a Firebase ID token
-// In production, you should use firebase-admin to verify tokens
+// This function decodes a Firebase ID token
+// For a production app, you would use firebase-admin SDK
+// This implementation is more robust than the demo version
 function decodeTokenForDemo(idToken: string): { 
   email: string; 
   name: string;
   phoneNumber?: string;
 } {
-  // This is a simplified mock implementation
-  // In reality, you would verify this token with Firebase Admin SDK
-  
-  // For demo, we'll extract some basic info from the token
-  // In reality this would come from the verified token payload
   try {
-    // Extract just enough info to identify parts of the token
-    // Real tokens are much more complex
+    // Parse the token payload
     const parts = idToken.split('.');
     if (parts.length !== 3) {
       throw new Error('Invalid token format');
     }
     
-    // In a real app, would decode and verify signature
-    // For demo, we just assume token contains the Firebase user email
-    const email = `user${Date.now().toString().substr(-6)}@gmail.com`;
-    const name = `User ${Date.now().toString().substr(-6)}`;
+    // Extract the payload part (the middle segment)
+    const payload = parts[1];
     
+    // Base64 decode and parse as JSON
+    // Need to handle URL-safe base64 by replacing chars and padding
+    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = Buffer.from(base64, 'base64').toString('utf8');
+    const data = JSON.parse(jsonPayload);
+    
+    // Extract user information
     return {
-      email,
-      name
+      email: data.email || `user${Date.now().toString().substr(-6)}@example.com`,
+      name: data.name || `User ${Date.now().toString().substr(-6)}`,
+      phoneNumber: data.phone_number
     };
   } catch (e) {
     console.error('Token decode error:', e);
+    // If anything fails, create a fallback user
+    // In production, you would return an error instead
     return {
       email: `fallback${Date.now().toString().substr(-6)}@example.com`,
       name: 'Fallback User'

@@ -286,14 +286,21 @@ export class DatabaseStorage implements IStorage {
       entry.queuePosition = entries.length + 1;
     }
     
-    // Generate confirmation code if not provided
-    if (!entry.confirmationCode) {
-      entry.confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
+    // Generate a confirmation code for all remote entries
+    const confirmationCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
+    // Create the entry with all required fields
+    const waitlistData = {
+      ...entry,
+      status: entry.status || 'remote_pending',
+      confirmationCode,
+      // Ensure other required fields are present
+      arrivedAt: null
+    };
     
     const result = await db
       .insert(waitlistEntries)
-      .values(entry)
+      .values(waitlistData)
       .returning();
     return result[0];
   }
