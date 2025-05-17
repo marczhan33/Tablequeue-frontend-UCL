@@ -8,11 +8,13 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  url: string,
-  options?: { method?: string, body?: any }
+  options: { method?: string, url: string, body?: any }
 ): Promise<Response> {
-  const method = options?.method || 'GET';
-  const data = options?.body;
+  const method = options.method || 'GET';
+  const data = options.body;
+  const url = options.url;
+
+  console.log(`API Request: ${method} ${url}`, data ? { dataProvided: true } : {});
 
   const res = await fetch(url, {
     method,
@@ -21,7 +23,13 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
+  if (!res.ok) {
+    console.error(`API Error: ${res.status} on ${method} ${url}`);
+    const errorText = await res.text();
+    console.error(`Error details:`, errorText);
+    throw new Error(`${res.status}: ${errorText || res.statusText}`);
+  }
+
   return res;
 }
 

@@ -59,19 +59,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to sync Firebase user with our backend
   const syncUserWithBackend = async (firebaseUser: any) => {
     try {
-      const idToken = await firebaseUser.getIdToken();
+      // Add additional logging to help debug
+      console.log("Attempting to sync user with backend", { 
+        uid: firebaseUser.uid,
+        email: firebaseUser.email
+      });
+      
+      // Get the ID token
+      const idToken = await firebaseUser.getIdToken(true); // Force refresh token
+      console.log("Got ID token successfully");
+      
+      // Send to our backend
       const res = await apiRequest({ 
         method: "POST", 
         url: "/api/auth/google", 
         body: { idToken } 
       });
       const backendUser = await res.json();
+      console.log("User synced with backend successfully");
       queryClient.setQueryData(["/api/user"], backendUser);
-    } catch (error) {
+      
+      // Show success message
+      toast({
+        title: "Signed in successfully",
+        description: `Welcome${backendUser.username ? ', ' + backendUser.username : ''}!`,
+      });
+    } catch (error: any) {
       console.error("Error syncing user with backend:", error);
+      
+      // Provide more helpful error message
       toast({
         title: "Authentication Error",
-        description: "There was a problem connecting to the server.",
+        description: error.message || "There was a problem connecting to the server. Please try again.",
         variant: "destructive",
       });
     }
