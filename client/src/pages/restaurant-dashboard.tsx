@@ -11,6 +11,7 @@ import TableTypeManager from "@/components/table-type-manager";
 import { TurnoverAnalysis } from "@/components/turnover-analysis";
 import { DemandForecastDisplay } from "@/components/restaurant/demand-forecast-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RestaurantPromoManager } from "@/components/restaurant-promo-manager";
 
 // Mock restaurant ID for demo - in a real app, this would come from authentication
 const RESTAURANT_ID = 4;
@@ -407,6 +408,28 @@ const RestaurantDashboard = () => {
             
             <h3 className="text-lg font-semibold mb-4">Turnover Time Analytics</h3>
             <TurnoverAnalysis restaurantId={RESTAURANT_ID} />
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="promotions">
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-semibold mb-4">Promotional Time Slot Offers</h3>
+            <p className="mb-4 text-gray-600">
+              Set percentage discounts for different time slots to encourage customers to book during off-peak hours. 
+              This helps balance demand throughout the day and maximize your restaurant's capacity.
+            </p>
+            
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4 text-sm mb-6">
+              <h4 className="font-medium text-blue-800 mb-1">Promotion Strategy Tips</h4>
+              <ul className="list-disc list-inside text-blue-700 space-y-1">
+                <li>Offer higher discounts (15-20%) during traditionally slow periods</li>
+                <li>Consider small discounts (5-10%) during shoulder periods just before or after peak times</li>
+                <li>Promotions automatically appear to customers when they book through the remote waitlist</li>
+                <li>Track the impact of promotions by monitoring customer distribution across time slots</li>
+              </ul>
+            </div>
+            
+            <RestaurantPromoManager restaurantId={RESTAURANT_ID} />
           </div>
         </TabsContent>
         
