@@ -625,25 +625,27 @@ const DemoDashboard = () => {
         </TabsContent>
         
         <TabsContent value="optimization">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6 mt-8 md:mt-0">
-            <h3 className="text-lg font-semibold mb-4">Wait Time Optimization</h3>
-            <p className="text-gray-600 mb-6">
-              Apply restaurant operation management strategies to reduce wait times and improve customer experience.
-            </p>
-            
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mb-6">
-              <h4 className="font-medium text-blue-800 mb-2">Casual Dining Strategy Benefits</h4>
-              <ul className="list-disc list-inside text-blue-700 space-y-2">
-                <li>Reduce entrance wait times by up to 20% through smart table allocation</li>
-                <li>Increase table turnover efficiency with party size matching</li>
-                <li>Create balanced demand throughout the day with time-slot incentives</li>
-                <li>Improve customer satisfaction with accurate wait time predictions</li>
-              </ul>
+          <div className="mt-8 md:mt-0">
+            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+              <h3 className="text-lg font-semibold mb-4">Wait Time Optimization</h3>
+              <p className="text-gray-600 mb-6">
+                Apply restaurant operation management strategies to reduce wait times and improve customer experience.
+              </p>
+              
+              <div className="p-4 bg-blue-50 border border-blue-200 rounded-md mb-6">
+                <h4 className="font-medium text-blue-800 mb-2">Casual Dining Strategy Benefits</h4>
+                <ul className="list-disc list-inside text-blue-700 space-y-2">
+                  <li>Reduce entrance wait times by up to 20% through smart table allocation</li>
+                  <li>Increase table turnover efficiency with party size matching</li>
+                  <li>Create balanced demand throughout the day with time-slot incentives</li>
+                  <li>Improve customer satisfaction with accurate wait time predictions</li>
+                </ul>
+              </div>
             </div>
+            
+            {/* Demand Forecast and Table Optimization */}
+            <DemandForecastDisplay restaurantId={DEMO_RESTAURANT.id} />
           </div>
-          
-          {/* Demand Forecast and Table Optimization */}
-          <DemandForecastDisplay restaurantId={DEMO_RESTAURANT.id} />
         </TabsContent>
         
         <TabsContent value="promotions">
