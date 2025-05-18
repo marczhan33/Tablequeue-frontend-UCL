@@ -149,7 +149,7 @@ const DemoDashboard = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 gap-1 mb-6">
+        <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 gap-1 mb-6 bg-gray-50 p-4 rounded-lg">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
           <TabsTrigger value="tables">Tables</TabsTrigger>
