@@ -313,7 +313,8 @@ const DemoDashboard = () => {
         
         <TabsContent value="waitlist">
           <div className="space-y-8">
-            <div className="bg-gray-50 rounded-lg p-6">
+            {/* Waitlist - Desktop View (hidden on mobile) */}
+            <div className="bg-gray-50 rounded-lg p-6 hidden md:block">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Current Waitlist</h3>
                 <Button variant="outline" size="sm" onClick={() => toast({ title: "Demo Mode", description: "In a real account, this would add a new party to the waitlist." })}>
@@ -362,7 +363,50 @@ const DemoDashboard = () => {
               </div>
             </div>
             
-            <div className="bg-gray-50 rounded-lg p-6">
+            {/* Waitlist - Mobile View (visible only on mobile) */}
+            <div className="bg-gray-50 rounded-lg p-4 md:hidden">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Current Waitlist</h3>
+                <Button variant="outline" size="sm" onClick={() => toast({ title: "Demo Mode", description: "In a real account, this would add a new party to the waitlist." })}>
+                  Add Party
+                </Button>
+              </div>
+              
+              <div className="space-y-4">
+                {DEMO_WAITLIST.map((entry) => (
+                  <div key={entry.id} className="bg-white p-4 rounded-lg shadow-sm">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium">{entry.customerName}</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        entry.status === 'waiting' ? 'bg-yellow-100 text-yellow-800' : 
+                        entry.status === 'notified' ? 'bg-blue-100 text-blue-800' : 
+                        entry.status === 'seated' ? 'bg-green-100 text-green-800' : 
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-2 text-sm text-gray-600">
+                      <div>Party Size:</div>
+                      <div>{entry.partySize}</div>
+                      <div>Wait Time:</div>
+                      <div>{entry.estimatedWaitTime} min</div>
+                      <div>Joined:</div>
+                      <div>{entry.joinedAt.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</div>
+                    </div>
+                    <div className="mt-2 text-right">
+                      <button className="text-primary hover:text-primary-dark text-sm font-medium" 
+                        onClick={() => toast({ title: "Demo Mode", description: "In a real account, you could manage this waitlist entry." })}>
+                        Manage
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            {/* Remote Queue - Desktop View (hidden on mobile) */}
+            <div className="bg-gray-50 rounded-lg p-6 hidden md:block">
               <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-semibold">Remote Queue</h3>
               </div>
@@ -405,11 +449,49 @@ const DemoDashboard = () => {
                 </table>
               </div>
             </div>
+            
+            {/* Remote Queue - Mobile View (visible only on mobile) */}
+            <div className="bg-gray-50 rounded-lg p-4 md:hidden">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Remote Queue</h3>
+              </div>
+              
+              <div className="space-y-4">
+                {DEMO_REMOTE_WAITLIST.map((entry) => (
+                  <div key={entry.id} className="bg-white p-4 rounded-lg shadow-sm">
+                    <div className="flex justify-between mb-2">
+                      <span className="font-medium">{entry.customerName}</span>
+                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                        entry.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+                        'bg-yellow-100 text-yellow-800'
+                      }`}>
+                        {entry.status.charAt(0).toUpperCase() + entry.status.slice(1)}
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-2 text-sm text-gray-600">
+                      <div>Party Size:</div>
+                      <div>{entry.partySize}</div>
+                      <div>Arrival:</div>
+                      <div>{entry.estimatedArrival}</div>
+                      <div>Phone:</div>
+                      <div>{entry.phoneNumber}</div>
+                    </div>
+                    <div className="mt-2 text-right">
+                      <button className="text-primary hover:text-primary-dark text-sm font-medium" 
+                        onClick={() => toast({ title: "Demo Mode", description: "In a real account, you could manage this remote entry." })}>
+                        Manage
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </TabsContent>
         
         <TabsContent value="tables">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+          {/* Tables Tab - Desktop View */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-6 hidden md:block">
             <h3 className="text-lg font-semibold mb-4">Table Management</h3>
             <p className="text-gray-600 mb-6">Manage your restaurant's table types and optimize queue management based on party sizes.</p>
             
@@ -464,15 +546,66 @@ const DemoDashboard = () => {
                 Add Table Type
               </Button>
             </div>
+          </div>
+          
+          {/* Tables Tab - Mobile View */}
+          <div className="bg-gray-50 rounded-lg p-4 mb-6 md:hidden">
+            <h3 className="text-lg font-semibold mb-4">Table Management</h3>
+            <p className="text-gray-600 mb-4">Manage your restaurant's table types and optimize queue management based on party sizes.</p>
             
-            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm mt-6">
-              <h4 className="font-medium text-yellow-800 mb-1">Table Type Tips</h4>
-              <ul className="list-disc list-inside text-yellow-700 space-y-1">
-                <li>Create different table types based on seating capacity and location (indoor, outdoor, etc.)</li>
-                <li>Set accurate turnover times to improve wait time predictions</li>
-                <li>More specific table types lead to better customer matching and shorter wait times</li>
-              </ul>
+            <div className="mb-6">
+              <h4 className="text-md font-semibold mb-2">Advanced Queue Settings</h4>
+              <div className="flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={DEMO_RESTAURANT.useAdvancedQueue}
+                    disabled
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <span className="ms-3 text-sm font-medium text-gray-900">Enable Advanced Queue Management</span>
+                </label>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">When enabled, the system will automatically match customers to appropriate tables based on party size.</p>
             </div>
+            
+            <div className="space-y-4">
+              {DEMO_RESTAURANT.tableTypes.map((tableType) => (
+                <div key={tableType.id} className="bg-white p-4 rounded-lg shadow-sm">
+                  <div className="flex justify-between mb-2">
+                    <span className="font-medium text-gray-900">{tableType.name}</span>
+                    <button className="text-primary hover:text-primary-dark text-sm font-medium" 
+                      onClick={() => toast({ title: "Demo Mode", description: "In a real account, you could edit this table type." })}>
+                      Edit
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-x-2 text-sm text-gray-600">
+                    <div>Capacity:</div>
+                    <div>{tableType.capacity} people</div>
+                    <div>Count:</div>
+                    <div>{tableType.count}</div>
+                    <div>Avg. Turnover:</div>
+                    <div>{tableType.averageTurnoverTime} minutes</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            
+            <div className="mt-4 flex justify-center">
+              <Button variant="outline" onClick={() => toast({ title: "Demo Mode", description: "In a real account, you could add a new table type." })}>
+                Add Table Type
+              </Button>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4 text-sm mt-6">
+            <h4 className="font-medium text-yellow-800 mb-1">Table Type Tips</h4>
+            <ul className="list-disc list-inside text-yellow-700 space-y-1">
+              <li>Create different table types based on seating capacity and location (indoor, outdoor, etc.)</li>
+              <li>Set accurate turnover times to improve wait time predictions</li>
+              <li>More specific table types lead to better customer matching and shorter wait times</li>
+            </ul>
           </div>
         </TabsContent>
         
