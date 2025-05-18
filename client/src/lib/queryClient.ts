@@ -8,11 +8,23 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
-  options: { method?: string, url: string, body?: any }
+  urlOrOptions: string | { method?: string, url: string, body?: any },
+  options?: { method?: string, body?: any }
 ): Promise<Response> {
-  const method = options.method || 'GET';
-  const data = options.body;
-  const url = options.url;
+  let method = 'GET';
+  let data: any = undefined;
+  let url: string;
+
+  // Handle both function signatures for backward compatibility
+  if (typeof urlOrOptions === 'string') {
+    url = urlOrOptions;
+    method = options?.method || 'GET';
+    data = options?.body;
+  } else {
+    url = urlOrOptions.url;
+    method = urlOrOptions.method || 'GET';
+    data = urlOrOptions.body;
+  }
 
   console.log(`API Request: ${method} ${url}`, data ? { dataProvided: true } : {});
 

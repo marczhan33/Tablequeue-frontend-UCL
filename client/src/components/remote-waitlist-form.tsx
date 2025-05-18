@@ -112,10 +112,11 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
       }
       
       // Submit remote waitlist entry
-      const response = await apiRequest(
-        `/api/restaurants/${restaurant.id}/remote-waitlist`,
-        { method: 'POST', body: formattedValues }
-      );
+      const response = await apiRequest({
+        url: `/api/restaurants/${restaurant.id}/remote-waitlist`,
+        method: 'POST', 
+        body: formattedValues
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

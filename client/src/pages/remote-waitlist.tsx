@@ -119,7 +119,13 @@ export default function RemoteWaitlistPage() {
     queryKey: ['/api/restaurants', id],
     queryFn: async () => {
       try {
-        const response = await apiRequest(`/api/restaurants/${id}`);
+        if (!id || isNaN(parseInt(id))) {
+          throw new Error("Invalid restaurant ID");
+        }
+        const response = await apiRequest({
+          url: `/api/restaurants/${id}`,
+          method: 'GET'
+        });
         return await response.json();
       } catch (error) {
         console.error('Error fetching restaurant:', error);
