@@ -489,11 +489,11 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="tables">
+        <TabsContent value="tables" className="bg-gray-50 rounded-lg p-6">
           <div className="mt-8 md:mt-0">
             {/* Desktop view */}
             <div className="hidden md:block">
-              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+              <div className="bg-white rounded-lg p-6 mb-6">
                 <h3 className="text-lg font-semibold mb-4">Table Management</h3>
                 <p className="text-gray-600 mb-6">Manage your restaurant's table types and optimize queue management based on party sizes.</p>
                 
@@ -624,9 +624,9 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="optimization">
+        <TabsContent value="optimization" className="bg-gray-50 rounded-lg p-6">
           <div className="mt-8 md:mt-0">
-            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <div className="bg-white rounded-lg p-6 mb-6">
               <h3 className="text-lg font-semibold mb-4">Wait Time Optimization</h3>
               <p className="text-gray-600 mb-6">
                 Apply restaurant operation management strategies to reduce wait times and improve customer experience.
@@ -648,8 +648,8 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="promotions">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+        <TabsContent value="promotions" className="bg-gray-50 rounded-lg p-6">
+          <div className="bg-white rounded-lg p-6 mb-6">
             <h3 className="text-lg font-semibold mb-4">Promotional Time Slot Offers</h3>
             <p className="mb-4 text-gray-600">
               Set percentage discounts for different time slots to encourage customers to book during off-peak hours. 
@@ -670,8 +670,8 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="qrcode">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6 mt-8 md:mt-0">
+        <TabsContent value="qrcode" className="bg-gray-50 rounded-lg p-6">
+          <div className="bg-white rounded-lg p-6 mb-6 mt-8 md:mt-0">
             <h3 className="text-lg font-semibold mb-4">QR Code Generator</h3>
             <p className="mb-4 text-gray-600">
               Generate a QR code for your restaurant that customers can scan to join your waitlist.
