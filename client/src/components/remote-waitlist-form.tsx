@@ -57,7 +57,8 @@ const remoteWaitlistFormSchema = z.object({
   email: z.string().email('Valid email required for confirmation').optional(),
   dietaryRequirements: z.string().optional(),
   notes: z.string().optional(),
-  expectedArrivalTime: z.string().optional(),
+  // Always set by the code, so it doesn't need to be filled by the user
+  expectedArrivalTime: z.string().optional(), 
 });
 
 type RemoteWaitlistFormValues = z.infer<typeof remoteWaitlistFormSchema>;
