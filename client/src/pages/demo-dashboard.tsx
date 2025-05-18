@@ -149,14 +149,16 @@ const DemoDashboard = () => {
       </div>
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-        <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 gap-1 mb-6 bg-gray-50 p-4 rounded-lg">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="waitlist">Waitlist</TabsTrigger>
-          <TabsTrigger value="tables">Tables</TabsTrigger>
-          <TabsTrigger value="promotions">Promotions</TabsTrigger>
-          <TabsTrigger value="optimization">Wait Optimization</TabsTrigger>
-          <TabsTrigger value="qrcode">QR Code</TabsTrigger>
-        </TabsList>
+        <div className="bg-gray-50 p-4 rounded-lg">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 gap-1 bg-transparent">
+            <TabsTrigger value="overview" className="bg-white hover:bg-gray-100">Overview</TabsTrigger>
+            <TabsTrigger value="waitlist" className="bg-white hover:bg-gray-100">Waitlist</TabsTrigger>
+            <TabsTrigger value="tables" className="bg-white hover:bg-gray-100">Tables</TabsTrigger>
+            <TabsTrigger value="promotions" className="bg-white hover:bg-gray-100">Promotions</TabsTrigger>
+            <TabsTrigger value="optimization" className="bg-white hover:bg-gray-100">Wait Optimization</TabsTrigger>
+            <TabsTrigger value="qrcode" className="bg-white hover:bg-gray-100">QR Code</TabsTrigger>
+          </TabsList>
+        </div>
         
         <TabsContent value="overview">
           {/* Current Status Card */}
