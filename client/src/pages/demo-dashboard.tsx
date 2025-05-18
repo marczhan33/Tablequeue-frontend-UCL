@@ -489,7 +489,7 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="tables" className="bg-gray-50 rounded-lg p-6">
+        <TabsContent value="tables">
           <div className="mt-8 md:mt-0">
             {/* Desktop view */}
             <div className="hidden md:block">
@@ -624,7 +624,7 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="optimization" className="bg-gray-50 rounded-lg p-6">
+        <TabsContent value="optimization">
           <div className="mt-8 md:mt-0">
             <div className="bg-white rounded-lg p-6 mb-6">
               <h3 className="text-lg font-semibold mb-4">Wait Time Optimization</h3>
@@ -648,7 +648,7 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="promotions" className="bg-gray-50 rounded-lg p-6">
+        <TabsContent value="promotions">
           <div className="bg-white rounded-lg p-6 mb-6">
             <h3 className="text-lg font-semibold mb-4">Promotional Time Slot Offers</h3>
             <p className="mb-4 text-gray-600">
@@ -670,7 +670,7 @@ const DemoDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="qrcode" className="bg-gray-50 rounded-lg p-6">
+        <TabsContent value="qrcode">
           <div className="bg-white rounded-lg p-6 mb-6 mt-8 md:mt-0">
             <h3 className="text-lg font-semibold mb-4">QR Code Generator</h3>
             <p className="mb-4 text-gray-600">
