@@ -477,7 +477,7 @@ const DemoDashboard = () => {
         </TabsContent>
         
         <TabsContent value="optimization">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+          <div className="bg-gray-50 rounded-lg p-6 mb-6 mt-8 md:mt-0">
             <h3 className="text-lg font-semibold mb-4">Wait Time Optimization</h3>
             <p className="text-gray-600 mb-6">
               Apply restaurant operation management strategies to reduce wait times and improve customer experience.
@@ -521,7 +521,7 @@ const DemoDashboard = () => {
         </TabsContent>
         
         <TabsContent value="qrcode">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+          <div className="bg-gray-50 rounded-lg p-6 mb-6 mt-8 md:mt-0">
             <h3 className="text-lg font-semibold mb-4">QR Code Generator</h3>
             <p className="mb-4 text-gray-600">
               Generate a QR code for your restaurant that customers can scan to join your waitlist.
