@@ -124,10 +124,25 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
       }
 
       const data = await response.json();
-      toast({
-        title: 'Added to Remote Waitlist',
-        description: `You've been added to the waitlist with queue position #${data.queuePosition}! Your confirmation code is ${data.confirmationCode}. Please use this code when you arrive at the restaurant to preserve your position in line.`,
-      });
+      
+      // Different message based on whether this is scheduled or immediate
+      if (isScheduled && selectedTime) {
+        // Find the selected time slot to get the discount (if any)
+        const selectedTimeSlot = timeOptions.find(slot => slot.time === selectedTime);
+        const discountText = selectedTimeSlot && selectedTimeSlot.discount > 0 
+          ? `with a ${selectedTimeSlot.discount}% discount` 
+          : '';
+          
+        toast({
+          title: 'Reservation Scheduled Successfully',
+          description: `Your table has been scheduled for ${selectedTime} ${discountText}. Your confirmation code is ${data.confirmationCode}. Please arrive at the restaurant on time and use this code to check in.`,
+        });
+      } else {
+        toast({
+          title: 'Added to Remote Waitlist',
+          description: `You've been added to the waitlist with queue position #${data.queuePosition}! Your confirmation code is ${data.confirmationCode}. Please use this code when you arrive at the restaurant to preserve your position in line.`,
+        });
+      }
       
       if (onSuccess) {
         onSuccess(data);
