@@ -73,9 +73,9 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
           <div className="flex items-start space-x-2 text-sm text-muted-foreground">
             <Info className="h-5 w-5 mt-0.5 flex-shrink-0" />
             <p>
-              When you arrive at {restaurant.name}, use the "Check In" tab and enter your confirmation 
-              code to notify the staff that you've arrived. Your position in the waitlist will be
-              activated and you'll be seated according to your party size and availability.
+              When you arrive at {restaurant.name}, click "Check In Now" below to let the staff know you've arrived. 
+              Your confirmation code will be automatically filled in for you. Your position in the waitlist 
+              will be activated and you'll be seated according to your party size and availability.
             </p>
           </div>
         </div>
@@ -89,6 +89,20 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
             Restaurant Details
           </Button>
           <Button 
+            className="flex-1"
+            variant="default"
+            onClick={() => {
+              // Navigate to check-in tab with confirmation code
+              navigate(`/restaurants/${restaurant.id}/remote-waitlist?code=${waitlistEntry.confirmationCode}&tab=checkin`);
+            }}
+          >
+            Check In Now
+          </Button>
+        </div>
+        
+        <div className="flex justify-center mt-4">
+          <Button 
+            variant="outline"
             className="flex-1"
             onClick={() => {
               const mapsUrl = createGoogleMapsUrl(
@@ -110,9 +124,15 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
 
 export default function RemoteWaitlistPage() {
   const { id } = useParams<{ id: string }>();
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [waitlistEntry, setWaitlistEntry] = useState<WaitlistEntry | null>(null);
-  const [activeTab, setActiveTab] = useState('join');
+  
+  // Parse URL query parameters
+  const searchParams = new URLSearchParams(location.split('?')[1]);
+  const confirmationCode = searchParams.get('code');
+  const initialTab = searchParams.get('tab') || 'join';
+  
+  const [activeTab, setActiveTab] = useState(initialTab);
   
   // Fetch restaurant by ID
   const { data: restaurant, isLoading, error } = useQuery({
@@ -219,7 +239,11 @@ export default function RemoteWaitlistPage() {
         </TabsContent>
         
         <TabsContent value="checkin">
-          <RemoteWaitlistCheckin restaurant={restaurant} onSuccess={handleCheckinSuccess} />
+          <RemoteWaitlistCheckin 
+            restaurant={restaurant} 
+            confirmationCode={confirmationCode || ''} 
+            onSuccess={handleCheckinSuccess} 
+          />
         </TabsContent>
       </Tabs>
     </div>
