@@ -135,8 +135,39 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Login with Google
   const loginWithGoogle = async () => {
     try {
-      await signInWithGoogle();
-      // User state will be updated by the auth state listener
+      console.log("Google login initiated");
+      const googleUser = await signInWithGoogle();
+      
+      if (googleUser) {
+        console.log("Google authentication successful, getting token...");
+        
+        // Get ID token and explicitly sync with backend
+        const idToken = await googleUser.getIdToken(true);
+        
+        // Send token to backend
+        const response = await apiRequest({
+          method: "POST",
+          url: "/api/auth/google",
+          body: { idToken }
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Authentication failed");
+        }
+        
+        // Process user data and update state
+        const userData = await response.json();
+        queryClient.setQueryData(["/api/user"], userData);
+        
+        // Force navigation to home
+        window.location.href = "/";
+        
+        toast({
+          title: "Sign in successful",
+          description: `Welcome${userData.username ? ', ' + userData.username : ''}!`,
+        });
+      }
     } catch (error: any) {
       console.error("Google login error:", error);
       toast({

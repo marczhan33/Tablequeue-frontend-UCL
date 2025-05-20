@@ -54,19 +54,24 @@ const googleProvider = new GoogleAuthProvider();
 // Google sign-in function
 export const signInWithGoogle = async () => {
   try {
-    // On desktop, use a popup
-    if (window.innerWidth > 768) {
-      const result = await signInWithPopup(auth, googleProvider);
-      return result.user;
-    } 
-    // On mobile, use redirect flow
-    else {
-      await signInWithRedirect(auth, googleProvider);
-      // The result will be handled in the component via onAuthStateChanged
-    }
-  } catch (error) {
+    console.log("Starting Google sign-in process");
+    // Always use popup to simplify the flow - mobile redirect has issues
+    const result = await signInWithPopup(auth, googleProvider);
+    console.log("Google sign-in successful", { 
+      email: result.user.email,
+      uid: result.user.uid
+    });
+    return result.user;
+  } catch (error: any) {
     console.error("Google sign-in error:", error);
-    throw error;
+    // Provide more detailed error information
+    if (error.code === 'auth/popup-closed-by-user') {
+      throw new Error('Sign-in was cancelled. Please try again.');
+    } else if (error.code === 'auth/popup-blocked') {
+      throw new Error('Pop-up was blocked by your browser. Please allow pop-ups for this site.');
+    } else {
+      throw new Error(`Authentication error: ${error.message || 'Unknown error'}`);
+    }
   }
 };
 

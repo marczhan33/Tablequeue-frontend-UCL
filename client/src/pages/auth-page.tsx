@@ -48,7 +48,7 @@ export default function AuthPage() {
   const [activeTab, setActiveTab] = useState<string>("login");
   const { user, registerMutation, loginWithGoogle } = useAuth();
   const { toast } = useToast();
-  // We're moving away from traditional login in favor of Google sign-in
+  // Support both traditional login and Google sign-in
   const [location, setLocation] = useLocation();
   const hasRedirected = useRef(false);
   
