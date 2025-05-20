@@ -12,13 +12,15 @@ export const sessionStore = new MemoryStore({
 // Session configuration
 export const sessionConfig = {
   secret: process.env.SESSION_SECRET || 'tablequeue-session-secret', // In production, use environment variable
-  resave: false,
-  saveUninitialized: false,
+  resave: true, // Changed to true to ensure session is saved back to store
+  saveUninitialized: true, // Changed to true to allow session creation before authentication
   store: sessionStore,
   cookie: { 
     httpOnly: true, 
     secure: false, // Set to false for development to work on both HTTP and HTTPS
-    sameSite: 'lax', // To help with cross-site cookie issues
-    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days for better persistence
+    sameSite: 'none', // Allow cross-domain cookies
+    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for better persistence
+    path: '/',
+    domain: undefined // Let browser automatically assign the domain
   }
 };

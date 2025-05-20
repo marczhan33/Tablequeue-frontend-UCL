@@ -66,11 +66,17 @@ export function setupGoogleAuth(app: Express) {
         }
         console.log("Successfully created session for user:", user.id);
         
-        // Set a more robust session cookie
+        // Set session data using a custom property
         if (req.session) {
-          req.session.userId = user.id;
-          req.session.userEmail = user.email;
-          req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+          // Use a type-safe approach
+          const session = req.session as any;
+          session.userId = user.id;
+          session.userEmail = user.email;
+          session.isAuthenticated = true;
+          session.authMethod = 'google';
+          
+          // Ensure long session duration
+          req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
         }
         
         return res.status(200).json(userWithoutSensitiveData);
