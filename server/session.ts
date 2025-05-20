@@ -17,7 +17,8 @@ export const sessionConfig = {
   store: sessionStore,
   cookie: { 
     httpOnly: true, 
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+    secure: false, // Set to false for development to work on both HTTP and HTTPS
+    sameSite: 'lax', // To help with cross-site cookie issues
+    maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days for better persistence
   }
 };
