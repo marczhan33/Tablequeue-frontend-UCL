@@ -219,7 +219,8 @@ export default function RemoteWaitlistPage() {
   }
   
   // If a waitlist entry was just created, show the success view
-  if (waitlistEntry && activeTab === 'join') {
+  // Show the same success view for both immediate and scheduled entries
+  if (waitlistEntry && (activeTab === 'join' || activeTab === 'schedule')) {
     return (
       <div className="container px-4 py-8 mx-auto">
         <div className="mb-6">
