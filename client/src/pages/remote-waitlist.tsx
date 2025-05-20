@@ -93,7 +93,8 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
             variant="default"
             onClick={() => {
               // Navigate to check-in tab with confirmation code
-              navigate(`/restaurants/${restaurant.id}/remote-waitlist?code=${waitlistEntry.confirmationCode}&tab=checkin`);
+              // Update URL first then force reload of the page to ensure tab switching works
+              window.location.href = `/restaurants/${restaurant.id}/remote-waitlist?code=${waitlistEntry.confirmationCode}&tab=checkin`;
             }}
           >
             Check In Now
@@ -102,7 +103,7 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
         
         <div className="flex justify-center mt-4">
           <Button 
-            variant="outline"
+            variant="default"
             className="flex-1"
             onClick={() => {
               const mapsUrl = createGoogleMapsUrl(
