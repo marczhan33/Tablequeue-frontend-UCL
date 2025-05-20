@@ -165,10 +165,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await response.json();
         queryClient.setQueryData(["/api/user"], userData);
         
+        // Set a session identifier in localStorage to help maintain login state
+        localStorage.setItem("auth_timestamp", Date.now().toString());
+        
         // Redirect to home page with a full page reload to ensure session is properly applied
         setTimeout(() => {
+          // Use replace to force a complete page refresh
           window.location.replace("/");
-        }, 500);
+        }, 700);
         
         toast({
           title: "Sign in successful",

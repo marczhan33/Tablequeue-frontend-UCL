@@ -53,6 +53,15 @@ export function setupAuth(app: Express) {
   app.use(session(sessionConfig));
   app.use(passport.initialize());
   app.use(passport.session());
+  
+  // Security headers
+  app.use((req, res, next) => {
+    res.set({
+      'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+      'Access-Control-Allow-Credentials': 'true'
+    });
+    next();
+  });
 
   passport.use(
     new LocalStrategy(async (username, password, done) => {

@@ -65,6 +65,14 @@ export function setupGoogleAuth(app: Express) {
           return res.status(500).json({ error: "Failed to create session" });
         }
         console.log("Successfully created session for user:", user.id);
+        
+        // Set a more robust session cookie
+        if (req.session) {
+          req.session.userId = user.id;
+          req.session.userEmail = user.email;
+          req.session.cookie.maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+        }
+        
         return res.status(200).json(userWithoutSensitiveData);
       });
     } catch (error) {
