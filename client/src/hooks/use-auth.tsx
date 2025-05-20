@@ -59,6 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Function to sync Firebase user with our backend
   const syncUserWithBackend = async (firebaseUser: any) => {
     try {
+      if (!firebaseUser) {
+        console.log("No Firebase user to sync");
+        return;
+      }
+      
       // Add additional logging to help debug
       console.log("Attempting to sync user with backend", { 
         uid: firebaseUser.uid,
@@ -75,9 +80,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         url: "/api/auth/google", 
         body: { idToken } 
       });
-      const backendUser = await res.json();
-      console.log("User synced with backend successfully");
+      
+      // Handle non-ok responses before trying to parse JSON
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
+        throw new Error(errorData.error || 'Failed to authenticate with server');
+      }
+      
+      const backendUser = await res.json().catch(err => {
+        console.error("Failed to parse user JSON", err);
+        return null;
+      });
+
+      if (!backendUser) {
+        throw new Error("Failed to parse user data from server");
+      }
+      
+      console.log("User synced with backend successfully", backendUser);
       queryClient.setQueryData(["/api/user"], backendUser);
+      
+      // Navigate to home after successful login
+      window.location.href = '/';
       
       // Show success message
       toast({
@@ -93,6 +116,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         description: error.message || "There was a problem connecting to the server. Please try again.",
         variant: "destructive",
       });
+      
+      // Clear Firebase state on failure
+      firebaseSignOut().catch(err => console.error("Failed to sign out from Firebase", err));
     }
   };
 

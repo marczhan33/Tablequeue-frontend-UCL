@@ -55,12 +55,17 @@ export function setupGoogleAuth(app: Express) {
         });
       }
 
+      // Remove password before sending user data
+      const { password, verificationToken, ...userWithoutSensitiveData } = user;
+      
       // Create a session
       req.login(user, (err) => {
         if (err) {
+          console.error("Session creation error:", err);
           return res.status(500).json({ error: "Failed to create session" });
         }
-        return res.status(200).json(user);
+        console.log("Successfully created session for user:", user.id);
+        return res.status(200).json(userWithoutSensitiveData);
       });
     } catch (error) {
       console.error("Google auth error:", error);
