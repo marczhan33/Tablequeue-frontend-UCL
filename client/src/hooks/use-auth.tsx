@@ -13,6 +13,7 @@ import {
   onAuthChange,
   getCurrentUser
 } from "@/lib/firebase";
+import { getAuth, getRedirectResult } from "firebase/auth";
 
 type AuthContextType = {
   user: SelectUser | null;
@@ -35,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Listen for Firebase auth state changes
   useEffect(() => {
     const unsubscribe = onAuthChange((user) => {
+      console.log("Firebase auth state changed:", user ? "user signed in" : "no user");
       setFirebaseUser(user);
       
       // If a user signs in via Firebase, we need to sync with our backend
@@ -49,9 +51,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Check for current user on page load (for redirect flow)
     const currentUser = getCurrentUser();
     if (currentUser) {
+      console.log("Found existing Firebase user on page load");
       setFirebaseUser(currentUser);
       syncUserWithBackend(currentUser);
     }
+    
+    // We'll handle the redirect with our custom implementation
 
     return () => unsubscribe();
   }, []);

@@ -6,7 +6,8 @@ import {
   signInWithRedirect,
   signOut as firebaseSignOut,
   onAuthStateChanged,
-  User as FirebaseUser 
+  User as FirebaseUser,
+  getRedirectResult
 } from "firebase/auth";
 
 // Your web app's Firebase configuration
@@ -51,24 +52,50 @@ try {
 const auth = getAuth();
 const googleProvider = new GoogleAuthProvider();
 
-// Google sign-in function
+// Google sign-in function with better error handling and support for all environments
 export const signInWithGoogle = async () => {
   try {
     console.log("Starting Google sign-in process");
-    // Always use popup to simplify the flow - mobile redirect has issues
-    const result = await signInWithPopup(auth, googleProvider);
-    console.log("Google sign-in successful", { 
-      email: result.user.email,
-      uid: result.user.uid
+    
+    // Configure additional scopes
+    googleProvider.addScope('email');
+    googleProvider.addScope('profile');
+    
+    // Add custom parameters for better mobile support
+    googleProvider.setCustomParameters({
+      prompt: 'select_account',
+      login_hint: ''
     });
-    return result.user;
+    
+    // Use redirect on mobile to avoid popup issues
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    
+    if (isMobile) {
+      console.log("Using redirect auth flow for mobile");
+      await signInWithRedirect(auth, googleProvider);
+      // The result will be handled in the auth state change listener
+      return null;
+    } else {
+      console.log("Using popup auth flow for desktop");
+      const result = await signInWithPopup(auth, googleProvider);
+      console.log("Google sign-in successful", { 
+        email: result.user.email,
+        uid: result.user.uid
+      });
+      return result.user;
+    }
   } catch (error: any) {
     console.error("Google sign-in error:", error);
-    // Provide more detailed error information
+    
+    // Provide detailed error information
     if (error.code === 'auth/popup-closed-by-user') {
       throw new Error('Sign-in was cancelled. Please try again.');
     } else if (error.code === 'auth/popup-blocked') {
       throw new Error('Pop-up was blocked by your browser. Please allow pop-ups for this site.');
+    } else if (error.code === 'auth/cancelled-popup-request') {
+      throw new Error('Another authentication request is in progress.');
+    } else if (error.code === 'auth/unauthorized-domain') {
+      throw new Error('This domain is not authorized for OAuth operations. Please add it to your Firebase Console.');
     } else {
       throw new Error(`Authentication error: ${error.message || 'Unknown error'}`);
     }
