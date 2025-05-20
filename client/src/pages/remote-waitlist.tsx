@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
@@ -92,9 +92,8 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
             className="flex-1"
             variant="default"
             onClick={() => {
-              // Navigate to check-in tab with confirmation code
-              // Update URL first then force reload of the page to ensure tab switching works
-              window.location.href = `/restaurants/${restaurant.id}/remote-waitlist?code=${waitlistEntry.confirmationCode}&tab=checkin`;
+              // Use hash fragment to ensure tab switching works properly
+              window.location.href = `/restaurants/${restaurant.id}/remote-waitlist?code=${waitlistEntry.confirmationCode}&tab=checkin#checkin`;
             }}
           >
             Check In Now
@@ -133,7 +132,15 @@ export default function RemoteWaitlistPage() {
   const confirmationCode = searchParams.get('code');
   const initialTab = searchParams.get('tab') || 'join';
   
+  // Make sure the tab gets set immediately and also after component mounts
   const [activeTab, setActiveTab] = useState(initialTab);
+  
+  // Force the tab to the correct value on component mount
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   
   // Fetch restaurant by ID
   const { data: restaurant, isLoading, error } = useQuery({
