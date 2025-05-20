@@ -20,6 +20,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { apiRequest, queryClient } from "../lib/queryClient";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 
@@ -85,10 +86,34 @@ export default function AuthPage() {
   });
 
   // Handle login submission 
-  // Note: We're transitioning to Google sign-in, so this function is kept for backward compatibility
-  const onLoginSubmit = (values: LoginFormValues) => {
-    console.log("Traditional login is being phased out in favor of Google sign-in");
-    // Redirect users to use Google sign-in instead
+  const onLoginSubmit = async (values: LoginFormValues) => {
+    try {
+      const response = await apiRequest({
+        method: "POST",
+        url: "/api/login",
+        body: values
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Login failed');
+      }
+      
+      const userData = await response.json();
+      queryClient.setQueryData(["/api/user"], userData);
+      
+      toast({
+        title: "Login successful",
+        description: `Welcome back, ${userData.username}!`
+      });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      toast({
+        title: "Login failed",
+        description: error.message || "Invalid credentials. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   // Handle role change
