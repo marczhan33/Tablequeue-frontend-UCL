@@ -8,7 +8,8 @@ import {
   insertTableTypeSchema,
   waitStatusEnum, 
   waitlistStatusEnum,
-  remoteWaitlistFormSchema
+  remoteWaitlistFormSchema,
+  type User
 } from "@shared/schema";
 import { z } from "zod";
 import { setupAuth } from "./auth";
@@ -21,18 +22,64 @@ import { updateGoogleMapsWaitTime, generateGoogleMapsUrl } from "./maps-integrat
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
+  // Check standard passport authentication
   if (req.isAuthenticated()) {
     return next();
   }
-  res.status(401).json({ error: "Unauthorized - Please log in" });
+  
+  // Also check for session authentication (for Google Sign-In)
+  const session = req.session as any;
+  if (session && session.userId) {
+    // Try to load the user from our database
+    storage.getUser(session.userId)
+      .then(user => {
+        if (user) {
+          // Manually set user to req.user so downstream functions can access it
+          (req as any).user = user;
+          return next();
+        }
+        res.status(401).json({ error: "Unauthorized - Please log in" });
+      })
+      .catch((err: Error) => {
+        console.error("Error verifying session authentication:", err);
+        res.status(401).json({ error: "Unauthorized - Authentication error" });
+      });
+  } else {
+    res.status(401).json({ error: "Unauthorized - Please log in" });
+  }
 }
 
 // Middleware to ensure user is restaurant owner
 function ensureRestaurantOwner(req: Request, res: Response, next: NextFunction) {
-  if (req.isAuthenticated() && req.user && req.user.role === 'owner') {
+  // First check if they're authenticated at all
+  if (!req.isAuthenticated() && !(req.session as any)?.userId) {
+    return res.status(401).json({ error: "Unauthorized - Please log in" });
+  }
+
+  // If they're authenticated, check their role
+  if (req.user && req.user.role === 'owner') {
     return next();
   }
-  res.status(403).json({ error: "Forbidden - Restaurant owner access required" });
+  
+  // If we have a session ID but not a loaded user, try to load the user
+  const session = req.session as any;
+  if (session && session.userId && !req.user) {
+    storage.getUser(session.userId)
+      .then((user: User | undefined) => {
+        if (user && user.role === 'owner') {
+          // Set the user manually and proceed
+          (req as any).user = user;
+          return next();
+        }
+        res.status(403).json({ error: "Forbidden - Restaurant owner access required" });
+      })
+      .catch((err: Error) => {
+        console.error("Error verifying owner authentication:", err);
+        res.status(403).json({ error: "Forbidden - Authentication error" });
+      });
+  } else {
+    res.status(403).json({ error: "Forbidden - Restaurant owner access required" });
+  }
 }
 
 /**

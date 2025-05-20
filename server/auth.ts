@@ -192,11 +192,33 @@ export function setupAuth(app: Express) {
   });
 
   app.get("/api/user", (req, res) => {
-    if (!req.isAuthenticated()) return res.status(401).json({ error: "Not authenticated" });
+    // Check standard auth first
+    if (req.isAuthenticated() && req.user) {
+      // Return user without password
+      const { password, verificationToken, ...userWithoutSensitiveData } = req.user as SelectUser;
+      return res.json(userWithoutSensitiveData);
+    }
     
-    // Return user without password
-    const { password, verificationToken, ...userWithoutSensitiveData } = req.user as SelectUser;
-    res.json(userWithoutSensitiveData);
+    // Also check session-based auth (for Google Sign-In)
+    const session = req.session as any;
+    if (session && session.userId) {
+      // Try to get the user from database
+      storage.getUser(session.userId)
+        .then(user => {
+          if (user) {
+            // Return user without sensitive data
+            const { password, verificationToken, ...userWithoutSensitiveData } = user;
+            return res.json(userWithoutSensitiveData);
+          }
+          return res.status(401).json({ error: "Not authenticated" });
+        })
+        .catch(err => {
+          console.error("Error fetching user:", err);
+          return res.status(401).json({ error: "Not authenticated" });
+        });
+    } else {
+      return res.status(401).json({ error: "Not authenticated" });
+    }
   });
   
   // Email verification endpoint
