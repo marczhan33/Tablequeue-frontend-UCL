@@ -191,6 +191,7 @@ export default function AuthPage() {
                 </form>
               </Form>
               
+              {/* Google Sign-In temporarily disabled until domain is authorized 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <Separator className="w-full" />
@@ -206,6 +207,7 @@ export default function AuthPage() {
                 onClick={loginWithGoogle} 
                 text="Sign in with Google" 
               />
+              */}
             </TabsContent>
             
             {/* Registration Form */}
@@ -337,6 +339,7 @@ export default function AuthPage() {
                 </form>
               </Form>
               
+              {/* Google Sign-In temporarily disabled until domain is authorized 
               <div className="relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <Separator className="w-full" />
@@ -352,6 +355,7 @@ export default function AuthPage() {
                 onClick={loginWithGoogle} 
                 text="Sign up with Google" 
               />
+              */}
             </TabsContent>
           </Tabs>
         </div>
