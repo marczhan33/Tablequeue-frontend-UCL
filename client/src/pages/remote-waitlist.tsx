@@ -92,8 +92,14 @@ const RemoteWaitlistSuccess = ({ waitlistEntry, restaurant }: RemoteWaitlistSucc
             className="flex-1"
             variant="default"
             onClick={() => {
-              // Use hash fragment to ensure tab switching works properly
-              window.location.href = `/restaurants/${restaurant.id}/remote-waitlist?code=${waitlistEntry.confirmationCode}&tab=checkin#checkin`;
+              // Create a custom event to store the confirmation code in session storage
+              // This will persist across page loads
+              if (waitlistEntry.confirmationCode) {
+                sessionStorage.setItem('confirmationCode', waitlistEntry.confirmationCode);
+                sessionStorage.setItem('activeTab', 'checkin');
+                // Force a full page reload to ensure state is reset
+                window.location.href = `/restaurants/${restaurant.id}/remote-waitlist`;
+              }
             }}
           >
             Check In Now
@@ -127,20 +133,34 @@ export default function RemoteWaitlistPage() {
   const [location, navigate] = useLocation();
   const [waitlistEntry, setWaitlistEntry] = useState<WaitlistEntry | null>(null);
   
-  // Parse URL query parameters
-  const searchParams = new URLSearchParams(location.split('?')[1]);
-  const confirmationCode = searchParams.get('code');
-  const initialTab = searchParams.get('tab') || 'join';
-  
-  // Make sure the tab gets set immediately and also after component mounts
-  const [activeTab, setActiveTab] = useState(initialTab);
-  
-  // Force the tab to the correct value on component mount
-  useEffect(() => {
-    if (initialTab && initialTab !== activeTab) {
-      setActiveTab(initialTab);
+  // Check session storage first for any saved values
+  const [activeTab, setActiveTab] = useState(() => {
+    // Check if we have a saved tab value in session storage
+    const savedTab = typeof window !== 'undefined' ? sessionStorage.getItem('activeTab') : null;
+    if (savedTab) {
+      // Clear it after reading
+      sessionStorage.removeItem('activeTab');
+      return savedTab;
     }
-  }, [initialTab]);
+    
+    // Fallback to URL parameters
+    const searchParams = new URLSearchParams(location.split('?')[1]);
+    return searchParams.get('tab') || 'join';
+  });
+  
+  // Get confirmation code from session storage or URL
+  const confirmationCode = (() => {
+    const savedCode = typeof window !== 'undefined' ? sessionStorage.getItem('confirmationCode') : null;
+    if (savedCode) {
+      // Clear it after reading
+      sessionStorage.removeItem('confirmationCode');
+      return savedCode;
+    }
+    
+    // Fallback to URL parameters
+    const searchParams = new URLSearchParams(location.split('?')[1]);
+    return searchParams.get('code') || '';
+  })();
   
   // Fetch restaurant by ID
   const { data: restaurant, isLoading, error } = useQuery({
