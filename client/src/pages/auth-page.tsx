@@ -191,7 +191,21 @@ export default function AuthPage() {
                 </form>
               </Form>
               
-              {/* Google sign-in temporarily disabled for domain authorization issues */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center">
+                  <span className="bg-background px-2 text-muted-foreground text-sm">
+                    OR
+                  </span>
+                </div>
+              </div>
+              
+              <GoogleSignInButton 
+                onClick={loginWithGoogle} 
+                text="Sign in with Google" 
+              />
             </TabsContent>
             
             {/* Registration Form */}

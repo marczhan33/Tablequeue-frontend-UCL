@@ -165,8 +165,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = await response.json();
         queryClient.setQueryData(["/api/user"], userData);
         
-        // Force navigation to home
-        window.location.href = "/";
+        // Redirect to home page with a full page reload to ensure session is properly applied
+        setTimeout(() => {
+          window.location.replace("/");
+        }, 500);
         
         toast({
           title: "Sign in successful",
