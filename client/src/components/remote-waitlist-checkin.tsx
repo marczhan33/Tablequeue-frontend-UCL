@@ -396,12 +396,18 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
                       without requiring location or QR verification.
                     </DialogDescription>
                   </DialogHeader>
-                  <div className="p-4 border rounded-md">
-                    <p className="mb-4">Your confirmation code: <span className="font-bold">{form.getValues().confirmationCode}</span></p>
-                    <p className="text-sm text-muted-foreground">
-                      Show this code to restaurant staff to be checked in directly.
-                    </p>
-                  </div>
+                  <FormField
+                    control={form.control}
+                    name="confirmationCode"
+                    render={({ field }) => (
+                      <div className="p-4 border rounded-md">
+                        <p className="mb-4">Your confirmation code: <span className="font-bold">{field.value}</span></p>
+                        <p className="text-sm text-muted-foreground">
+                          Show this code to restaurant staff to be checked in directly.
+                        </p>
+                      </div>
+                    )}
+                  />
                   <DialogFooter>
                     <Button 
                       onClick={() => {
