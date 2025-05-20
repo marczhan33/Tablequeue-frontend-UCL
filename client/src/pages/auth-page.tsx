@@ -249,7 +249,7 @@ export default function AuthPage() {
                                   <circle cx="12" cy="7" r="4"></circle>
                                 </svg>
                               </div>
-                              <Label htmlFor="customer" className="font-medium">Customer</Label>
+                              <Label htmlFor="customer" className="font-medium text-center w-full">Customer</Label>
                               <span className="text-xs text-center mt-1 text-gray-500">Find restaurants and join waitlists</span>
                             </div>
                             
@@ -264,7 +264,7 @@ export default function AuthPage() {
                                   <path d="M15 14v2"></path>
                                 </svg>
                               </div>
-                              <Label htmlFor="owner" className="font-medium">Restaurant Owner</Label>
+                              <Label htmlFor="owner" className="font-medium text-center w-full">Restaurant Owner</Label>
                               <span className="text-xs text-center mt-1 text-gray-500">Manage your restaurant waitlist</span>
                             </div>
                           </RadioGroup>
