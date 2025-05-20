@@ -258,17 +258,17 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
           
           <Tabs defaultValue="location" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="location">
-                <MapPin className="h-4 w-4 mr-2" />
-                Use Location
+              <TabsTrigger value="location" className="flex flex-col items-center py-2 px-1 text-xs sm:text-sm sm:flex-row">
+                <MapPin className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+                <span className="whitespace-nowrap">Location</span>
               </TabsTrigger>
-              <TabsTrigger value="qrcode">
-                <QrCode className="h-4 w-4 mr-2" />
-                Scan QR Code
+              <TabsTrigger value="qrcode" className="flex flex-col items-center py-2 px-1 text-xs sm:text-sm sm:flex-row">
+                <QrCode className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+                <span className="whitespace-nowrap">QR Code</span>
               </TabsTrigger>
-              <TabsTrigger value="link">
-                <LinkIcon className="h-4 w-4 mr-2" />
-                Direct Link
+              <TabsTrigger value="link" className="flex flex-col items-center py-2 px-1 text-xs sm:text-sm sm:flex-row">
+                <LinkIcon className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
+                <span className="whitespace-nowrap">Direct</span>
               </TabsTrigger>
             </TabsList>
             
