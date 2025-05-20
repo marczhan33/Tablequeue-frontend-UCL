@@ -43,8 +43,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (user) {
         syncUserWithBackend(user);
       } else {
-        // If firebase user logs out, clear our backend user too
-        queryClient.setQueryData(["/api/user"], null);
+        // Only clear if we don't have a session-based authentication
+        if (!localStorage.getItem("auth_session_active")) {
+          queryClient.setQueryData(["/api/user"], null);
+        }
       }
     });
     
@@ -56,8 +58,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       syncUserWithBackend(currentUser);
     }
     
-    // We'll handle the redirect with our custom implementation
-
+    // Also check for session-based authentication on load
+    const checkSessionAuth = async () => {
+      try {
+        // If we have a stored session marker, verify it with the server
+        if (localStorage.getItem("auth_session_active")) {
+          console.log("Checking for active session authentication...");
+          const response = await fetch('/api/auth/status', {
+            credentials: 'include' // Important for session cookies
+          });
+          
+          if (response.ok) {
+            const status = await response.json();
+            console.log("Session auth status check:", status);
+            
+            // If authenticated but no user data loaded yet, fetch the user
+            if (status.isAuthenticated && !user) {
+              console.log("Session is authenticated, loading user data");
+              const userResponse = await fetch('/api/user', {
+                credentials: 'include'
+              });
+              
+              if (userResponse.ok) {
+                const userData = await userResponse.json();
+                console.log("Loaded user from session:", userData);
+                queryClient.setQueryData(["/api/user"], userData);
+              }
+            }
+          } else {
+            // If server says we're not authenticated, clear the local marker
+            localStorage.removeItem("auth_session_active");
+          }
+        }
+      } catch (error) {
+        console.error("Error checking session authentication:", error);
+      }
+    };
+    
+    // Run the session check
+    checkSessionAuth();
+    
     return () => unsubscribe();
   }, []);
 
