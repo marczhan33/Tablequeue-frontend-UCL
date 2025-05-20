@@ -237,7 +237,7 @@ export const RemoteWaitlistForm = ({ restaurant, onSuccess, isScheduled = false 
             <>
               <p>Join the waitlist in advance and spend less time waiting</p>
               <p className="text-primary font-medium">Secure your spot in line now! Your position is reserved from the moment you submit this form.</p>
-              <p className="text-amber-600 font-medium">⚠️ Important: You must check in physically within 15 minutes of your arrival time or your reservation will be automatically cancelled.</p>
+              <p className="text-amber-600 font-medium">⚠️ Important: For Digital Waitlist clients, if you don't check in within 15 minutes of your arrival time, your spot in line will be cancelled.</p>
             </>
           )}
           {isScheduled && (

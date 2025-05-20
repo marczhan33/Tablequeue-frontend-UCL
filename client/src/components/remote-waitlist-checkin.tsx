@@ -248,13 +248,12 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
       <CardHeader>
         <CardTitle className="text-xl font-bold">Check-in to {restaurant.name}</CardTitle>
         <CardDescription>
-          Enter your confirmation code and verify your physical presence
+          Choose between the 3 methods of checking in, or select Restaurant Staff Check-in
         </CardDescription>
       </CardHeader>
       <CardContent>
         {/* Physical Verification Section */}
         <div className="mb-6">
-          <h3 className="text-lg font-medium mb-2">Step 1: Verify Your Presence</h3>
           
           <Tabs defaultValue="location" value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-3">
@@ -444,7 +443,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
       <CardFooter className="flex flex-col pt-0">
         <p className="text-sm text-amber-600 mt-4">
           <AlertTriangle className="inline-block mr-1 h-4 w-4" />
-          If you don't check in within 15 minutes of your arrival time, your spot in line will be cancelled.
+          For Digital Waitlist clients, if you don't check in within 15 minutes of your arrival time, your spot in line will be cancelled.
         </p>
       </CardFooter>
     </Card>
