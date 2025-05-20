@@ -6,10 +6,17 @@ import { z } from "zod";
 export function setupGoogleAuth(app: Express) {
   // Debug Google auth issues
   app.get("/api/auth/status", (req: Request, res: Response) => {
+    // Check if user is authenticated through session
+    const session = req.session as any;
+    
     return res.status(200).json({
-      isAuthenticated: !!req.user,
+      isAuthenticated: !!req.user || !!(session && session.userId),
       user: req.user || null,
-      session: req.session ? true : false
+      session: req.session ? {
+        exists: true,
+        userId: session?.userId,
+        authMethod: session?.authMethod || 'standard'
+      } : false
     });
   });
   

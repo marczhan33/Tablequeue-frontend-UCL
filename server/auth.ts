@@ -36,16 +36,18 @@ export function setupAuth(app: Express) {
     checkPeriod: 86400000 // prune expired entries every 24h
   });
 
-  // Session configuration
+  // Enhanced session configuration for better cross-domain support
   const sessionConfig: session.SessionOptions = {
     secret: process.env.SESSION_SECRET || 'tablequeue-session-secret', // In production, use environment variable
-    resave: false,
-    saveUninitialized: false,
+    resave: true, // Changed to true to ensure session is always saved
+    saveUninitialized: true, // Changed to true to allow session creation before authentication
     store: sessionStore,
     cookie: { 
       httpOnly: true, 
       secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 1 week
+      sameSite: 'lax', // Allow cross-domain cookies with proper security
+      maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days for longer persistence
+      path: '/'
     }
   };
 

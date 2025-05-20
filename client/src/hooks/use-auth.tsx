@@ -141,19 +141,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async () => {
     try {
       console.log("Google login initiated");
+      const googleUser = await signInWithGoogle();
       
-      // Instead of direct Google authentication, let's use their email to create/login with a standard account
-      // This is a workaround for domain authorization issues with Firebase
-      
-      // Show a message to the user
-      toast({
-        title: "Please use traditional login",
-        description: "Traditional username/password login is more reliable in this environment.",
-      });
-      
-      // Direct users to use the regular login which is working reliably
-      return;
-      
+      if (googleUser) {
+        console.log("Google authentication successful, getting token...");
+        
+        // Get ID token and explicitly sync with backend
+        const idToken = await googleUser.getIdToken(true);
+        
+        // Use credentials: 'include' to ensure cookies are sent with request
+        const response = await fetch('/api/auth/google', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken }),
+          credentials: 'include' // This is crucial for cookie-based auth
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Authentication failed");
+        }
+        
+        // Process user data and update state
+        const userData = await response.json();
+        queryClient.setQueryData(["/api/user"], userData);
+        
+        // Store authentication state in localStorage as well
+        localStorage.setItem("auth_session_active", "true");
+        localStorage.setItem("auth_timestamp", Date.now().toString());
+        
+        // Force a complete page reload to apply session cookies properly
+        window.location.href = "/";
+        
+        toast({
+          title: "Sign in successful",
+          description: `Welcome${userData.username ? ', ' + userData.username : ''}!`,
+        });
+      }
     } catch (error: any) {
       console.error("Google login error:", error);
       toast({
