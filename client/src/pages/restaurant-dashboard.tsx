@@ -22,9 +22,30 @@ const RestaurantDashboard = () => {
   const [partySize, setPartySize] = useState("Any size");
   const [activeTab, setActiveTab] = useState("overview");
   
+  // Local form state to avoid making API calls on every keystroke
+  const [formState, setFormState] = useState({
+    name: '',
+    phoneNumber: '',
+    cuisine: '',
+    priceRange: '',
+    description: '',
+    address: ''
+  });
+  
   // Fetch restaurant data
   const { data: restaurant, isLoading } = useQuery<Restaurant>({
     queryKey: [`/api/restaurants/${RESTAURANT_ID}`],
+    onSuccess: (data) => {
+      // Initialize the form state with the restaurant data when it loads
+      setFormState({
+        name: data.name || '',
+        phoneNumber: data.phoneNumber || '',
+        cuisine: data.cuisine || '',
+        priceRange: data.priceRange || '',
+        description: data.description || '',
+        address: data.address || ''
+      });
+    }
   });
   
   // Update wait time mutation
@@ -260,8 +281,13 @@ const RestaurantDashboard = () => {
                     <input 
                       type="text" 
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                      value={restaurant.name}
-                      onChange={(e) => updateRestaurant.mutate({ name: e.target.value })}
+                      value={formState.name}
+                      onChange={(e) => setFormState({...formState, name: e.target.value})}
+                      onBlur={() => {
+                        if (formState.name !== restaurant.name) {
+                          updateRestaurant.mutate({ name: formState.name });
+                        }
+                      }}
                     />
                   </div>
                   <div>
@@ -269,16 +295,24 @@ const RestaurantDashboard = () => {
                     <input 
                       type="tel" 
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                      value={restaurant.phoneNumber || ""}
-                      onChange={(e) => updateRestaurant.mutate({ phoneNumber: e.target.value })}
+                      value={formState.phoneNumber || ""}
+                      onChange={(e) => setFormState({...formState, phoneNumber: e.target.value})}
+                      onBlur={() => {
+                        if (formState.phoneNumber !== restaurant.phoneNumber) {
+                          updateRestaurant.mutate({ phoneNumber: formState.phoneNumber });
+                        }
+                      }}
                     />
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">Cuisine Type</label>
                     <select 
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                      value={restaurant.cuisine}
-                      onChange={(e) => updateRestaurant.mutate({ cuisine: e.target.value })}
+                      value={formState.cuisine}
+                      onChange={(e) => {
+                        setFormState({...formState, cuisine: e.target.value});
+                        updateRestaurant.mutate({ cuisine: e.target.value });
+                      }}
                     >
                       <option>Seafood</option>
                       <option>Italian</option>
@@ -292,8 +326,11 @@ const RestaurantDashboard = () => {
                     <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
                     <select 
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                      value={restaurant.priceRange}
-                      onChange={(e) => updateRestaurant.mutate({ priceRange: e.target.value })}
+                      value={formState.priceRange}
+                      onChange={(e) => {
+                        setFormState({...formState, priceRange: e.target.value});
+                        updateRestaurant.mutate({ priceRange: e.target.value });
+                      }}
                     >
                       <option>$ (Under $10)</option>
                       <option>$$ ($11-$30)</option>
@@ -306,8 +343,13 @@ const RestaurantDashboard = () => {
                     <textarea 
                       className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
                       rows={3}
-                      value={restaurant.description || ""}
-                      onChange={(e) => updateRestaurant.mutate({ description: e.target.value })}
+                      value={formState.description || ""}
+                      onChange={(e) => setFormState({...formState, description: e.target.value})}
+                      onBlur={() => {
+                        if (formState.description !== restaurant.description) {
+                          updateRestaurant.mutate({ description: formState.description });
+                        }
+                      }}
                     ></textarea>
                   </div>
                 </div>
