@@ -46,7 +46,7 @@ const RestaurantDashboard = () => {
         address: data.address || ''
       });
     }
-  });
+  } as any);
   
   // Update wait time mutation
   const updateWaitTime = useMutation({
@@ -387,8 +387,13 @@ const RestaurantDashboard = () => {
               <input 
                 type="text" 
                 className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                value={restaurant.address}
-                onChange={(e) => updateRestaurant.mutate({ address: e.target.value })}
+                value={formState.address}
+                onChange={(e) => setFormState({...formState, address: e.target.value})}
+                onBlur={() => {
+                  if (formState.address !== restaurant.address) {
+                    updateRestaurant.mutate({ address: formState.address });
+                  }
+                }}
               />
             </div>
             {/* Google Maps component */}
