@@ -266,7 +266,11 @@ export default function AuthPage() {
                             defaultValue={field.value}
                             className="grid grid-cols-2 gap-2"
                           >
-                            <div className="flex flex-col items-center p-4 border rounded-lg hover:border-primary cursor-pointer">
+                            <div className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                              field.value === 'customer' 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-gray-200 hover:border-primary'
+                            }`}>
                               <RadioGroupItem value="customer" id="customer" className="sr-only" />
                               <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-full bg-primary/10">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
@@ -278,7 +282,11 @@ export default function AuthPage() {
                               <span className="text-xs text-center mt-1 text-gray-500">Find restaurants and join waitlists</span>
                             </div>
                             
-                            <div className="flex flex-col items-center p-4 border rounded-lg hover:border-primary cursor-pointer">
+                            <div className={`flex flex-col items-center p-4 border-2 rounded-lg cursor-pointer transition-colors ${
+                              field.value === 'owner' 
+                                ? 'border-primary bg-primary/5' 
+                                : 'border-gray-200 hover:border-primary'
+                            }`}>
                               <RadioGroupItem value="owner" id="owner" className="sr-only" />
                               <div className="w-12 h-12 mb-2 flex items-center justify-center rounded-full bg-primary/10">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary">
