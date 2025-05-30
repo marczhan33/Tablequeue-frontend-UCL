@@ -127,50 +127,78 @@ const RestaurantDashboard = () => {
   };
 
   const handleVerifyLocation = async () => {
-    if (!formState.address) {
-      toast({
-        title: "Error",
-        description: "Please enter an address first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
     setIsVerifyingLocation(true);
     
     try {
-      // Use the Google Maps Geocoding API to verify the address
-      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(formState.address)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+      // Get current GPS location
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('Geolocation is not supported by this browser'));
+          return;
+        }
+        
+        navigator.geolocation.getCurrentPosition(resolve, reject, {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000
+        });
+      });
+
+      const { latitude, longitude } = position.coords;
+
+      // Use reverse geocoding to get the address from coordinates
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
       
       const response = await fetch(geocodeUrl);
       const data = await response.json();
       
       if (data.status === 'OK' && data.results.length > 0) {
-        const location = data.results[0].geometry.location;
         const formattedAddress = data.results[0].formatted_address;
         
-        // Update restaurant with verified coordinates
+        // Update restaurant with GPS coordinates and address
         updateRestaurant.mutate({ 
           address: formattedAddress,
-          latitude: location.lat.toString(),
-          longitude: location.lng.toString()
+          latitude: latitude.toString(),
+          longitude: longitude.toString()
         });
+        
+        // Update local form state too
+        setFormState(prev => ({
+          ...prev,
+          address: formattedAddress
+        }));
         
         toast({
           title: "Location verified",
-          description: "Your restaurant location has been verified and updated on the map.",
+          description: "Your restaurant location has been set using your current GPS location.",
         });
       } else {
         toast({
-          title: "Location not found",
-          description: "We couldn't verify this address. Please check the spelling and try again.",
+          title: "Address lookup failed",
+          description: "We got your GPS location but couldn't determine the address. The map will still be updated.",
           variant: "destructive",
         });
+        
+        // Still update coordinates even if we can't get address
+        updateRestaurant.mutate({ 
+          latitude: latitude.toString(),
+          longitude: longitude.toString()
+        });
       }
-    } catch (error) {
+    } catch (error: any) {
+      let errorMessage = "Unable to get your location.";
+      
+      if (error.code === 1) {
+        errorMessage = "Location access denied. Please allow location access and try again.";
+      } else if (error.code === 2) {
+        errorMessage = "Location unavailable. Please check your GPS settings.";
+      } else if (error.code === 3) {
+        errorMessage = "Location request timed out. Please try again.";
+      }
+      
       toast({
-        title: "Verification failed",
-        description: "Unable to verify location. Please check your internet connection and try again.",
+        title: "Location error",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
@@ -511,9 +539,9 @@ const RestaurantDashboard = () => {
               <button 
                 className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm disabled:opacity-50"
                 onClick={handleVerifyLocation}
-                disabled={isVerifyingLocation || !formState.address}
+                disabled={isVerifyingLocation}
               >
-                {isVerifyingLocation ? 'Verifying...' : 'Verify Location'}
+                {isVerifyingLocation ? 'Getting Location...' : 'Use My Current Location'}
               </button>
             </div>
           </div>
