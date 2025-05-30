@@ -35,6 +35,9 @@ const RestaurantDashboard = () => {
   // State for editing hours
   const [isEditingHours, setIsEditingHours] = useState(false);
   
+  // State for location verification
+  const [isVerifyingLocation, setIsVerifyingLocation] = useState(false);
+  
   // Fetch restaurant data
   const { data: restaurant, isLoading } = useQuery<Restaurant>({
     queryKey: [`/api/restaurants/${RESTAURANT_ID}`],
@@ -121,6 +124,58 @@ const RestaurantDashboard = () => {
       status: restaurant.currentWaitStatus as WaitStatus, 
       customTime: customWaitTime
     });
+  };
+
+  const handleVerifyLocation = async () => {
+    if (!formState.address) {
+      toast({
+        title: "Error",
+        description: "Please enter an address first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsVerifyingLocation(true);
+    
+    try {
+      // Use the Google Maps Geocoding API to verify the address
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(formState.address)}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+      
+      const response = await fetch(geocodeUrl);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results.length > 0) {
+        const location = data.results[0].geometry.location;
+        const formattedAddress = data.results[0].formatted_address;
+        
+        // Update restaurant with verified coordinates
+        updateRestaurant.mutate({ 
+          address: formattedAddress,
+          latitude: location.lat.toString(),
+          longitude: location.lng.toString()
+        });
+        
+        toast({
+          title: "Location verified",
+          description: "Your restaurant location has been verified and updated on the map.",
+        });
+      } else {
+        toast({
+          title: "Location not found",
+          description: "We couldn't verify this address. Please check the spelling and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Verification failed",
+        description: "Unable to verify location. Please check your internet connection and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsVerifyingLocation(false);
+    }
   };
   
   if (isLoading) {
@@ -453,8 +508,12 @@ const RestaurantDashboard = () => {
               className="mb-4"
             />
             <div className="flex justify-end">
-              <button className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm">
-                Verify Location
+              <button 
+                className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm disabled:opacity-50"
+                onClick={handleVerifyLocation}
+                disabled={isVerifyingLocation || !formState.address}
+              >
+                {isVerifyingLocation ? 'Verifying...' : 'Verify Location'}
               </button>
             </div>
           </div>
