@@ -32,6 +32,9 @@ const RestaurantDashboard = () => {
     address: ''
   });
   
+  // State for editing hours
+  const [isEditingHours, setIsEditingHours] = useState(false);
+  
   // Fetch restaurant data
   const { data: restaurant, isLoading } = useQuery<Restaurant>({
     queryKey: [`/api/restaurants/${RESTAURANT_ID}`],
@@ -369,12 +372,58 @@ const RestaurantDashboard = () => {
                     <p className="text-gray-500">No operating hours set.</p>
                   )}
                 </div>
-                <button className="mt-4 text-secondary hover:text-primary transition-colors text-sm">
+                <button 
+                  className="mt-4 text-secondary hover:text-primary transition-colors text-sm"
+                  onClick={() => setIsEditingHours(!isEditingHours)}
+                >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 inline mr-1" viewBox="0 0 20 20" fill="currentColor">
                     <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
                   </svg>
-                  Edit Hours
+                  {isEditingHours ? 'Cancel' : 'Edit Hours'}
                 </button>
+                
+                {/* Hours editing form */}
+                {isEditingHours && (
+                  <div className="mt-4 space-y-3">
+                    {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'].map((day) => (
+                      <div key={day} className="flex items-center space-x-2">
+                        <label className="w-20 text-sm font-medium capitalize">{day}:</label>
+                        <input 
+                          type="time" 
+                          className="px-2 py-1 border border-gray-300 rounded text-sm"
+                          defaultValue={operatingHours?.[day]?.open || "09:00"}
+                        />
+                        <span className="text-sm">to</span>
+                        <input 
+                          type="time" 
+                          className="px-2 py-1 border border-gray-300 rounded text-sm"
+                          defaultValue={operatingHours?.[day]?.close || "21:00"}
+                        />
+                      </div>
+                    ))}
+                    <div className="flex space-x-2 mt-4">
+                      <button 
+                        className="px-4 py-2 bg-secondary text-white rounded hover:bg-opacity-90 text-sm"
+                        onClick={() => {
+                          // Save hours logic would go here
+                          setIsEditingHours(false);
+                          toast({
+                            title: "Hours updated",
+                            description: "Your restaurant hours have been updated successfully.",
+                          });
+                        }}
+                      >
+                        Save Hours
+                      </button>
+                      <button 
+                        className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm"
+                        onClick={() => setIsEditingHours(false)}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
