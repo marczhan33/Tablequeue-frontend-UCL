@@ -297,7 +297,19 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
                         min={1}
                         max={20}
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Remove leading zeros and convert to number
+                          const numValue = value === '' ? 0 : parseInt(value, 10);
+                          field.onChange(numValue);
+                        }}
+                        onBlur={(e) => {
+                          // Ensure no leading zeros on blur
+                          const value = e.target.value;
+                          if (value && value !== '0') {
+                            e.target.value = parseInt(value, 10).toString();
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -317,7 +329,19 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
                         min={1}
                         max={100}
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Remove leading zeros and convert to number
+                          const numValue = value === '' ? 0 : parseInt(value, 10);
+                          field.onChange(numValue);
+                        }}
+                        onBlur={(e) => {
+                          // Ensure no leading zeros on blur
+                          const value = e.target.value;
+                          if (value && value !== '0') {
+                            e.target.value = parseInt(value, 10).toString();
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -337,7 +361,19 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
                         min={15}
                         max={240}
                         {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          // Remove leading zeros and convert to number
+                          const numValue = value === '' ? 0 : parseInt(value, 10);
+                          field.onChange(numValue);
+                        }}
+                        onBlur={(e) => {
+                          // Ensure no leading zeros on blur
+                          const value = e.target.value;
+                          if (value && value !== '0') {
+                            e.target.value = parseInt(value, 10).toString();
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
