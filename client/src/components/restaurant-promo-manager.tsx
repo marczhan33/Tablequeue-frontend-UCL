@@ -103,9 +103,21 @@ export function RestaurantPromoManager({ restaurantId, initialPromotions }: Prom
   
   // Handle discount change
   const handleDiscountChange = (time: string, newDiscount: string) => {
+    if (newDiscount === '') {
+      // Allow empty input
+      setPromotions(prev => 
+        prev.map(promo => 
+          promo.time === time 
+            ? { ...promo, discount: 0 } 
+            : promo
+        )
+      );
+      return;
+    }
+    
     const discount = parseInt(newDiscount, 10);
     
-    // Ensure discount is between 0-100
+    // Ensure discount is between 0-100, remove leading zeros
     const validDiscount = isNaN(discount) ? 0 : Math.min(100, Math.max(0, discount));
     
     setPromotions(prev => 
@@ -116,6 +128,24 @@ export function RestaurantPromoManager({ restaurantId, initialPromotions }: Prom
       )
     );
   };
+
+  // Helper function to render discount input
+  const renderDiscountInput = (promo: TimeSlotPromo) => (
+    <Input
+      id={`discount-${promo.time}`}
+      type="number"
+      min="0"
+      max="100"
+      value={promo.discount === 0 ? '' : promo.discount}
+      onChange={(e) => handleDiscountChange(promo.time, e.target.value)}
+      onFocus={(e) => {
+        if (e.target.value === '0') {
+          e.target.value = '';
+        }
+      }}
+      className="w-20 text-right"
+    />
+  );
   
   // Save promotions to the server
   const savePromotions = async () => {
@@ -199,15 +229,7 @@ export function RestaurantPromoManager({ restaurantId, initialPromotions }: Prom
                           Discount for {promo.time}
                         </Label>
                         <div className="flex items-center">
-                          <Input
-                            id={`discount-${promo.time}`}
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={promo.discount}
-                            onChange={(e) => handleDiscountChange(promo.time, e.target.value)}
-                            className="w-20 text-right"
-                          />
+                          {renderDiscountInput(promo)}
                           <span className="ml-2 text-sm font-medium">% OFF</span>
                         </div>
                       </div>
@@ -233,15 +255,7 @@ export function RestaurantPromoManager({ restaurantId, initialPromotions }: Prom
                           Discount for {promo.time}
                         </Label>
                         <div className="flex items-center">
-                          <Input
-                            id={`discount-${promo.time}`}
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={promo.discount}
-                            onChange={(e) => handleDiscountChange(promo.time, e.target.value)}
-                            className="w-20 text-right"
-                          />
+                          {renderDiscountInput(promo)}
                           <span className="ml-2 text-sm font-medium">% OFF</span>
                         </div>
                       </div>
