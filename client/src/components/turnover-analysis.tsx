@@ -75,7 +75,7 @@ export function TurnoverAnalysis({ restaurantId }: TurnoverAnalyticsProps) {
     );
   }
   
-  if (!analytics) {
+  if (!analytics || !analytics.seasonalTrends || !analytics.industryComparison) {
     return (
       <Card>
         <CardHeader>
@@ -118,7 +118,7 @@ export function TurnoverAnalysis({ restaurantId }: TurnoverAnalyticsProps) {
                 <CardContent>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analytics.seasonalTrends.byMonth}>
+                      <BarChart data={analytics.seasonalTrends.byMonth || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="month" />
                         <YAxis name="Minutes" />
@@ -140,7 +140,7 @@ export function TurnoverAnalysis({ restaurantId }: TurnoverAnalyticsProps) {
                 <CardContent>
                   <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={analytics.seasonalTrends.byDayOfWeek}>
+                      <BarChart data={analytics.seasonalTrends.byDayOfWeek || []}>
                         <CartesianGrid strokeDasharray="3 3" />
                         <XAxis dataKey="day" />
                         <YAxis name="Minutes" />
@@ -163,7 +163,7 @@ export function TurnoverAnalysis({ restaurantId }: TurnoverAnalyticsProps) {
               <CardContent>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={analytics.seasonalTrends.byHourOfDay}>
+                    <LineChart data={analytics.seasonalTrends.byHourOfDay || []}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="hour" />
                       <YAxis />
