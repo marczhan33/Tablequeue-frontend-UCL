@@ -214,42 +214,43 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
           </Button>
         </div>
       ) : (
-        <div className="border rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-100">
-              <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Capacity</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Count</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Turnover Time</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {tableTypes.map((tableType) => (
-                <tr key={tableType.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{tableType.name}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tableType.capacity} people</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tableType.count}</td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{tableType.estimatedTurnoverTime} min</td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${tableType.isActive ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                      {tableType.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <Button variant="ghost" size="sm" onClick={() => handleEdit(tableType)} className="text-blue-600 hover:text-blue-900 mr-1">
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => handleDelete(tableType.id)} className="text-red-600 hover:text-red-900">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-4">
+          {tableTypes.map((tableType) => (
+            <div key={tableType.id} className="bg-white rounded-lg border p-6">
+              <div className="flex justify-between items-start mb-4">
+                <h3 className="text-lg font-semibold text-gray-900">{tableType.name}</h3>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleEdit(tableType)} 
+                  className="text-red-600 hover:text-red-900"
+                >
+                  Edit
+                </Button>
+              </div>
+              
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Capacity:</span>
+                  <span className="font-medium">{tableType.capacity} people</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Count:</span>
+                  <span className="font-medium">{tableType.count}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Avg. Turnover:</span>
+                  <span className="font-medium">{tableType.estimatedTurnoverTime} minutes</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Status:</span>
+                  <span className={`font-medium ${tableType.isActive ? 'text-green-600' : 'text-gray-600'}`}>
+                    {tableType.isActive ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
