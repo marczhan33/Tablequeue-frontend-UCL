@@ -281,15 +281,7 @@ export function RestaurantPromoManager({ restaurantId, initialPromotions }: Prom
                           Discount for {promo.time}
                         </Label>
                         <div className="flex items-center">
-                          <Input
-                            id={`discount-${promo.time}`}
-                            type="number"
-                            min="0"
-                            max="100"
-                            value={promo.discount}
-                            onChange={(e) => handleDiscountChange(promo.time, e.target.value)}
-                            className="w-20 text-right"
-                          />
+                          {renderDiscountInput(promo)}
                           <span className="ml-2 text-sm font-medium">% OFF</span>
                         </div>
                       </div>
