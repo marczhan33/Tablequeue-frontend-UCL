@@ -447,10 +447,12 @@ const RestaurantDashboard = () => {
               <h3 className="text-lg font-semibold mb-4">Opening Hours</h3>
               <div className="bg-gray-50 rounded-lg p-6">
                 <div className="space-y-3">
-                  {operatingHours && Object.entries(operatingHours).map(([day, hours]: [string, any]) => (
+                  {operatingHours && ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                    .filter(day => operatingHours[day])
+                    .map((day) => (
                     <div key={day} className="flex justify-between">
                       <span className="font-medium">{day.charAt(0).toUpperCase() + day.slice(1)}</span>
-                      <span>{hours.open} - {hours.close}</span>
+                      <span>{operatingHours[day].open} - {operatingHours[day].close}</span>
                     </div>
                   ))}
                   {!operatingHours && (

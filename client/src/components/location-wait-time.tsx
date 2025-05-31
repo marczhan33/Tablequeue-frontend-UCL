@@ -158,10 +158,12 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
                   <p className="font-semibold">Operating Hours:</p>
                   {restaurant.operatingHours ? (
                     <div className="text-sm grid grid-cols-2 gap-2 mt-1">
-                      {Object.entries(restaurant.operatingHours as Record<string, {open: string, close: string}>).map(([day, hours]) => (
+                      {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+                        .filter(day => restaurant.operatingHours?.[day])
+                        .map((day) => (
                         <div key={day}>
                           <span className="font-medium">{day.charAt(0).toUpperCase() + day.slice(1)}: </span>
-                          <span>{hours.open} - {hours.close}</span>
+                          <span>{restaurant.operatingHours[day].open} - {restaurant.operatingHours[day].close}</span>
                         </div>
                       ))}
                     </div>
