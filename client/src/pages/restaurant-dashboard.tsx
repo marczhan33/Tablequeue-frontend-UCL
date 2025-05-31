@@ -252,7 +252,7 @@ const RestaurantDashboard = () => {
           <TabsTrigger value="qrcode">QR Code</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="bg-gray-50 rounded-lg p-6">
           {/* Current Status Card */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
             <h3 className="text-lg font-semibold mb-4">Current Wait Status</h3>
@@ -547,7 +547,7 @@ const RestaurantDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="waitlist">
+        <TabsContent value="waitlist" className="bg-gray-50 rounded-lg p-6">
           <div className="space-y-8">
             <WaitlistManagement restaurantId={RESTAURANT_ID} />
             
@@ -556,8 +556,8 @@ const RestaurantDashboard = () => {
           </div>
         </TabsContent>
         
-        <TabsContent value="tables">
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+        <TabsContent value="tables" className="bg-gray-50 rounded-lg p-6">
+          <div className="mb-6">
             <h3 className="text-lg font-semibold mb-4">Table Management</h3>
             <p className="text-gray-600 mb-6">Manage your restaurant's table types and optimize queue management based on party sizes.</p>
             
