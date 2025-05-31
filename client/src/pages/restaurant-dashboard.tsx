@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Restaurant, WaitStatus } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import GoogleMap from "@/components/ui/google-map";
@@ -41,18 +41,21 @@ const RestaurantDashboard = () => {
   // Fetch restaurant data
   const { data: restaurant, isLoading } = useQuery<Restaurant>({
     queryKey: [`/api/restaurants/${RESTAURANT_ID}`],
-    onSuccess: (data) => {
-      // Initialize the form state with the restaurant data when it loads
+  });
+  
+  // Initialize form state when restaurant data loads
+  useEffect(() => {
+    if (restaurant) {
       setFormState({
-        name: data.name || '',
-        phoneNumber: data.phoneNumber || '',
-        cuisine: data.cuisine || '',
-        priceRange: data.priceRange || '',
-        description: data.description || '',
-        address: data.address || ''
+        name: restaurant.name || '',
+        phoneNumber: restaurant.phoneNumber || '',
+        cuisine: restaurant.cuisine || '',
+        priceRange: restaurant.priceRange || '',
+        description: restaurant.description || '',
+        address: restaurant.address || ''
       });
     }
-  } as any);
+  }, [restaurant]);
   
   // Update wait time mutation
   const updateWaitTime = useMutation({
