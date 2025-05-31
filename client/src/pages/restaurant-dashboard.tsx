@@ -149,17 +149,14 @@ const RestaurantDashboard = () => {
 
       const { latitude, longitude } = position.coords;
 
-      // Use reverse geocoding to get the address from coordinates
-      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${import.meta.env.VITE_GOOGLE_MAPS_API_KEY}`;
+      // Use backend endpoint for reverse geocoding to get the address from coordinates
+      const response = await apiRequest('/api/geocode', {
+        method: 'POST',
+        body: { latitude, longitude }
+      });
       
-      console.log('Making geocoding request to:', geocodeUrl);
-      const response = await fetch(geocodeUrl);
-      const data = await response.json();
-      
-      console.log('Geocoding response:', data);
-      
-      if (data.status === 'OK' && data.results.length > 0) {
-        const formattedAddress = data.results[0].formatted_address;
+      if (response.address) {
+        const formattedAddress = response.address;
         
         // Update restaurant with GPS coordinates and address
         updateRestaurant.mutate({ 

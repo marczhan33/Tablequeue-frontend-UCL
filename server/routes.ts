@@ -1552,6 +1552,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Time slot promotions API endpoints
+  // Geocoding endpoint to convert coordinates to address
+  apiRouter.post("/geocode", async (req: Request, res: Response) => {
+    try {
+      const { latitude, longitude } = req.body;
+      
+      if (!latitude || !longitude) {
+        return res.status(400).json({ error: "Latitude and longitude are required" });
+      }
+      
+      const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${latitude},${longitude}&key=${process.env.VITE_GOOGLE_MAPS_API_KEY}`;
+      
+      const response = await fetch(geocodeUrl);
+      const data = await response.json();
+      
+      if (data.status === 'OK' && data.results.length > 0) {
+        const formattedAddress = data.results[0].formatted_address;
+        res.json({ address: formattedAddress });
+      } else {
+        res.status(400).json({ error: "Unable to geocode location", details: data });
+      }
+    } catch (error) {
+      console.error("Geocoding error:", error);
+      res.status(500).json({ error: "Internal server error during geocoding" });
+    }
+  });
+
   apiRouter.get("/restaurants/:id/promotions", async (req: Request, res: Response) => {
     try {
       const restaurantId = parseInt(req.params.id);
