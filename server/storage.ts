@@ -330,6 +330,22 @@ export class DatabaseStorage implements IStorage {
       entry.queuePosition = entries.length + 1;
     }
     
+    // Calculate estimated wait time if not provided
+    if (!entry.estimatedWaitTime) {
+      const restaurant = await this.getRestaurant(entry.restaurantId);
+      if (restaurant) {
+        // Base wait time of 15 minutes per position ahead
+        entry.estimatedWaitTime = Math.max(5, (entry.queuePosition - 1) * 15);
+        
+        // Apply custom wait time if restaurant has one set
+        if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
+          entry.estimatedWaitTime = restaurant.customWaitTime;
+        }
+      } else {
+        entry.estimatedWaitTime = 15; // Default fallback
+      }
+    }
+    
     const result = await db
       .insert(waitlistEntries)
       .values(entry)
@@ -352,6 +368,22 @@ export class DatabaseStorage implements IStorage {
       // Get current queue position if not provided
       const entries = await this.getWaitlistEntriesByRestaurantId(entry.restaurantId);
       entry.queuePosition = entries.length + 1;
+    }
+    
+    // Calculate estimated wait time if not provided
+    if (!entry.estimatedWaitTime) {
+      const restaurant = await this.getRestaurant(entry.restaurantId);
+      if (restaurant) {
+        // Base wait time of 15 minutes per position ahead
+        entry.estimatedWaitTime = Math.max(5, (entry.queuePosition - 1) * 15);
+        
+        // Apply custom wait time if restaurant has one set
+        if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
+          entry.estimatedWaitTime = restaurant.customWaitTime;
+        }
+      } else {
+        entry.estimatedWaitTime = 15; // Default fallback
+      }
     }
     
     // Generate a confirmation code for all remote entries
