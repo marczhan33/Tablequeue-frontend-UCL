@@ -236,6 +236,31 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
   const handleCancel = (entryId: number) => {
     updateEntryMutation.mutate({ entryId, status: 'cancelled' });
   };
+
+  // Handle seat/check-in customer
+  const handleSeatCustomer = (entry: WaitlistEntry) => {
+    // If this is a remote customer who hasn't checked in yet, show confirmation dialog
+    if (entry.isRemote && (entry.status === 'remote_pending' || entry.status === 'remote_confirmed')) {
+      setSelectedEntry(entry);
+      setCheckInDialogOpen(true);
+    } else {
+      // For customers already waiting, seat them directly
+      updateEntryMutation.mutate({ entryId: entry.id, status: 'processing' });
+    }
+  };
+
+  const handleConfirmCheckIn = () => {
+    if (!confirmationCode.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter the confirmation code',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    checkInMutation.mutate({ confirmationCode: confirmationCode.trim() });
+  };
   
   // Format the expected arrival time
   const formatTime = (timestamp: string | Date) => {
@@ -474,13 +499,13 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
                               variant="ghost"
                               size="sm"
                               className="h-8 w-8 p-0 text-green-500"
-                              onClick={() => updateEntryMutation.mutate({ 
-                                entryId: entry.id, 
-                                status: 'processing' 
-                              })}
+                              onClick={() => handleSeatCustomer(entry)}
                             >
                               <UserCheck className="h-4 w-4" />
-                              <span className="sr-only">Process</span>
+                              <span className="sr-only">
+                                {entry.isRemote && (entry.status === 'remote_pending' || entry.status === 'remote_confirmed') 
+                                  ? 'Check In' : 'Process'}
+                              </span>
                             </Button>
                           )}
                           
@@ -514,6 +539,49 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
           )}
         </div>
       </CardFooter>
+
+      {/* Confirmation Code Dialog */}
+      <Dialog open={checkInDialogOpen} onOpenChange={setCheckInDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Check In Customer</DialogTitle>
+            <DialogDescription>
+              {selectedEntry && `Enter the confirmation code shown by ${selectedEntry.customerName} to check them in.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="confirmationCode">Confirmation Code</Label>
+              <Input
+                id="confirmationCode"
+                value={confirmationCode}
+                onChange={(e) => setConfirmationCode(e.target.value)}
+                placeholder="Enter 6-digit code"
+                maxLength={6}
+                className="text-center tracking-widest text-lg"
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setCheckInDialogOpen(false);
+                  setConfirmationCode('');
+                  setSelectedEntry(null);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleConfirmCheckIn}
+                disabled={checkInMutation.isPending}
+              >
+                {checkInMutation.isPending ? 'Checking In...' : 'Check In'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
