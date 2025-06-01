@@ -161,57 +161,41 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
   // Process next customer based on priority rules
   const processNextCustomer = () => {
     try {
-      let nextCustomer = null;
-      
-      // Prioritize physically present customers if enabled
-      if (prioritizePhysical) {
-        // First check for physical customers waiting
-        const physicalEntries = allWaitlistEntries.filter((entry: WaitlistEntry) => 
-          !entry.isRemote && entry.status === 'waiting'
-        );
-        
-        if (physicalEntries.length > 0) {
-          // Sort by creation time (first in, first out)
-          physicalEntries.sort((a: WaitlistEntry, b: WaitlistEntry) => {
-            const aTime = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-            const bTime = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-            return aTime - bTime;
-          });
-          
-          nextCustomer = physicalEntries[0];
-          updateEntryMutation.mutate({ 
-            entryId: nextCustomer.id, 
-            status: 'processing' 
-          });
-          
-          toast({
-            title: 'Processing Next Customer',
-            description: `Physical customer ${nextCustomer.customerName} is being processed.`,
-          });
-          return;
-        }
-      }
-      
-      // If no physical entries or not prioritizing, check for remote entries
-      const remoteEntries = allWaitlistEntries.filter((entry: WaitlistEntry) => 
-        entry.isRemote && (entry.status === 'remote_confirmed')
+      // Find customers ready to be seated (status: 'ready_to_seat')
+      const readyToSeatEntries = allWaitlistEntries.filter((entry: WaitlistEntry) => 
+        entry.status === 'ready_to_seat'
       );
       
-      if (remoteEntries.length > 0) {
-        // Sort by original queue position
-        remoteEntries.sort((a: WaitlistEntry, b: WaitlistEntry) => 
+      if (readyToSeatEntries.length > 0) {
+        // Sort by queue position to maintain fairness
+        readyToSeatEntries.sort((a: WaitlistEntry, b: WaitlistEntry) => 
           a.queuePosition - b.queuePosition
         );
         
-        nextCustomer = remoteEntries[0];
+        const nextCustomer = readyToSeatEntries[0];
+        
+        // Seat the customer (change status to 'seated')
         updateEntryMutation.mutate({ 
           entryId: nextCustomer.id, 
-          status: 'processing' 
+          status: 'seated' 
         });
         
         toast({
-          title: 'Processing Next Customer',
-          description: `Remote customer ${nextCustomer.customerName} is being processed.`,
+          title: 'Customer Seated',
+          description: `${nextCustomer.customerName} has been seated and turnover tracking has begun.`,
+        });
+        return;
+      }
+      
+      // If no customers are ready to seat, check for waiting customers
+      const waitingEntries = allWaitlistEntries.filter((entry: WaitlistEntry) => 
+        entry.status === 'waiting'
+      );
+      
+      if (waitingEntries.length > 0) {
+        toast({
+          title: 'No Tables Available',
+          description: 'Customers are waiting but no tables are currently available.',
         });
         return;
       }
@@ -482,11 +466,20 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
                       
                       <TableCell>
                         {entry.isRemote ? (
-                          <Badge variant={entry.status === 'remote_pending' ? 'secondary' : 'outline'}>
-                            {entry.status === 'remote_pending' ? 'Pending Arrival' : 'Confirmed En Route'}
+                          <Badge variant={
+                            entry.status === 'remote_pending' ? 'secondary' : 
+                            entry.status === 'ready_to_seat' ? 'default' :
+                            entry.status === 'waiting' ? 'outline' : 'outline'
+                          }>
+                            {entry.status === 'remote_pending' ? 'Pending Arrival' : 
+                             entry.status === 'ready_to_seat' ? 'Can be seated' :
+                             entry.status === 'waiting' ? 'Waiting' : 'Confirmed En Route'}
                           </Badge>
                         ) : (
-                          <Badge variant="default">In Person</Badge>
+                          <Badge variant={entry.status === 'ready_to_seat' ? 'default' : 'outline'}>
+                            {entry.status === 'ready_to_seat' ? 'Can be seated' : 
+                             entry.status === 'waiting' ? 'Waiting' : 'In Person'}
+                          </Badge>
                         )}
                       </TableCell>
                       

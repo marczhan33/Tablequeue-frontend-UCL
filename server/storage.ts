@@ -1267,7 +1267,7 @@ export class MemStorage implements IStorage {
     let newStatus = 'waiting';
     let seatedAt = null;
     
-    // If advanced queue is enabled, check for available tables
+    // Check queue position and table availability to determine if customer can be seated
     if (restaurant.useAdvancedQueue) {
       const tableTypes = await this.getTableTypes(entry.restaurantId);
       const suitableTables = tableTypes.filter(
@@ -1275,21 +1275,25 @@ export class MemStorage implements IStorage {
       );
       
       if (suitableTables.length > 0) {
-        // Check if there are available tables
-        const totalAvailableTables = suitableTables.reduce((sum, table) => sum + table.count, 0);
+        // Check how many customers are ahead in the queue
+        const waitingCustomers = Array.from(this.waitlistEntries.values()).filter(
+          e => e.restaurantId === entry.restaurantId && 
+          (e.status === 'waiting' || e.status === 'ready_to_seat') &&
+          e.queuePosition < entry.queuePosition
+        );
         
-        // Count currently seated customers using these table types
+        // Check available tables
+        const totalAvailableTables = suitableTables.reduce((sum, table) => sum + table.count, 0);
         const seatedEntries = Array.from(this.waitlistEntries.values()).filter(
           e => e.restaurantId === entry.restaurantId && e.status === 'seated' && e.seatedAt
         );
+        const availableTables = totalAvailableTables - seatedEntries.length;
         
-        if (seatedEntries.length < totalAvailableTables) {
-          // Tables are available, seat the customer immediately
-          newStatus = 'seated';
-          seatedAt = new Date();
-          
-          // Start turnover analytics tracking
-          // Note: Table seating will be tracked when turnover analytics are generated
+        // If there are available tables and no one ahead in queue, customer can be seated
+        if (availableTables > 0 && waitingCustomers.length === 0) {
+          newStatus = 'ready_to_seat'; // Ready to seat but not automatically seated
+        } else {
+          newStatus = 'waiting'; // Must wait for their turn
         }
       }
     }
