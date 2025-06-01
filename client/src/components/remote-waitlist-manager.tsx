@@ -46,12 +46,17 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
   
   // Filter entries based on the active tab
   const waitlistEntries = allWaitlistEntries ? allWaitlistEntries.filter((entry: WaitlistEntry) => {
+    // Always exclude cancelled entries from all views
+    if (entry.status === 'cancelled') {
+      return false;
+    }
+    
     if (activeTab === 'remote') {
       return entry.isRemote && (entry.status === 'remote_pending' || entry.status === 'remote_confirmed');
     } else if (activeTab === 'physical') {
-      return !entry.isRemote && entry.status === 'waiting';
+      return !entry.isRemote && (entry.status === 'waiting' || entry.status === 'ready_to_seat');
     } else if (activeTab === 'all') {
-      return true;
+      return entry.status !== 'seated'; // Show all except seated and cancelled
     }
     return false;
   }) : [];
