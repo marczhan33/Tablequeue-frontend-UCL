@@ -1258,13 +1258,48 @@ export class MemStorage implements IStorage {
       return undefined;
     }
     
-    // Update status to mark arrival but KEEP the original queue position
-    // This preserves their spot in line from when they joined remotely
+    // Get restaurant to check if advanced queue is enabled
+    const restaurant = this.restaurants.get(entry.restaurantId);
+    if (!restaurant) {
+      return undefined;
+    }
+    
+    let newStatus = 'waiting';
+    let seatedAt = null;
+    
+    // If advanced queue is enabled, check for available tables
+    if (restaurant.useAdvancedQueue) {
+      const tableTypes = await this.getTableTypes(entry.restaurantId);
+      const suitableTables = tableTypes.filter(
+        table => table.capacity >= entry.partySize && table.isActive
+      );
+      
+      if (suitableTables.length > 0) {
+        // Check if there are available tables
+        const totalAvailableTables = suitableTables.reduce((sum, table) => sum + table.count, 0);
+        
+        // Count currently seated customers using these table types
+        const seatedEntries = Array.from(this.waitlistEntries.values()).filter(
+          e => e.restaurantId === entry.restaurantId && e.status === 'seated' && e.seatedAt
+        );
+        
+        if (seatedEntries.length < totalAvailableTables) {
+          // Tables are available, seat the customer immediately
+          newStatus = 'seated';
+          seatedAt = new Date();
+          
+          // Start turnover analytics tracking
+          // Note: Table seating will be tracked when turnover analytics are generated
+        }
+      }
+    }
+    
+    // Update status and preserve original queue position
     const updatedEntry = { 
       ...entry, 
-      status: 'waiting',
-      arrivedAt: new Date()
-      // Importantly, we're NOT recalculating queuePosition here
+      status: newStatus,
+      arrivedAt: new Date(),
+      seatedAt
     };
     
     this.waitlistEntries.set(entry.id, updatedEntry);
