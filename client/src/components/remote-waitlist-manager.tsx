@@ -13,6 +13,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 
 interface RemoteWaitlistManagerProps {
   restaurant: Restaurant;
@@ -23,6 +31,9 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
   const [autoProcessing, setAutoProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState('remote');
   const [prioritizePhysical, setPrioritizePhysical] = useState(true);
+  const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<WaitlistEntry | null>(null);
+  const [confirmationCode, setConfirmationCode] = useState('');
   
   // Get all waitlist entries for this restaurant
   const { data: allWaitlistEntries, isLoading, error } = useQuery({
@@ -69,6 +80,37 @@ export const RemoteWaitlistManager = ({ restaurant }: RemoteWaitlistManagerProps
         variant: 'destructive',
       });
     }
+  });
+
+  // Mutation to check in remote customers with confirmation code
+  const checkInMutation = useMutation({
+    mutationFn: async ({ confirmationCode }: { confirmationCode: string }) => {
+      const response = await apiRequest({
+        url: `/api/restaurants/${restaurant.id}/remote-waitlist/checkin`,
+        method: 'POST',
+        body: { confirmationCode }
+      });
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate query to refresh waitlist
+      queryClient.invalidateQueries({ queryKey: ['/api/restaurants', restaurant.id, 'waitlist'] });
+      setCheckInDialogOpen(false);
+      setConfirmationCode('');
+      setSelectedEntry(null);
+      toast({
+        title: 'Success',
+        description: 'Customer checked in successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Invalid confirmation code',
+        variant: 'destructive',
+      });
+    },
   });
   
   // Auto-process entries that are past the 15-minute grace period

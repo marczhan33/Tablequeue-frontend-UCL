@@ -14,6 +14,16 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { formatDistanceToNow } from 'date-fns';
 import type { WaitlistEntry } from '@shared/schema';
 
@@ -23,6 +33,9 @@ interface WaitlistManagementProps {
 
 export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) => {
   const [activeTab, setActiveTab] = useState('waiting');
+  const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<WaitlistEntry | null>(null);
+  const [confirmationCode, setConfirmationCode] = useState('');
   const queryClient = useQueryClient();
 
   // Fetch waitlist entries for this restaurant
@@ -62,12 +75,63 @@ export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) =>
     },
   });
 
+  // Mutation to check in remote customers with confirmation code
+  const checkInMutation = useMutation({
+    mutationFn: async ({ confirmationCode }: { confirmationCode: string }) => {
+      const response = await apiRequest({
+        url: `/api/restaurants/${restaurantId}/remote-waitlist/checkin`,
+        method: 'POST',
+        body: { confirmationCode }
+      });
+      
+      return response.json();
+    },
+    onSuccess: () => {
+      // Invalidate query to refresh waitlist
+      queryClient.invalidateQueries({ queryKey: ['/api/restaurants', restaurantId, 'waitlist'] });
+      setCheckInDialogOpen(false);
+      setConfirmationCode('');
+      setSelectedEntry(null);
+      toast({
+        title: 'Success',
+        description: 'Customer checked in successfully',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Error',
+        description: error.message || 'Invalid confirmation code',
+        variant: 'destructive',
+      });
+    },
+  });
+
   const handleNotifyCustomer = (entryId: number) => {
     updateEntryMutation.mutate({ entryId, status: 'notified' });
   };
 
-  const handleSeatCustomer = (entryId: number) => {
-    updateEntryMutation.mutate({ entryId, status: 'seated' });
+  const handleSeatCustomer = (entry: WaitlistEntry) => {
+    // If this is a remote customer who hasn't checked in yet, show confirmation dialog
+    if (entry.status === 'remote_pending' || entry.status === 'remote_confirmed') {
+      setSelectedEntry(entry);
+      setCheckInDialogOpen(true);
+    } else {
+      // For customers already waiting, seat them directly
+      updateEntryMutation.mutate({ entryId: entry.id, status: 'seated' });
+    }
+  };
+
+  const handleConfirmCheckIn = () => {
+    if (!confirmationCode.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Please enter the confirmation code',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    checkInMutation.mutate({ confirmationCode: confirmationCode.trim() });
   };
 
   const handleCancelEntry = (entryId: number) => {
@@ -210,13 +274,13 @@ export const WaitlistManagement = ({ restaurantId }: WaitlistManagementProps) =>
                                 Notify
                               </Button>
                             )}
-                            {(entry.status === 'waiting' || entry.status === 'notified') && (
+                            {(entry.status === 'waiting' || entry.status === 'notified' || entry.status === 'remote_pending' || entry.status === 'remote_confirmed') && (
                               <>
                                 <Button 
                                   size="sm" 
-                                  onClick={() => handleSeatCustomer(entry.id)}
+                                  onClick={() => handleSeatCustomer(entry)}
                                 >
-                                  Seat
+                                  {entry.status === 'remote_pending' || entry.status === 'remote_confirmed' ? 'Check In' : 'Seat'}
                                 </Button>
                                 <Button 
                                   size="sm" 
