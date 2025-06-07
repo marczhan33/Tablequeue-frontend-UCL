@@ -149,18 +149,22 @@ export default function RemoteWaitlistPage() {
   });
   
   // Get confirmation code from session storage or URL
-  const confirmationCode = (() => {
+  const [confirmationCode, setConfirmationCode] = useState<string>('');
+  
+  useEffect(() => {
     const savedCode = typeof window !== 'undefined' ? sessionStorage.getItem('confirmationCode') : null;
     if (savedCode) {
-      // Clear it after reading
-      sessionStorage.removeItem('confirmationCode');
-      return savedCode;
+      setConfirmationCode(savedCode);
+      // Don't clear it immediately, let it persist for the session
+      console.log('Found confirmation code in sessionStorage:', savedCode);
+    } else {
+      // Fallback to URL parameters
+      const searchParams = new URLSearchParams(location.split('?')[1]);
+      const urlCode = searchParams.get('code') || '';
+      setConfirmationCode(urlCode);
+      console.log('Using confirmation code from URL:', urlCode);
     }
-    
-    // Fallback to URL parameters
-    const searchParams = new URLSearchParams(location.split('?')[1]);
-    return searchParams.get('code') || '';
-  })();
+  }, [location]);
   
   // Fetch restaurant by ID
   const { data: restaurant, isLoading, error } = useQuery({
@@ -268,6 +272,7 @@ export default function RemoteWaitlistPage() {
         </TabsContent>
         
         <TabsContent value="checkin">
+          {console.log('Passing confirmationCode to RemoteWaitlistCheckin:', confirmationCode)}
           <RemoteWaitlistCheckin 
             restaurant={restaurant} 
             confirmationCode={confirmationCode || ''} 

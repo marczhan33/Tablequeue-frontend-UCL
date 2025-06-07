@@ -47,6 +47,9 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
   const linkInputRef = useRef<HTMLInputElement>(null);
   const [, navigate] = useLocation();
   
+  // Debug: Log the confirmation code
+  console.log('RemoteWaitlistCheckin confirmationCode prop:', confirmationCode);
+  
   const form = useForm<CheckinFormValues>({
     resolver: zodResolver(checkinFormSchema),
     defaultValues: {
@@ -396,10 +399,14 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
                     </DialogDescription>
                   </DialogHeader>
                   <div className="p-4 border rounded-md">
-                    <p className="mb-4">Your confirmation code: <span className="font-bold text-lg tracking-wider">{confirmationCode || form.getValues().confirmationCode}</span></p>
+                    <p className="mb-4">Your confirmation code: <span className="font-bold text-lg tracking-wider bg-yellow-100 px-2 py-1 rounded">{confirmationCode || form.getValues().confirmationCode || 'Loading...'}</span></p>
                     <p className="text-sm text-muted-foreground">
                       Show this code to restaurant staff to be checked in directly.
                     </p>
+                    {/* Debug info */}
+                    <div className="text-xs text-gray-500 mt-2">
+                      Debug: prop={confirmationCode}, form={form.getValues().confirmationCode}
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button 
