@@ -156,13 +156,11 @@ export default function RemoteWaitlistPage() {
     if (savedCode) {
       setConfirmationCode(savedCode);
       // Don't clear it immediately, let it persist for the session
-      console.log('Found confirmation code in sessionStorage:', savedCode);
     } else {
       // Fallback to URL parameters
       const searchParams = new URLSearchParams(location.split('?')[1]);
       const urlCode = searchParams.get('code') || '';
       setConfirmationCode(urlCode);
-      console.log('Using confirmation code from URL:', urlCode);
     }
   }, [location]);
   
@@ -272,7 +270,6 @@ export default function RemoteWaitlistPage() {
         </TabsContent>
         
         <TabsContent value="checkin">
-          {console.log('Passing confirmationCode to RemoteWaitlistCheckin:', confirmationCode)}
           <RemoteWaitlistCheckin 
             restaurant={restaurant} 
             confirmationCode={confirmationCode || ''} 
