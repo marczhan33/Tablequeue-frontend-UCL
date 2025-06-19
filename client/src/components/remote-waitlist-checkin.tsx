@@ -11,7 +11,7 @@ import { apiRequest } from '@/lib/queryClient';
 import { toast } from '@/hooks/use-toast';
 import { Restaurant, WaitlistEntry } from '@shared/schema';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { CheckCircle, Loader2, MapPin, QrCode, AlertTriangle, Link as LinkIcon, Copy } from 'lucide-react';
+import { CheckCircle, Loader2, MapPin, QrCode, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
   Dialog,
@@ -43,8 +43,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
   const [isVerified, setIsVerified] = useState(false);
   const [isNearRestaurant, setIsNearRestaurant] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [qrCodeLink, setQrCodeLink] = useState<string | null>(null);
-  const linkInputRef = useRef<HTMLInputElement>(null);
+
   const [, navigate] = useLocation();
   
 
@@ -57,14 +56,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
     },
   });
   
-  // Initialize QR code URL for the direct link option
-  useEffect(() => {
-    // In a real app, this would be a unique link to a verification page
-    // For demo purposes, we're creating a simple URL that would contain the confirmation code
-    if (confirmationCode) {
-      setQrCodeLink(`https://${window.location.host}/restaurants/${restaurant.id}/verify/${confirmationCode}`);
-    }
-  }, [confirmationCode, restaurant.id]);
+
 
   // Function to check if user is near the restaurant using geolocation
   const checkLocation = () => {
@@ -141,28 +133,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
     });
   };
 
-  // Function to copy link to clipboard
-  const copyLinkToClipboard = () => {
-    if (linkInputRef.current && qrCodeLink) {
-      linkInputRef.current.select();
-      document.execCommand('copy');
-      toast({
-        title: 'Link Copied',
-        description: 'The verification link has been copied to your clipboard'
-      });
-    }
-  };
-  
-  // Handle direct QR code link verification
-  const handleDirectLinkVerification = () => {
-    // In a real app, this would validate the link and token
-    // For demo purposes, we're just simulating verification
-    setIsVerified(true);
-    toast({
-      title: 'Link Verified',
-      description: 'Your link has been verified. You can now check in!',
-    });
-  };
+
   
   const onSubmit = async (values: CheckinFormValues) => {
     try {
@@ -250,7 +221,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
       <CardHeader>
         <CardTitle className="text-xl font-bold">Check-in to {restaurant.name}</CardTitle>
         <CardDescription>
-          Choose between the 3 methods of checking in, or select Restaurant Staff Check-in
+          Choose between the 2 methods of checking in, or select Restaurant Staff Check-in
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -258,7 +229,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
         <div className="mb-6">
           
           <Tabs defaultValue="location" value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="location" className="flex flex-col items-center py-2 px-1 text-xs sm:text-sm sm:flex-row">
                 <MapPin className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
                 <span className="whitespace-nowrap">Location</span>
@@ -266,10 +237,6 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
               <TabsTrigger value="qrcode" className="flex flex-col items-center py-2 px-1 text-xs sm:text-sm sm:flex-row">
                 <QrCode className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
                 <span className="whitespace-nowrap">QR Code</span>
-              </TabsTrigger>
-              <TabsTrigger value="link" className="flex flex-col items-center py-2 px-1 text-xs sm:text-sm sm:flex-row">
-                <LinkIcon className="h-4 w-4 mb-1 sm:mb-0 sm:mr-2" />
-                <span className="whitespace-nowrap">Direct</span>
               </TabsTrigger>
             </TabsList>
             
@@ -327,42 +294,7 @@ export const RemoteWaitlistCheckin = ({ restaurant, onSuccess, confirmationCode 
               </div>
             </TabsContent>
             
-            {/* Direct Link Tab - Tertiary Method */}
-            <TabsContent value="link" className="space-y-4 mt-4">
-              <div className="text-center p-6 border border-dashed rounded-md">
-                <LinkIcon className="h-20 w-20 mx-auto mb-4 text-primary" />
-                <p className="mb-4">Paste the QR code link if you're unable to scan</p>
-                
-                <div className="flex items-center space-x-2 mb-4">
-                  <Input 
-                    placeholder="https://example.com/verify/code123" 
-                    value={qrCodeLink || ''} 
-                    readOnly 
-                    ref={linkInputRef}
-                  />
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="outline"
-                    onClick={copyLinkToClipboard}
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                </div>
-                
-                <Button 
-                  onClick={handleDirectLinkVerification} 
-                  variant="outline" 
-                  disabled={isVerified || !qrCodeLink}
-                >
-                  Verify Link
-                </Button>
-                
-                <p className="mt-4 text-xs text-muted-foreground">
-                  You can open this link on your computer or any device
-                </p>
-              </div>
-            </TabsContent>
+
           </Tabs>
           
           {isVerified && (
