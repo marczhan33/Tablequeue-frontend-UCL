@@ -22,6 +22,11 @@ const RestaurantDashboard = () => {
   const [partySizeWaitTimes1to2, setPartySizeWaitTimes1to2] = useState(0);
   const [partySizeWaitTimes3to4, setPartySizeWaitTimes3to4] = useState(0);
   const [partySizeWaitTimes5plus, setPartySizeWaitTimes5plus] = useState(0);
+  
+  // Individual loading states for each update button
+  const [updating1to2, setUpdating1to2] = useState(false);
+  const [updating3to4, setUpdating3to4] = useState(false);
+  const [updating5plus, setUpdating5plus] = useState(false);
   const [activeTab, setActiveTab] = useState("overview");
   
   // Local form state to avoid making API calls on every keystroke
@@ -182,32 +187,84 @@ const RestaurantDashboard = () => {
     });
   };
   
-  // Update party size wait time mutation
-  const updatePartySizeWaitTime = useMutation({
-    mutationFn: async ({ partySize, waitTimeMinutes }: { partySize: string, waitTimeMinutes: number }) => {
-      return await apiRequest(
+  // Individual update functions for each party size
+  const updateWaitTime1to2 = async () => {
+    setUpdating1to2(true);
+    try {
+      await apiRequest(
         `/api/restaurants/${RESTAURANT_ID}/party-size-wait-time`,
         {
           method: "POST",
-          body: { partySize, waitTimeMinutes }
+          body: { partySize: '1-2 people', waitTimeMinutes: partySizeWaitTimes1to2 }
         }
       );
-    },
-    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}/party-size-wait-times`] });
       toast({
         title: "Wait time updated",
-        description: "Party size wait time has been updated successfully.",
+        description: "Wait time for 1-2 people has been updated successfully.",
       });
-    },
-    onError: (error) => {
+    } catch (error) {
       toast({
         title: "Error",
         description: `Failed to update wait time: ${(error as Error).message}`,
         variant: "destructive",
       });
+    } finally {
+      setUpdating1to2(false);
     }
-  });
+  };
+
+  const updateWaitTime3to4 = async () => {
+    setUpdating3to4(true);
+    try {
+      await apiRequest(
+        `/api/restaurants/${RESTAURANT_ID}/party-size-wait-time`,
+        {
+          method: "POST",
+          body: { partySize: '3-4 people', waitTimeMinutes: partySizeWaitTimes3to4 }
+        }
+      );
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}/party-size-wait-times`] });
+      toast({
+        title: "Wait time updated",
+        description: "Wait time for 3-4 people has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update wait time: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating3to4(false);
+    }
+  };
+
+  const updateWaitTime5plus = async () => {
+    setUpdating5plus(true);
+    try {
+      await apiRequest(
+        `/api/restaurants/${RESTAURANT_ID}/party-size-wait-time`,
+        {
+          method: "POST",
+          body: { partySize: '5+ people', waitTimeMinutes: partySizeWaitTimes5plus }
+        }
+      );
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}/party-size-wait-times`] });
+      toast({
+        title: "Wait time updated",
+        description: "Wait time for 5+ people has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update wait time: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating5plus(false);
+    }
+  };
 
   const handleVerifyLocation = async () => {
     setIsVerifyingLocation(true);
@@ -422,20 +479,17 @@ const RestaurantDashboard = () => {
                       placeholder="Minutes" 
                       min="0" 
                       max="300" 
-                      value={partySizeWaitTimes1to2}
-                      onChange={(e) => setPartySizeWaitTimes1to2(parseInt(e.target.value) || 0)}
+                      value={partySizeWaitTimes1to2 || ''}
+                      onChange={(e) => setPartySizeWaitTimes1to2(e.target.value === '' ? 0 : parseInt(e.target.value))}
                     />
                     <span className="text-sm text-gray-500">min</span>
                   </div>
                   <button 
                     className="w-full bg-primary text-white px-3 py-2 rounded-md hover:bg-opacity-90 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
-                    onClick={() => updatePartySizeWaitTime.mutate({ 
-                      partySize: '1-2 people', 
-                      waitTimeMinutes: partySizeWaitTimes1to2 
-                    })}
-                    disabled={updatePartySizeWaitTime.isPending}
+                    onClick={updateWaitTime1to2}
+                    disabled={updating1to2}
                   >
-                    {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update'}
+                    {updating1to2 ? 'Updating...' : 'Update'}
                   </button>
                 </div>
 
@@ -449,20 +503,17 @@ const RestaurantDashboard = () => {
                       placeholder="Minutes" 
                       min="0" 
                       max="300" 
-                      value={partySizeWaitTimes3to4}
-                      onChange={(e) => setPartySizeWaitTimes3to4(parseInt(e.target.value) || 0)}
+                      value={partySizeWaitTimes3to4 || ''}
+                      onChange={(e) => setPartySizeWaitTimes3to4(e.target.value === '' ? 0 : parseInt(e.target.value))}
                     />
                     <span className="text-sm text-gray-500">min</span>
                   </div>
                   <button 
                     className="w-full bg-primary text-white px-3 py-2 rounded-md hover:bg-opacity-90 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
-                    onClick={() => updatePartySizeWaitTime.mutate({ 
-                      partySize: '3-4 people', 
-                      waitTimeMinutes: partySizeWaitTimes3to4 
-                    })}
-                    disabled={updatePartySizeWaitTime.isPending}
+                    onClick={updateWaitTime3to4}
+                    disabled={updating3to4}
                   >
-                    {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update'}
+                    {updating3to4 ? 'Updating...' : 'Update'}
                   </button>
                 </div>
 
@@ -476,20 +527,17 @@ const RestaurantDashboard = () => {
                       placeholder="Minutes" 
                       min="0" 
                       max="300" 
-                      value={partySizeWaitTimes5plus}
-                      onChange={(e) => setPartySizeWaitTimes5plus(parseInt(e.target.value) || 0)}
+                      value={partySizeWaitTimes5plus || ''}
+                      onChange={(e) => setPartySizeWaitTimes5plus(e.target.value === '' ? 0 : parseInt(e.target.value))}
                     />
                     <span className="text-sm text-gray-500">min</span>
                   </div>
                   <button 
                     className="w-full bg-primary text-white px-3 py-2 rounded-md hover:bg-opacity-90 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
-                    onClick={() => updatePartySizeWaitTime.mutate({ 
-                      partySize: '5+ people', 
-                      waitTimeMinutes: partySizeWaitTimes5plus 
-                    })}
-                    disabled={updatePartySizeWaitTime.isPending}
+                    onClick={updateWaitTime5plus}
+                    disabled={updating5plus}
                   >
-                    {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update'}
+                    {updating5plus ? 'Updating...' : 'Update'}
                   </button>
                 </div>
               </div>
