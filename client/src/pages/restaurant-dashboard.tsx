@@ -18,8 +18,10 @@ const RESTAURANT_ID = 4;
 
 const RestaurantDashboard = () => {
   const { toast } = useToast();
-  const [customWaitTime, setCustomWaitTime] = useState(15);
-  const [partySize, setPartySize] = useState("Any size");
+  // State for party size wait times
+  const [partySizeWaitTimes1to2, setPartySizeWaitTimes1to2] = useState(0);
+  const [partySizeWaitTimes3to4, setPartySizeWaitTimes3to4] = useState(0);
+  const [partySizeWaitTimes5plus, setPartySizeWaitTimes5plus] = useState(0);
   const [activeTab, setActiveTab] = useState("overview");
   
   // Local form state to avoid making API calls on every keystroke
@@ -51,6 +53,11 @@ const RestaurantDashboard = () => {
   const { data: restaurant, isLoading } = useQuery<Restaurant>({
     queryKey: [`/api/restaurants/${RESTAURANT_ID}`],
   });
+
+  // Fetch party-size wait times
+  const { data: partySizeWaitTimes, isLoading: waitTimesLoading } = useQuery({
+    queryKey: [`/api/restaurants/${RESTAURANT_ID}/party-size-wait-times`],
+  });
   
   // Initialize form state when restaurant data loads
   useEffect(() => {
@@ -70,6 +77,19 @@ const RestaurantDashboard = () => {
       }
     }
   }, [restaurant]);
+
+  // Initialize party size wait times when data loads
+  useEffect(() => {
+    if (partySizeWaitTimes) {
+      const waitTimes1to2 = partySizeWaitTimes.find((wt: any) => wt.partySize === '1-2 people');
+      const waitTimes3to4 = partySizeWaitTimes.find((wt: any) => wt.partySize === '3-4 people');
+      const waitTimes5plus = partySizeWaitTimes.find((wt: any) => wt.partySize === '5+ people');
+      
+      setPartySizeWaitTimes1to2(waitTimes1to2?.waitTimeMinutes || 0);
+      setPartySizeWaitTimes3to4(waitTimes3to4?.waitTimeMinutes || 0);
+      setPartySizeWaitTimes5plus(waitTimes5plus?.waitTimeMinutes || 0);
+    }
+  }, [partySizeWaitTimes]);
   
   // Update wait time mutation
   const updateWaitTime = useMutation({
@@ -158,7 +178,7 @@ const RestaurantDashboard = () => {
     
     updateWaitTime.mutate({ 
       status, 
-      customTime: status === 'available' ? 0 : (status === 'short' ? customWaitTime : customWaitTime * 2)
+      customTime: status === 'available' ? 0 : (status === 'short' ? 15 : 30)
     });
   };
   
@@ -174,6 +194,7 @@ const RestaurantDashboard = () => {
       );
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}/party-size-wait-times`] });
       toast({
         title: "Wait time updated",
         description: "Party size wait time has been updated successfully.",
@@ -187,15 +208,6 @@ const RestaurantDashboard = () => {
       });
     }
   });
-
-  const handleCustomWaitTimeUpdate = () => {
-    if (!restaurant) return;
-    
-    updatePartySizeWaitTime.mutate({ 
-      partySize, 
-      waitTimeMinutes: customWaitTime
-    });
-  };
 
   const handleVerifyLocation = async () => {
     setIsVerifyingLocation(true);
@@ -389,47 +401,99 @@ const RestaurantDashboard = () => {
             </div>
           </div>
 
-          {/* Custom Wait Time Setup */}
+          {/* Party Size Wait Times */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold mb-4">Custom Wait Time</h3>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-grow">
-                <label htmlFor="wait-time" className="block text-sm font-medium text-gray-700 mb-1">Estimated wait time (minutes)</label>
-                <input 
-                  type="number" 
-                  id="wait-time" 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary" 
-                  placeholder="Enter minutes" 
-                  min="0" 
-                  max="180" 
-                  value={customWaitTime}
-                  onChange={(e) => setCustomWaitTime(parseInt(e.target.value))}
-                />
+            <h3 className="text-lg font-semibold mb-4">Smart Wait Time Management</h3>
+            <p className="text-gray-600 mb-6">Set customized wait times for different party sizes to provide accurate predictions to your customers.</p>
+            
+            {waitTimesLoading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
-              <div className="flex-grow">
-                <label htmlFor="party-size" className="block text-sm font-medium text-gray-700 mb-1">For party size</label>
-                <select 
-                  id="party-size" 
-                  className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary"
-                  value={partySize}
-                  onChange={(e) => setPartySize(e.target.value)}
-                >
-                  <option>Any size</option>
-                  <option>1-2 people</option>
-                  <option>3-4 people</option>
-                  <option>5+ people</option>
-                </select>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* 1-2 people */}
+                <div className="bg-white rounded-lg p-4 border">
+                  <h4 className="font-medium text-gray-900 mb-2">1-2 people</h4>
+                  <div className="flex items-center gap-2 mb-3">
+                    <input 
+                      type="number" 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm" 
+                      placeholder="Minutes" 
+                      min="0" 
+                      max="300" 
+                      value={partySizeWaitTimes1to2}
+                      onChange={(e) => setPartySizeWaitTimes1to2(parseInt(e.target.value) || 0)}
+                    />
+                    <span className="text-sm text-gray-500">min</span>
+                  </div>
+                  <button 
+                    className="w-full bg-primary text-white px-3 py-2 rounded-md hover:bg-opacity-90 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
+                    onClick={() => updatePartySizeWaitTime.mutate({ 
+                      partySize: '1-2 people', 
+                      waitTimeMinutes: partySizeWaitTimes1to2 
+                    })}
+                    disabled={updatePartySizeWaitTime.isPending}
+                  >
+                    {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
+
+                {/* 3-4 people */}
+                <div className="bg-white rounded-lg p-4 border">
+                  <h4 className="font-medium text-gray-900 mb-2">3-4 people</h4>
+                  <div className="flex items-center gap-2 mb-3">
+                    <input 
+                      type="number" 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm" 
+                      placeholder="Minutes" 
+                      min="0" 
+                      max="300" 
+                      value={partySizeWaitTimes3to4}
+                      onChange={(e) => setPartySizeWaitTimes3to4(parseInt(e.target.value) || 0)}
+                    />
+                    <span className="text-sm text-gray-500">min</span>
+                  </div>
+                  <button 
+                    className="w-full bg-primary text-white px-3 py-2 rounded-md hover:bg-opacity-90 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
+                    onClick={() => updatePartySizeWaitTime.mutate({ 
+                      partySize: '3-4 people', 
+                      waitTimeMinutes: partySizeWaitTimes3to4 
+                    })}
+                    disabled={updatePartySizeWaitTime.isPending}
+                  >
+                    {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
+
+                {/* 5+ people */}
+                <div className="bg-white rounded-lg p-4 border">
+                  <h4 className="font-medium text-gray-900 mb-2">5+ people</h4>
+                  <div className="flex items-center gap-2 mb-3">
+                    <input 
+                      type="number" 
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary text-sm" 
+                      placeholder="Minutes" 
+                      min="0" 
+                      max="300" 
+                      value={partySizeWaitTimes5plus}
+                      onChange={(e) => setPartySizeWaitTimes5plus(parseInt(e.target.value) || 0)}
+                    />
+                    <span className="text-sm text-gray-500">min</span>
+                  </div>
+                  <button 
+                    className="w-full bg-primary text-white px-3 py-2 rounded-md hover:bg-opacity-90 transition-colors duration-200 font-medium text-sm disabled:opacity-50"
+                    onClick={() => updatePartySizeWaitTime.mutate({ 
+                      partySize: '5+ people', 
+                      waitTimeMinutes: partySizeWaitTimes5plus 
+                    })}
+                    disabled={updatePartySizeWaitTime.isPending}
+                  >
+                    {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update'}
+                  </button>
+                </div>
               </div>
-              <div className="flex items-end">
-                <button 
-                  className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm w-full md:w-auto disabled:opacity-50"
-                  onClick={handleCustomWaitTimeUpdate}
-                  disabled={updatePartySizeWaitTime.isPending}
-                >
-                  {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update Wait Time'}
-                </button>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Restaurant Information */}
