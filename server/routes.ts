@@ -1144,76 +1144,103 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Calculate the prediction
-      // This would typically use a complex algorithm, but for now we'll use a simple approach
+      // First, check for party-size-specific wait times
       let estWaitTime = 0;
+      let usedPartySizeSpecificTime = false;
       
-      if (restaurant.useAdvancedQueue && tableTypes.length > 0) {
-        // Get suitable tables for this party size
-        const suitableTables = tableTypes.filter(
-          table => table.capacity >= partySize && table.isActive
-        );
+      try {
+        // Get party-size-specific wait times for this restaurant
+        const partySizeWaitTimes = await storage.getPartySizeWaitTimes(id);
         
-        // Active waitlist entries (not seated or cancelled)
-        const activeWaitlist = waitlistEntries.filter(
-          entry => entry.status === 'waiting' || entry.status === 'notified'
-        );
+        // Find the appropriate wait time based on party size
+        let matchingWaitTime = null;
         
-        // Count available tables of suitable sizes
-        const availableTables = suitableTables.reduce(
-          (total, table) => total + table.count, 
-          0
-        );
+        if (partySize <= 2) {
+          matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '1-2 people');
+        } else if (partySize <= 4) {
+          matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '3-4 people');
+        } else {
+          matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '5+ people');
+        }
         
-        // Calculate people ahead in queue with similar party sizes
-        const similarPartySizeEntries = activeWaitlist.filter(
-          entry => Math.abs(entry.partySize - partySize) <= 2
-        );
-        
-        // Get average turnover time
-        const avgTurnoverTime = suitableTables.length > 0
-          ? suitableTables.reduce((sum, table) => sum + table.estimatedTurnoverTime, 0) / suitableTables.length
-          : 45; // Default 45 minutes
-        
-        // Base wait time from restaurant status
-        const baseWaitTime = (() => {
-          switch (restaurant.currentWaitStatus) {
-            case 'available': return 0;
-            case 'short': return 15;
-            case 'long': return 30;
-            case 'very_long': return 60;
-            case 'closed': return 0;
-            default: return 15;
-          }
-        })();
-        
-        // Adjust for custom wait time if set
-        estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
-          ? restaurant.customWaitTime
-          : baseWaitTime;
+        if (matchingWaitTime) {
+          estWaitTime = matchingWaitTime.waitTimeMinutes;
+          usedPartySizeSpecificTime = true;
+        }
+      } catch (error) {
+        console.error("Error fetching party-size wait times:", error);
+      }
+      
+      // If no party-size-specific time found, use original algorithm
+      if (!usedPartySizeSpecificTime) {
+        if (restaurant.useAdvancedQueue && tableTypes.length > 0) {
+          // Get suitable tables for this party size
+          const suitableTables = tableTypes.filter(
+            table => table.capacity >= partySize && table.isActive
+          );
           
-        // Add wait time for each person ahead with similar party size
-        if (similarPartySizeEntries.length > 0) {
-          estWaitTime += similarPartySizeEntries.length * (avgTurnoverTime / Math.max(1, availableTables));
-        }
-        
-        // If no suitable tables, give a high wait time
-        if (suitableTables.length === 0) {
-          estWaitTime = 120; // 2 hours
-        }
-      } else {
-        // Fallback to basic wait time if advanced queue is not enabled
-        switch (restaurant.currentWaitStatus) {
-          case 'available': estWaitTime = 0; break;
-          case 'short': estWaitTime = 15; break;
-          case 'long': estWaitTime = 30; break;
-          case 'very_long': estWaitTime = 60; break;
-          case 'closed': estWaitTime = 0; break;
-          default: estWaitTime = 15;
-        }
-        
-        // Adjust for party size
-        if (partySize > 4) {
-          estWaitTime = Math.round(estWaitTime * 1.5); // 50% longer wait for large parties
+          // Active waitlist entries (not seated or cancelled)
+          const activeWaitlist = waitlistEntries.filter(
+            entry => entry.status === 'waiting' || entry.status === 'notified'
+          );
+          
+          // Count available tables of suitable sizes
+          const availableTables = suitableTables.reduce(
+            (total, table) => total + table.count, 
+            0
+          );
+          
+          // Calculate people ahead in queue with similar party sizes
+          const similarPartySizeEntries = activeWaitlist.filter(
+            entry => Math.abs(entry.partySize - partySize) <= 2
+          );
+          
+          // Get average turnover time
+          const avgTurnoverTime = suitableTables.length > 0
+            ? suitableTables.reduce((sum, table) => sum + table.estimatedTurnoverTime, 0) / suitableTables.length
+            : 45; // Default 45 minutes
+          
+          // Base wait time from restaurant status
+          const baseWaitTime = (() => {
+            switch (restaurant.currentWaitStatus) {
+              case 'available': return 0;
+              case 'short': return 15;
+              case 'long': return 30;
+              case 'very_long': return 60;
+              case 'closed': return 0;
+              default: return 15;
+            }
+          })();
+          
+          // Adjust for custom wait time if set
+          estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
+            ? restaurant.customWaitTime
+            : baseWaitTime;
+            
+          // Add wait time for each person ahead with similar party size
+          if (similarPartySizeEntries.length > 0) {
+            estWaitTime += similarPartySizeEntries.length * (avgTurnoverTime / Math.max(1, availableTables));
+          }
+          
+          // If no suitable tables, give a high wait time
+          if (suitableTables.length === 0) {
+            estWaitTime = 120; // 2 hours
+          }
+        } else {
+          // Fallback to basic wait time if advanced queue is not enabled
+          switch (restaurant.currentWaitStatus) {
+            case 'available': estWaitTime = 0; break;
+            case 'short': estWaitTime = 15; break;
+            case 'long': estWaitTime = 30; break;
+            case 'very_long': estWaitTime = 60; break;
+            case 'closed': estWaitTime = 0; break;
+            default: estWaitTime = 15;
+          }
+          
+          // Adjust for party size
+          if (partySize > 4) {
+            estWaitTime = Math.round(estWaitTime * 1.5); // 50% longer wait for large parties
+          }
         }
       }
       
