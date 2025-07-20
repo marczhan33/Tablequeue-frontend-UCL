@@ -34,6 +34,15 @@ const RestaurantDashboard = () => {
   
   // State for editing hours
   const [isEditingHours, setIsEditingHours] = useState(false);
+  const [editingHours, setEditingHours] = useState({
+    monday: { open: '09:00', close: '21:00' },
+    tuesday: { open: '09:00', close: '21:00' },
+    wednesday: { open: '09:00', close: '21:00' },
+    thursday: { open: '09:00', close: '21:00' },
+    friday: { open: '09:00', close: '21:00' },
+    saturday: { open: '09:00', close: '21:00' },
+    sunday: { open: '09:00', close: '21:00' }
+  });
   
   // State for location verification
   const [isVerifyingLocation, setIsVerifyingLocation] = useState(false);
@@ -54,6 +63,11 @@ const RestaurantDashboard = () => {
         description: restaurant.description || '',
         address: restaurant.address || ''
       });
+      
+      // Initialize editing hours with current restaurant hours
+      if (restaurant.operatingHours) {
+        setEditingHours(restaurant.operatingHours);
+      }
     }
   }, [restaurant]);
   
@@ -106,6 +120,34 @@ const RestaurantDashboard = () => {
       toast({
         title: "Error",
         description: `Failed to update restaurant: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update operating hours mutation
+  const updateOperatingHours = useMutation({
+    mutationFn: async (operatingHours: any) => {
+      return await apiRequest(
+        `/api/restaurants/${RESTAURANT_ID}`,
+        {
+          method: "PATCH",
+          body: { operatingHours }
+        }
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}`] });
+      setIsEditingHours(false);
+      toast({
+        title: "Hours updated",
+        description: "Your restaurant hours have been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update hours: ${(error as Error).message}`,
         variant: "destructive",
       });
     }
@@ -456,9 +498,9 @@ const RestaurantDashboard = () => {
                   {operatingHours && ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
                     .filter(day => operatingHours[day])
                     .map((day) => (
-                    <div key={day} className="flex justify-between">
-                      <span className="font-medium">{day.charAt(0).toUpperCase() + day.slice(1)}</span>
-                      <span>{operatingHours[day].open} - {operatingHours[day].close}</span>
+                    <div key={day} className="flex justify-between items-center">
+                      <span className="font-medium min-w-[100px]">{day.charAt(0).toUpperCase() + day.slice(1)}</span>
+                      <span className="text-right">{operatingHours[day].open} - {operatingHours[day].close}</span>
                     </div>
                   ))}
                   {!operatingHours && (
@@ -484,29 +526,31 @@ const RestaurantDashboard = () => {
                         <input 
                           type="time" 
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          defaultValue={operatingHours?.[day]?.open || "09:00"}
+                          value={editingHours[day]?.open || "09:00"}
+                          onChange={(e) => setEditingHours({
+                            ...editingHours,
+                            [day]: { ...editingHours[day], open: e.target.value }
+                          })}
                         />
                         <span className="text-sm">to</span>
                         <input 
                           type="time" 
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          defaultValue={operatingHours?.[day]?.close || "21:00"}
+                          value={editingHours[day]?.close || "21:00"}
+                          onChange={(e) => setEditingHours({
+                            ...editingHours,
+                            [day]: { ...editingHours[day], close: e.target.value }
+                          })}
                         />
                       </div>
                     ))}
                     <div className="flex space-x-2 mt-4">
                       <button 
-                        className="px-4 py-2 bg-secondary text-white rounded hover:bg-opacity-90 text-sm"
-                        onClick={() => {
-                          // Save hours logic would go here
-                          setIsEditingHours(false);
-                          toast({
-                            title: "Hours updated",
-                            description: "Your restaurant hours have been updated successfully.",
-                          });
-                        }}
+                        className="px-4 py-2 bg-secondary text-white rounded hover:bg-opacity-90 text-sm disabled:opacity-50"
+                        onClick={() => updateOperatingHours.mutate(editingHours)}
+                        disabled={updateOperatingHours.isPending}
                       >
-                        Save Hours
+                        {updateOperatingHours.isPending ? 'Saving...' : 'Save Hours'}
                       </button>
                       <button 
                         className="px-4 py-2 border border-gray-300 rounded hover:bg-gray-50 text-sm"
