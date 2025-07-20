@@ -18,6 +18,7 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - 2025-01-20: Resolved confirmation code display issue in staff check-in modal
 - 2025-01-20: Updated check-in interface layout from 3 columns to 2 columns
 - 2025-01-20: Deleted all user accounts for data cleanup (3 accounts removed)
+- 2025-01-20: Deleted all waitlist entries for data cleanup (12 entries removed)
 
 ## User Preferences
 - Prefers simplified interfaces over complex multi-option layouts
