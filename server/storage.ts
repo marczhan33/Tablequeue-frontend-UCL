@@ -4,6 +4,7 @@ import {
   waitlistEntries, type WaitlistEntry, type InsertWaitlistEntry,
   tableTypes, type TableType, type InsertTableType,
   timeSlotPromotions,
+  partySizeWaitTimes, type PartySizeWaitTime, type InsertPartySizeWaitTime,
   dailyAnalytics, type DailyAnalytics, type InsertDailyAnalytics,
   hourlyAnalytics, type HourlyAnalytics, type InsertHourlyAnalytics,
   tableAnalytics, type TableAnalytics, type InsertTableAnalytics,
@@ -39,6 +40,11 @@ export interface IStorage {
   getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]>;
   updateTimeSlotPromotion(restaurantId: number, timeSlot: string, discount: number): Promise<TimeSlotPromotion>;
   createTimeSlotPromotions(restaurantId: number, promotions: {timeSlot: string, discount: number}[]): Promise<TimeSlotPromotion[]>;
+  
+  // Party size wait times operations
+  getPartySizeWaitTimes(restaurantId: number): Promise<PartySizeWaitTime[]>;
+  updatePartySizeWaitTime(restaurantId: number, partySize: string, waitTimeMinutes: number): Promise<PartySizeWaitTime>;
+  createPartySizeWaitTime(waitTime: InsertPartySizeWaitTime): Promise<PartySizeWaitTime>;
   
   // Restaurant operations
   getRestaurant(id: number): Promise<Restaurant | undefined>;
@@ -138,6 +144,64 @@ export class DatabaseStorage implements IStorage {
     }
     
     return createdPromotions;
+  }
+
+  // Party size wait times operations
+  async getPartySizeWaitTimes(restaurantId: number): Promise<PartySizeWaitTime[]> {
+    return db
+      .select()
+      .from(partySizeWaitTimes)
+      .where(eq(partySizeWaitTimes.restaurantId, restaurantId));
+  }
+
+  async updatePartySizeWaitTime(restaurantId: number, partySize: string, waitTimeMinutes: number): Promise<PartySizeWaitTime> {
+    // First check if it exists
+    const [existing] = await db
+      .select()
+      .from(partySizeWaitTimes)
+      .where(
+        and(
+          eq(partySizeWaitTimes.restaurantId, restaurantId),
+          eq(partySizeWaitTimes.partySize, partySize)
+        )
+      );
+    
+    if (existing) {
+      // Update existing wait time
+      const [updated] = await db
+        .update(partySizeWaitTimes)
+        .set({ 
+          waitTimeMinutes,
+          updatedAt: new Date()
+        })
+        .where(
+          and(
+            eq(partySizeWaitTimes.restaurantId, restaurantId),
+            eq(partySizeWaitTimes.partySize, partySize)
+          )
+        )
+        .returning();
+      return updated;
+    } else {
+      // Create new wait time
+      const [created] = await db
+        .insert(partySizeWaitTimes)
+        .values({
+          restaurantId,
+          partySize,
+          waitTimeMinutes
+        })
+        .returning();
+      return created;
+    }
+  }
+
+  async createPartySizeWaitTime(waitTime: InsertPartySizeWaitTime): Promise<PartySizeWaitTime> {
+    const [created] = await db
+      .insert(partySizeWaitTimes)
+      .values(waitTime)
+      .returning();
+    return created;
   }
   // User operations
   async getUser(id: number): Promise<User | undefined> {

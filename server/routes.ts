@@ -380,6 +380,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       return res.status(500).json({ message: "Error updating wait time" });
     }
   });
+
+  // Get party size wait times for a restaurant
+  apiRouter.get("/restaurants/:id/party-size-wait-times", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const waitTimes = await storage.getPartySizeWaitTimes(id);
+      return res.json(waitTimes);
+    } catch (error) {
+      console.error("Error fetching party size wait times:", error);
+      return res.status(500).json({ message: "Error fetching party size wait times" });
+    }
+  });
+
+  // Update party size wait time for a restaurant
+  apiRouter.post("/restaurants/:id/party-size-wait-time", async (req: Request, res: Response) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      // Check authorization - user must own the restaurant
+      if (req.user?.id !== restaurant.userId) {
+        return res.status(403).json({ message: "Unauthorized - You don't own this restaurant" });
+      }
+      
+      const waitTimeSchema = z.object({
+        partySize: z.string().min(1, "Party size is required"),
+        waitTimeMinutes: z.number().min(0, "Wait time must be non-negative")
+      });
+      
+      const { partySize, waitTimeMinutes } = waitTimeSchema.parse(req.body);
+      
+      const updatedWaitTime = await storage.updatePartySizeWaitTime(id, partySize, waitTimeMinutes);
+      
+      return res.json(updatedWaitTime);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: "Validation error", 
+          errors: error.errors 
+        });
+      }
+      
+      console.error("Error updating party size wait time:", error);
+      return res.status(500).json({ message: "Error updating party size wait time" });
+    }
+  });
   
   // User routes - authentication would be added in a real app
   apiRouter.post("/users", async (req: Request, res: Response) => {

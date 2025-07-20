@@ -162,12 +162,38 @@ const RestaurantDashboard = () => {
     });
   };
   
+  // Update party size wait time mutation
+  const updatePartySizeWaitTime = useMutation({
+    mutationFn: async ({ partySize, waitTimeMinutes }: { partySize: string, waitTimeMinutes: number }) => {
+      return await apiRequest(
+        `/api/restaurants/${RESTAURANT_ID}/party-size-wait-time`,
+        {
+          method: "POST",
+          body: { partySize, waitTimeMinutes }
+        }
+      );
+    },
+    onSuccess: () => {
+      toast({
+        title: "Wait time updated",
+        description: "Party size wait time has been updated successfully.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: `Failed to update wait time: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  });
+
   const handleCustomWaitTimeUpdate = () => {
     if (!restaurant) return;
     
-    updateWaitTime.mutate({ 
-      status: restaurant.currentWaitStatus as WaitStatus, 
-      customTime: customWaitTime
+    updatePartySizeWaitTime.mutate({ 
+      partySize, 
+      waitTimeMinutes: customWaitTime
     });
   };
 
@@ -396,11 +422,11 @@ const RestaurantDashboard = () => {
               </div>
               <div className="flex items-end">
                 <button 
-                  className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm w-full md:w-auto"
+                  className="bg-secondary text-white px-4 py-2 rounded-lg hover:bg-opacity-90 transition-colors duration-200 font-medium shadow-sm w-full md:w-auto disabled:opacity-50"
                   onClick={handleCustomWaitTimeUpdate}
-                  disabled={updateWaitTime.isPending}
+                  disabled={updatePartySizeWaitTime.isPending}
                 >
-                  {updateWaitTime.isPending ? 'Updating...' : 'Update Wait Time'}
+                  {updatePartySizeWaitTime.isPending ? 'Updating...' : 'Update Wait Time'}
                 </button>
               </div>
             </div>
