@@ -13,6 +13,9 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-26: Implemented AI-powered table management system with intelligent optimization suggestions
+- 2025-01-26: Added AI demand prediction capabilities and capacity recommendations  
+- 2025-01-26: Created AI Assistant Panel for restaurant dashboard with real-time suggestions
 - 2025-01-26: Implemented advanced table combination logic for realistic restaurant operations
 - 2025-01-26: Enhanced Smart Wait Time Management with manual/automatic mode toggle and improved calculation logic
 - 2025-01-26: Fixed Advanced Queue Management to properly consider table utilization rates for more accurate predictions

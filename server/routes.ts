@@ -19,6 +19,8 @@ import { processTableTurnover, initializeAnalytics } from "./analytics";
 import { generateRestaurantQrCode, generateConfirmationQrCode, generateConfirmationCode } from "./qr-service";
 import { sendCustomerNotification, generateTableReadyMessage } from "./notification-service";
 import { updateGoogleMapsWaitTime, generateGoogleMapsUrl } from "./maps-integration";
+import { AITableOptimizer } from "./ai/table-optimizer";
+import { AIDemandPredictor } from "./ai/demand-predictor";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
@@ -1803,6 +1805,117 @@ export async function registerRoutes(app: Express): Promise<Server> {
         error: "Failed to save promotional offers",
         details: error instanceof Error ? error.message : "Unknown error"
       });
+    }
+  });
+
+  // AI-Powered Table Management Routes
+
+  // Get AI optimization suggestions for waitlist
+  apiRouter.get('/restaurants/:id/ai-suggestions', async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      
+      // Get current waitlist and table data
+      const waitlistEntries = await storage.getWaitlistEntries(restaurantId);
+      const tableTypes = await storage.getTableTypes(restaurantId);
+      
+      // Generate AI suggestions
+      const suggestions = AITableOptimizer.analyzeWaitlistOptimization(
+        waitlistEntries,
+        tableTypes,
+        new Date()
+      );
+      
+      res.json({
+        restaurantId,
+        suggestions,
+        timestamp: new Date().toISOString(),
+        totalSuggestions: suggestions.length
+      });
+    } catch (error) {
+      console.error('Error generating AI suggestions:', error);
+      res.status(500).json({ error: 'Failed to generate AI suggestions' });
+    }
+  });
+
+  // Get AI demand predictions
+  apiRouter.get('/restaurants/:id/demand-predictions', async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const weatherFactor = parseFloat(req.query.weather as string) || 1.0;
+      const specialEvents = (req.query.events as string)?.split(',') || [];
+      
+      // Get historical data for predictions (simplified for now)
+      const historicalData: any[] = []; // In real implementation, fetch from analytics
+      
+      // Generate predictions
+      const predictions = AIDemandPredictor.predictUpcomingDemand(
+        historicalData,
+        new Date(),
+        weatherFactor,
+        specialEvents
+      );
+      
+      // Get capacity recommendations
+      const tableTypes = await storage.getTableTypes(restaurantId);
+      const recommendations = AIDemandPredictor.generateCapacityRecommendations(
+        predictions,
+        { /* current capacity data */ },
+        tableTypes
+      );
+      
+      res.json({
+        restaurantId,
+        predictions,
+        recommendations,
+        timestamp: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Error generating demand predictions:', error);
+      res.status(500).json({ error: 'Failed to generate demand predictions' });
+    }
+  });
+
+  // Apply AI suggestion (seat a party based on AI recommendation)
+  apiRouter.post('/restaurants/:id/apply-ai-suggestion', ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const { suggestionId, partyId, tableAssignment } = req.body;
+      
+      // Verify restaurant ownership
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant || restaurant.userId !== (req.user as User).id) {
+        return res.status(403).json({ error: 'Unauthorized - You don\'t own this restaurant' });
+      }
+      
+      // Get the waitlist entry
+      const waitlistEntry = await storage.getWaitlistEntry(partyId);
+      if (!waitlistEntry || waitlistEntry.restaurantId !== restaurantId) {
+        return res.status(404).json({ error: 'Waitlist entry not found' });
+      }
+      
+      // Update the entry status to seated
+      const updatedEntry = await storage.updateWaitlistEntry(partyId, {
+        status: 'seated',
+        seatedAt: new Date(),
+        tableInfo: tableAssignment ? `${tableAssignment.tableCount}x Table ${tableAssignment.tableTypeId}` : undefined
+      });
+      
+      // Send notification to customer if contact info available
+      if (updatedEntry.contactMethod === 'sms' && updatedEntry.phoneNumber) {
+        const message = generateTableReadyMessage(restaurant.name, updatedEntry.confirmationCode);
+        await sendCustomerNotification(updatedEntry.phoneNumber, message, 'sms');
+      }
+      
+      res.json({
+        success: true,
+        message: 'AI suggestion applied successfully',
+        updatedEntry,
+        appliedSuggestion: { suggestionId, tableAssignment }
+      });
+    } catch (error) {
+      console.error('Error applying AI suggestion:', error);
+      res.status(500).json({ error: 'Failed to apply AI suggestion' });
     }
   });
 
