@@ -1176,42 +1176,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // If no party-size-specific time found, use original algorithm
       if (!usedPartySizeSpecificTime) {
         if (restaurant.useAdvancedQueue && tableTypes.length > 0) {
-          // Get suitable tables for this party size
-          const suitableTables = tableTypes.filter(
-            table => table.capacity >= partySize && table.isActive
-          );
-          
           // Active waitlist entries (not seated or cancelled)
           const activeWaitlist = waitlistEntries.filter(
             entry => entry.status === 'waiting' || entry.status === 'notified'
           );
           
-          // Count available tables of suitable sizes
-          const availableTables = suitableTables.reduce(
-            (total, table) => total + table.count, 
-            0
-          );
+          // Enhanced table matching: support both single tables and combinations
+          const findBestTableSolution = (partySize: number) => {
+            const activeTableTypes = tableTypes.filter(t => t.isActive);
+            
+            // Option 1: Single table that can accommodate the party
+            const suitableSingleTables = activeTableTypes.filter(
+              table => table.capacity >= partySize
+            ).sort((a, b) => a.capacity - b.capacity); // Prefer smaller tables
+            
+            if (suitableSingleTables.length > 0) {
+              return {
+                type: 'single',
+                tables: [suitableSingleTables[0]],
+                totalCapacity: suitableSingleTables[0].capacity,
+                availableCount: suitableSingleTables[0].count,
+                avgTurnoverTime: suitableSingleTables[0].estimatedTurnoverTime,
+                waitTime: 0 // Available now
+              };
+            }
+            
+            // Option 2: Combination of smaller tables
+            // Try to find the optimal combination (e.g., 2x2-seaters for party of 3-4, 2x4-seaters for party of 7, etc.)
+            for (const baseTable of activeTableTypes.sort((a, b) => b.capacity - a.capacity)) {
+              const tablesNeeded = Math.ceil(partySize / baseTable.capacity);
+              if (tablesNeeded <= baseTable.count && tablesNeeded <= 4) { // Max 4 tables for practical reasons
+                // Calculate when all needed tables would be available
+                const currentlyAvailable = Math.floor(baseTable.count * 0.8); // Assume 80% are currently free
+                const immediatelyAvailable = Math.min(tablesNeeded, currentlyAvailable);
+                const tablesStillNeeded = tablesNeeded - immediatelyAvailable;
+                
+                // If we need more tables, estimate when they'll be free
+                const additionalWaitTime = tablesStillNeeded > 0 
+                  ? (tablesStillNeeded * baseTable.estimatedTurnoverTime / Math.max(1, baseTable.count - currentlyAvailable))
+                  : 0;
+                
+                return {
+                  type: 'combination',
+                  tables: Array(tablesNeeded).fill(baseTable),
+                  totalCapacity: baseTable.capacity * tablesNeeded,
+                  availableCount: baseTable.count,
+                  avgTurnoverTime: baseTable.estimatedTurnoverTime,
+                  waitTime: additionalWaitTime,
+                  tablesNeeded,
+                  immediatelyAvailable,
+                  tablesStillNeeded
+                };
+              }
+            }
+            
+            // No solution found
+            return null;
+          };
           
-          // Calculate people ahead in queue who would compete for the same optimal table types
-          const similarPartySizeEntries = activeWaitlist.filter(entry => {
-            // Find the optimal table size for the waitlisted entry (smallest that fits)
-            const entryOptimalTable = tableTypes
-              .filter(table => table.capacity >= entry.partySize && table.isActive)
-              .sort((a, b) => a.capacity - b.capacity)[0];
+          const tableSolution = findBestTableSolution(partySize);
+          
+          // Calculate people ahead in queue who would compete for similar solutions
+          const competingEntries = activeWaitlist.filter(entry => {
+            const entryTableSolution = findBestTableSolution(entry.partySize);
             
-            // Find the optimal table size for current party (smallest that fits)
-            const currentOptimalTable = suitableTables
-              .sort((a, b) => a.capacity - b.capacity)[0];
+            if (!tableSolution || !entryTableSolution) return false;
             
-            // Only compete if they use the exact same optimal table type
-            return entryOptimalTable && currentOptimalTable && 
-                   entryOptimalTable.id === currentOptimalTable.id;
+            // If both use single tables, check if they use the same table type
+            if (tableSolution.type === 'single' && entryTableSolution.type === 'single') {
+              return tableSolution.tables[0].id === entryTableSolution.tables[0].id;
+            }
+            
+            // If either uses combination, check if they compete for the same base table type
+            if (tableSolution.type === 'combination' || entryTableSolution.type === 'combination') {
+              const currentBaseTable = tableSolution.tables[0];
+              const entryBaseTable = entryTableSolution.tables[0];
+              return currentBaseTable.id === entryBaseTable.id;
+            }
+            
+            return false;
           });
-          
-          // Get average turnover time
-          const avgTurnoverTime = suitableTables.length > 0
-            ? suitableTables.reduce((sum, table) => sum + table.estimatedTurnoverTime, 0) / suitableTables.length
-            : 45; // Default 45 minutes
           
           // Base wait time from restaurant status
           const baseWaitTime = (() => {
@@ -1225,48 +1269,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })();
           
-          // In automatic mode with Advanced Queue, calculate more intelligently
-          // Only use custom wait time if explicitly in manual mode or if advanced queue is disabled
-          if ((restaurant.waitTimeMode || 'automatic') === 'manual' || !restaurant.useAdvancedQueue) {
-            estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
-              ? restaurant.customWaitTime
-              : baseWaitTime;
-          } else {
-            // Advanced automatic mode: start with base status time, not custom override
-            estWaitTime = baseWaitTime;
-            
-            // If there are plenty of suitable tables available, reduce wait time significantly
-            const totalSuitableCapacity = suitableTables.reduce((total, table) => total + (table.count * table.capacity), 0);
-            const occupiedByActiveWaitlist = activeWaitlist.reduce((total, entry) => total + entry.partySize, 0);
-            const utilizationRate = occupiedByActiveWaitlist / Math.max(1, totalSuitableCapacity);
-            
-            // console.log(`- Total suitable capacity: ${totalSuitableCapacity}`);
-            // console.log(`- Occupied by active waitlist: ${occupiedByActiveWaitlist}`);
-            // console.log(`- Utilization rate: ${(utilizationRate * 100).toFixed(1)}%`);
-            
-            // If utilization is low, reduce base wait time dramatically
-            if (utilizationRate < 0.2) { // Less than 20% utilization
-              estWaitTime = Math.max(0, baseWaitTime * 0.2); // Reduce to 20% of base
-            } else if (utilizationRate < 0.5) { // Less than 50% utilization
-              estWaitTime = Math.max(5, baseWaitTime * 0.5); // Reduce to 50% of base
-            }
-          }
-            
-          // Debug logging for development (commented out for production)
-          // console.log(`Debug wait time calculation for restaurant ${id}, party size ${partySize}:`);
-          // console.log(`- Restaurant wait status: ${restaurant.currentWaitStatus}`);
-          // console.log(`- Initial estimated wait time: ${estWaitTime} minutes`);
-            
-          // Add wait time for each person ahead with similar party size
-          if (similarPartySizeEntries.length > 0) {
-            const waitTimePerPerson = avgTurnoverTime / Math.max(1, availableTables);
-            const additionalWaitTime = similarPartySizeEntries.length * waitTimePerPerson;
-            estWaitTime += additionalWaitTime;
-          }
-          
-          // If no suitable tables, give a high wait time
-          if (suitableTables.length === 0) {
+          if (!tableSolution) {
+            // No table solution found, give a high wait time
             estWaitTime = 120; // 2 hours
+          } else {
+            // Use the table solution to calculate wait time
+            const avgTurnoverTime = tableSolution.avgTurnoverTime;
+            
+            // Start with base wait time or table combination wait time
+            estWaitTime = Math.max(baseWaitTime, tableSolution.waitTime);
+            
+            // In automatic mode with Advanced Queue, calculate more intelligently
+            if ((restaurant.waitTimeMode || 'automatic') === 'manual' || !restaurant.useAdvancedQueue) {
+              estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
+                ? restaurant.customWaitTime
+                : estWaitTime;
+            } else {
+              // Advanced automatic mode: consider table utilization
+              const totalCapacity = tableSolution.totalCapacity * tableSolution.availableCount;
+              const occupiedByActiveWaitlist = activeWaitlist.reduce((total, entry) => total + entry.partySize, 0);
+              const utilizationRate = occupiedByActiveWaitlist / Math.max(1, totalCapacity);
+              
+              // Debug logging for table solution (uncomment for development)
+              // console.log(`Table solution for party ${partySize}: ${tableSolution.type}`);
+              // if (tableSolution.type === 'combination') {
+              //   console.log(`- Tables needed: ${tableSolution.tablesNeeded} x ${tableSolution.tables[0].name}`);
+              //   console.log(`- Combination wait time: ${tableSolution.waitTime} minutes`);
+              // }
+              
+              // If utilization is low, reduce base wait time
+              if (utilizationRate < 0.2) {
+                estWaitTime = Math.max(tableSolution.waitTime, baseWaitTime * 0.2);
+              } else if (utilizationRate < 0.5) {
+                estWaitTime = Math.max(tableSolution.waitTime, baseWaitTime * 0.5);
+              }
+            }
+            
+            // Add wait time for competing entries ahead in queue
+            if (competingEntries.length > 0) {
+              const waitTimePerCompetitor = avgTurnoverTime / Math.max(1, tableSolution.availableCount);
+              const additionalWaitTime = competingEntries.length * waitTimePerCompetitor;
+              estWaitTime += additionalWaitTime;
+              
+              // console.log(`- Competing entries: ${competingEntries.length}`);
+            }
           }
         } else {
           // Fallback to basic wait time if advanced queue is not enabled
