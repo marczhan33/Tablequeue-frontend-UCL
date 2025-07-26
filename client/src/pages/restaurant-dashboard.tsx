@@ -79,6 +79,17 @@ const RestaurantDashboard = () => {
       // Initialize editing hours with current restaurant hours
       if (restaurant.operatingHours) {
         setEditingHours(restaurant.operatingHours);
+      } else {
+        // Set default hours if none exist
+        setEditingHours({
+          monday: { open: '09:00', close: '22:00' },
+          tuesday: { open: '09:00', close: '22:00' },
+          wednesday: { open: '09:00', close: '22:00' },
+          thursday: { open: '09:00', close: '22:00' },
+          friday: { open: '09:00', close: '22:00' },
+          saturday: { open: '09:00', close: '22:00' },
+          sunday: { open: '09:00', close: '22:00' }
+        });
       }
     }
   }, [restaurant]);
@@ -544,7 +555,7 @@ const RestaurantDashboard = () => {
             )}
             
             {/* Current Wait Times Summary */}
-            {partySizeWaitTimes.length > 0 && (
+            {partySizeWaitTimes && Array.isArray(partySizeWaitTimes) && partySizeWaitTimes.length > 0 && (
               <div className="mt-6 bg-white rounded-lg border">
                 <div className="px-4 py-3 border-b bg-gray-50 rounded-t-lg">
                   <h4 className="font-medium text-gray-900">Current Wait Times</h4>
@@ -562,7 +573,7 @@ const RestaurantDashboard = () => {
                     </div>
                     
                     {/* Party Size Specific Times */}
-                    {partySizeWaitTimes.map((waitTime) => (
+                    {partySizeWaitTimes && Array.isArray(partySizeWaitTimes) && partySizeWaitTimes.map((waitTime: any) => (
                       <div key={waitTime.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md">
                         <span className="text-sm font-medium text-gray-700">{waitTime.partySize}</span>
                         <span className="text-sm text-gray-900 font-medium">{waitTime.waitTimeMinutes} min</span>
@@ -694,20 +705,20 @@ const RestaurantDashboard = () => {
                         <input 
                           type="time" 
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          value={editingHours[day]?.open || "09:00"}
+                          value={editingHours && editingHours[day as keyof typeof editingHours]?.open || "09:00"}
                           onChange={(e) => setEditingHours({
                             ...editingHours,
-                            [day]: { ...editingHours[day], open: e.target.value }
+                            [day]: { ...editingHours && editingHours[day as keyof typeof editingHours], open: e.target.value }
                           })}
                         />
                         <span className="text-sm">to</span>
                         <input 
                           type="time" 
                           className="px-2 py-1 border border-gray-300 rounded text-sm"
-                          value={editingHours[day]?.close || "21:00"}
+                          value={editingHours && editingHours[day as keyof typeof editingHours]?.close || "21:00"}
                           onChange={(e) => setEditingHours({
                             ...editingHours,
-                            [day]: { ...editingHours[day], close: e.target.value }
+                            [day]: { ...editingHours && editingHours[day as keyof typeof editingHours], close: e.target.value }
                           })}
                         />
                       </div>

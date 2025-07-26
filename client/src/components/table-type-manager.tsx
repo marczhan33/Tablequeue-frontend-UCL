@@ -370,23 +370,17 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
                         type="number"
                         min={15}
                         max={240}
-                        value={field.value === 0 ? '' : field.value}
+                        placeholder="Minutes"
+                        value={field.value || ''}
                         onChange={(e) => {
                           const value = e.target.value;
                           if (value === '') {
-                            field.onChange(15); // Default to minimum value for turnover time
+                            field.onChange(0);
                           } else {
-                            // Remove leading zeros and convert to number
                             const numValue = parseInt(value, 10);
-                            if (!isNaN(numValue) && numValue >= 15) {
+                            if (!isNaN(numValue)) {
                               field.onChange(numValue);
                             }
-                          }
-                        }}
-                        onFocus={(e) => {
-                          // Clear field if it shows default value
-                          if (e.target.value === '15' || e.target.value === '0') {
-                            e.target.value = '';
                           }
                         }}
                       />
