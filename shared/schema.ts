@@ -76,6 +76,7 @@ export const restaurants = pgTable("restaurants", {
   hasReservationSystem: text("has_reservation_system"), // Name of reservation system if any
   reservationUrl: text("reservation_url"), // URL to reservation system
   useAdvancedQueue: boolean("use_advanced_queue").default(false), // Whether to use advanced queue management
+  waitTimeMode: text("wait_time_mode").notNull().default('automatic'), // 'manual' or 'automatic'
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -121,8 +122,14 @@ export const waitlistStatusEnum = z.enum([
   "remote_confirmed",  // Customer joined remotely and confirmed they're on their way
 ]);
 
+export const waitTimeModeEnum = z.enum([
+  'manual',      // Restaurant owner manually sets wait times
+  'automatic'    // System calculates wait times automatically
+]);
+
 export type WaitStatus = z.infer<typeof waitStatusEnum>;
 export type WaitlistStatus = z.infer<typeof waitlistStatusEnum>;
+export type WaitTimeMode = z.infer<typeof waitTimeModeEnum>;
 
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({

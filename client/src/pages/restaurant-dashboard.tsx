@@ -197,6 +197,34 @@ const RestaurantDashboard = () => {
       customTime: status === 'available' ? 0 : (status === 'short' ? 15 : 30)
     });
   };
+
+  // Handle wait time mode toggle
+  const handleWaitTimeModeToggle = async () => {
+    if (!restaurant) return;
+    
+    const currentMode = restaurant.waitTimeMode || 'automatic';
+    const newMode = currentMode === 'manual' ? 'automatic' : 'manual';
+    
+    try {
+      await apiRequest(`/api/restaurants/${RESTAURANT_ID}`, {
+        method: "PATCH",
+        body: { waitTimeMode: newMode }
+      });
+      
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${RESTAURANT_ID}`] });
+      
+      toast({
+        title: "Wait time mode updated",
+        description: `Switched to ${newMode} mode successfully.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: `Failed to update wait time mode: ${(error as Error).message}`,
+        variant: "destructive",
+      });
+    }
+  };
   
   // Individual update functions for each party size
   const updateWaitTime1to2 = async () => {
@@ -471,15 +499,81 @@ const RestaurantDashboard = () => {
 
           {/* Party Size Wait Times */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold mb-4">Smart Wait Time Management</h3>
-            <p className="text-gray-600 mb-6">Set customized wait times for different party sizes to provide accurate predictions to your customers.</p>
-            
-            {waitTimesLoading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="flex justify-between items-start mb-4">
+              <div>
+                <h3 className="text-lg font-semibold">Smart Wait Time Management</h3>
+                <p className="text-gray-600 mt-1">Choose between manual control or automatic calculations based on your Advanced Queue Management.</p>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="flex items-center gap-3">
+                <span className={`text-sm font-medium ${(restaurant.waitTimeMode || 'automatic') === 'manual' ? 'text-primary' : 'text-gray-500'}`}>
+                  Manual
+                </span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    className="sr-only peer" 
+                    checked={(restaurant.waitTimeMode || 'automatic') === 'automatic'}
+                    onChange={handleWaitTimeModeToggle}
+                  />
+                  <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                </label>
+                <span className={`text-sm font-medium ${(restaurant.waitTimeMode || 'automatic') === 'automatic' ? 'text-primary' : 'text-gray-500'}`}>
+                  Automatic
+                </span>
+              </div>
+            </div>
+            
+            {/* Mode Description */}
+            <div className="mb-6">
+              {(restaurant.waitTimeMode || 'automatic') === 'manual' ? (
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+                  <div className="flex items-start">
+                    <svg className="h-5 w-5 text-blue-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-medium text-blue-800 mb-1">Manual Mode Active</h4>
+                      <p className="text-sm text-blue-700">You're in control. Set specific wait times for each party size. These will override any automatic calculations.</p>
+                      {restaurant.useAdvancedQueue && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded">
+                          <p className="text-xs text-yellow-800 flex items-center">
+                            <svg className="h-4 w-4 text-yellow-600 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                            </svg>
+                            Warning: Your manual wait times will override Advanced Queue Management calculations
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-green-50 border border-green-200 rounded-md p-4">
+                  <div className="flex items-start">
+                    <svg className="h-5 w-5 text-green-400 mt-0.5 mr-3" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    <div>
+                      <h4 className="text-sm font-medium text-green-800 mb-1">Automatic Mode Active</h4>
+                      <p className="text-sm text-green-700">
+                        {restaurant.useAdvancedQueue 
+                          ? "Smart calculations using your table types, current waitlist, and turnover times provide the most accurate wait times."
+                          : "Basic wait time calculations based on your current wait status. Enable Advanced Queue Management for more precise predictions."
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {(restaurant.waitTimeMode || 'automatic') === 'manual' ? (
+              waitTimesLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* 1-2 people */}
                 <div className="bg-white rounded-lg p-4 border">
                   <h4 className="font-medium text-gray-900 mb-2">1-2 people</h4>
@@ -550,6 +644,27 @@ const RestaurantDashboard = () => {
                   >
                     {updating5plus ? 'Updating...' : 'Update'}
                   </button>
+                </div>
+                </div>
+              )
+            ) : (
+              <div className="text-center py-8">
+                <div className="max-w-md mx-auto">
+                  <div className="bg-green-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">Automatic Mode Active</h3>
+                  <p className="text-gray-600 mb-4">
+                    {restaurant.useAdvancedQueue 
+                      ? "Your wait times are being calculated automatically using Advanced Queue Management. The system considers your table types, current waitlist, and turnover times for optimal accuracy."
+                      : "Wait times are calculated based on your current wait status. Enable Advanced Queue Management in the settings above for more precise predictions."
+                    }
+                  </p>
+                  <div className="text-sm text-gray-500">
+                    <p>Current predictions are being shown to customers on your restaurant page based on real-time data.</p>
+                  </div>
                 </div>
               </div>
             )}

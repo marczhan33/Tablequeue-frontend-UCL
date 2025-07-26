@@ -1144,31 +1144,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Calculate the prediction
-      // First, check for party-size-specific wait times
+      // First, check waitTimeMode and party-size-specific wait times (only in manual mode)
       let estWaitTime = 0;
       let usedPartySizeSpecificTime = false;
       
-      try {
-        // Get party-size-specific wait times for this restaurant
-        const partySizeWaitTimes = await storage.getPartySizeWaitTimes(id);
-        
-        // Find the appropriate wait time based on party size
-        let matchingWaitTime = null;
-        
-        if (partySize <= 2) {
-          matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '1-2 people');
-        } else if (partySize <= 4) {
-          matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '3-4 people');
-        } else {
-          matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '5+ people');
+      if ((restaurant.waitTimeMode || 'automatic') === 'manual') {
+        try {
+          // Get party-size-specific wait times for this restaurant
+          const partySizeWaitTimes = await storage.getPartySizeWaitTimes(id);
+          
+          // Find the appropriate wait time based on party size
+          let matchingWaitTime = null;
+          
+          if (partySize <= 2) {
+            matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '1-2 people');
+          } else if (partySize <= 4) {
+            matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '3-4 people');
+          } else {
+            matchingWaitTime = partySizeWaitTimes.find(wt => wt.partySize === '5+ people');
+          }
+          
+          if (matchingWaitTime) {
+            estWaitTime = matchingWaitTime.waitTimeMinutes;
+            usedPartySizeSpecificTime = true;
+          }
+        } catch (error) {
+          console.error("Error fetching party-size wait times:", error);
         }
-        
-        if (matchingWaitTime) {
-          estWaitTime = matchingWaitTime.waitTimeMinutes;
-          usedPartySizeSpecificTime = true;
-        }
-      } catch (error) {
-        console.error("Error fetching party-size wait times:", error);
       }
       
       // If no party-size-specific time found, use original algorithm
@@ -1287,10 +1289,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
         Math.max(1, restaurant.tableCapacity || 10)) * 100
       ));
       
-      // Confidence level based on available data
-      const confidence = restaurant.useAdvancedQueue && tableTypes.length > 0 
-        ? 'high' 
-        : ((restaurant.customWaitTime ?? 0) > 0 ? 'medium' : 'low');
+      // Confidence level based on available data and wait time mode
+      let confidence: 'high' | 'medium' | 'low' = 'low';
+      
+      if ((restaurant.waitTimeMode || 'automatic') === 'manual' && usedPartySizeSpecificTime) {
+        confidence = 'high'; // Manual override gives high confidence
+      } else if ((restaurant.waitTimeMode || 'automatic') === 'automatic' && restaurant.useAdvancedQueue && tableTypes.length > 0) {
+        confidence = 'high'; // Advanced queue with table types gives high confidence
+      } else if ((restaurant.waitTimeMode || 'automatic') === 'automatic' && (restaurant.customWaitTime ?? 0) > 0) {
+        confidence = 'medium'; // Custom wait time gives medium confidence
+      } else {
+        confidence = 'low'; // Basic fallback gives low confidence
+      }
       
       // Return prediction with improved confidence based on historical data
       
@@ -1317,6 +1327,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ? 'Current conditions and historical patterns' 
             : 'Current conditions only',
           confidence: confidence,
+          waitTimeMode: restaurant.waitTimeMode || 'automatic',
+          calculationMethod: (restaurant.waitTimeMode || 'automatic') === 'manual' && usedPartySizeSpecificTime
+            ? 'Manual party-size-specific override'
+            : (restaurant.waitTimeMode || 'automatic') === 'automatic' && restaurant.useAdvancedQueue && tableTypes.length > 0
+              ? 'Advanced queue management calculation'
+              : 'Basic wait status calculation',
           accuracyLevel: historicalData.hasHistoricalData ? 'Enhanced' : 'Standard'
         }
       });
