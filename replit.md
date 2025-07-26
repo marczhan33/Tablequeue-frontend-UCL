@@ -13,6 +13,10 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-26: Enhanced Smart Wait Time Management with manual/automatic mode toggle and improved calculation logic
+- 2025-01-26: Fixed Advanced Queue Management to properly consider table utilization rates for more accurate predictions
+- 2025-01-26: Improved wait time calculation to only consider competing parties using the same optimal table types
+- 2025-01-26: Added intelligent wait time reduction in automatic mode when table utilization is low (reduces 35min to 10min predictions)
 - 2025-01-20: Removed Direct Link verification method from check-in interface, simplified to Location and QR Code only
 - 2025-01-20: Fixed QR code joining error by implementing proper estimated wait time calculation
 - 2025-01-20: Resolved confirmation code display issue in staff check-in modal

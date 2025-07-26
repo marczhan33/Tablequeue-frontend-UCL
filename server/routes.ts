@@ -1192,10 +1192,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
             0
           );
           
-          // Calculate people ahead in queue with similar party sizes
-          const similarPartySizeEntries = activeWaitlist.filter(
-            entry => Math.abs(entry.partySize - partySize) <= 2
-          );
+          // Calculate people ahead in queue who would compete for the same optimal table types
+          const similarPartySizeEntries = activeWaitlist.filter(entry => {
+            // Find the optimal table size for the waitlisted entry (smallest that fits)
+            const entryOptimalTable = tableTypes
+              .filter(table => table.capacity >= entry.partySize && table.isActive)
+              .sort((a, b) => a.capacity - b.capacity)[0];
+            
+            // Find the optimal table size for current party (smallest that fits)
+            const currentOptimalTable = suitableTables
+              .sort((a, b) => a.capacity - b.capacity)[0];
+            
+            // Only compete if they use the exact same optimal table type
+            return entryOptimalTable && currentOptimalTable && 
+                   entryOptimalTable.id === currentOptimalTable.id;
+          });
           
           // Get average turnover time
           const avgTurnoverTime = suitableTables.length > 0
@@ -1214,14 +1225,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
             }
           })();
           
-          // Adjust for custom wait time if set
-          estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
-            ? restaurant.customWaitTime
-            : baseWaitTime;
+          // In automatic mode with Advanced Queue, calculate more intelligently
+          // Only use custom wait time if explicitly in manual mode or if advanced queue is disabled
+          if ((restaurant.waitTimeMode || 'automatic') === 'manual' || !restaurant.useAdvancedQueue) {
+            estWaitTime = restaurant.customWaitTime && restaurant.customWaitTime > 0
+              ? restaurant.customWaitTime
+              : baseWaitTime;
+          } else {
+            // Advanced automatic mode: start with base status time, not custom override
+            estWaitTime = baseWaitTime;
+            
+            // If there are plenty of suitable tables available, reduce wait time significantly
+            const totalSuitableCapacity = suitableTables.reduce((total, table) => total + (table.count * table.capacity), 0);
+            const occupiedByActiveWaitlist = activeWaitlist.reduce((total, entry) => total + entry.partySize, 0);
+            const utilizationRate = occupiedByActiveWaitlist / Math.max(1, totalSuitableCapacity);
+            
+            // console.log(`- Total suitable capacity: ${totalSuitableCapacity}`);
+            // console.log(`- Occupied by active waitlist: ${occupiedByActiveWaitlist}`);
+            // console.log(`- Utilization rate: ${(utilizationRate * 100).toFixed(1)}%`);
+            
+            // If utilization is low, reduce base wait time dramatically
+            if (utilizationRate < 0.2) { // Less than 20% utilization
+              estWaitTime = Math.max(0, baseWaitTime * 0.2); // Reduce to 20% of base
+            } else if (utilizationRate < 0.5) { // Less than 50% utilization
+              estWaitTime = Math.max(5, baseWaitTime * 0.5); // Reduce to 50% of base
+            }
+          }
+            
+          // Debug logging for development (commented out for production)
+          // console.log(`Debug wait time calculation for restaurant ${id}, party size ${partySize}:`);
+          // console.log(`- Restaurant wait status: ${restaurant.currentWaitStatus}`);
+          // console.log(`- Initial estimated wait time: ${estWaitTime} minutes`);
             
           // Add wait time for each person ahead with similar party size
           if (similarPartySizeEntries.length > 0) {
-            estWaitTime += similarPartySizeEntries.length * (avgTurnoverTime / Math.max(1, availableTables));
+            const waitTimePerPerson = avgTurnoverTime / Math.max(1, availableTables);
+            const additionalWaitTime = similarPartySizeEntries.length * waitTimePerPerson;
+            estWaitTime += additionalWaitTime;
           }
           
           // If no suitable tables, give a high wait time
