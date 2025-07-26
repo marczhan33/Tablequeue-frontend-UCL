@@ -219,14 +219,26 @@ export default function TableTypeManager({ restaurantId }: TableTypeManagerProps
             <div key={tableType.id} className="bg-white rounded-lg border p-6">
               <div className="flex justify-between items-start mb-4">
                 <h3 className="text-lg font-semibold text-gray-900">{tableType.name}</h3>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={() => handleEdit(tableType)} 
-                  className="text-red-600 hover:text-red-900"
-                >
-                  Edit
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleEdit(tableType)} 
+                    className="text-blue-600 hover:text-blue-900"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={() => handleDelete(tableType.id)} 
+                    className="text-red-600 hover:text-red-900"
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                </div>
               </div>
               
               <div className="space-y-2 text-sm">
