@@ -553,36 +553,6 @@ const RestaurantDashboard = () => {
                 </div>
               </div>
             )}
-            
-            {/* Current Wait Times Summary */}
-            {partySizeWaitTimes && Array.isArray(partySizeWaitTimes) && partySizeWaitTimes.length > 0 && (
-              <div className="mt-6 bg-white rounded-lg border">
-                <div className="px-4 py-3 border-b bg-gray-50 rounded-t-lg">
-                  <h4 className="font-medium text-gray-900">Current Wait Times</h4>
-                  <p className="text-sm text-gray-600">Currently active wait times for each party size</p>
-                </div>
-                <div className="p-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    {/* Any Size (Restaurant Default) */}
-                    <div className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md">
-                      <span className="text-sm font-medium text-gray-700">Any Size</span>
-                      <span className="text-sm text-gray-900 font-medium">
-                        {restaurant.currentWaitStatus === 'available' ? '0' : 
-                         restaurant.currentWaitStatus === 'short' ? '15' : '30'} min
-                      </span>
-                    </div>
-                    
-                    {/* Party Size Specific Times */}
-                    {partySizeWaitTimes && Array.isArray(partySizeWaitTimes) && partySizeWaitTimes.map((waitTime: any) => (
-                      <div key={waitTime.id} className="flex items-center justify-between py-2 px-3 bg-gray-50 rounded-md">
-                        <span className="text-sm font-medium text-gray-700">{waitTime.partySize}</span>
-                        <span className="text-sm text-gray-900 font-medium">{waitTime.waitTimeMinutes} min</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Restaurant Information */}
