@@ -13,6 +13,10 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-27: Completed SMS-only password reset system - users enter phone numbers directly, receive Twilio SMS codes, eliminated SendGrid dependency
+- 2025-01-27: Fixed getUserByPhone method to handle duplicate phone numbers by prioritizing users with most recent reset tokens
+- 2025-01-27: Updated forgot password interface to use phone number input instead of email for streamlined SMS verification
+- 2025-01-27: Fixed "Back to login" navigation link to correctly point to /auth route instead of /login
 - 2025-01-27: Updated Google OAuth buttons to use "Continue with Google" for improved UX clarity (single text for both login/signup)
 - 2025-01-27: Removed "My Profile" tab from main navigation - profile page now exclusively accessible via user dropdown menu
 - 2025-01-27: Implemented comprehensive user profile management system with secure backend API endpoint and form validation

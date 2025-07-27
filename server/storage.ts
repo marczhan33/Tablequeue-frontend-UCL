@@ -234,6 +234,18 @@ export class DatabaseStorage implements IStorage {
 
   async getUserByPhone(phone: string): Promise<User | undefined> {
     const result = await db.select().from(users).where(eq(users.phone, phone));
+    
+    // If multiple users have the same phone, return the one with the most recent reset token activity
+    if (result.length > 1) {
+      const usersWithResetTokens = result.filter(user => user.resetPasswordToken && user.resetPasswordExpires);
+      if (usersWithResetTokens.length > 0) {
+        // Return the user with the most recent reset token
+        return usersWithResetTokens.sort((a, b) => 
+          (b.resetPasswordExpires?.getTime() || 0) - (a.resetPasswordExpires?.getTime() || 0)
+        )[0];
+      }
+    }
+    
     return result[0];
   }
   
