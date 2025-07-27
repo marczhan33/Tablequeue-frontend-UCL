@@ -387,7 +387,7 @@ function ForgotPasswordPage() {
             <div className="text-center">
               <p className="text-sm text-muted-foreground">
                 Remember your password?{" "}
-                <Link href="/login" className="text-primary hover:underline">
+                <Link href="/auth" className="text-primary hover:underline">
                   Back to login
                 </Link>
               </p>
