@@ -22,6 +22,7 @@ import WaitlistStatusPage from "@/pages/waitlist-status";
 import JoinWaitlist from "@/pages/join-waitlist";
 import ConfirmArrival from "@/pages/confirm-arrival";
 import AuthPage from "@/pages/auth-page";
+import CustomerAuth from "@/pages/customer-auth";
 import NotFound from "@/pages/not-found";
 
 function AuthNavItem({ path, label }: { path: string, label: string }) {
@@ -91,14 +92,35 @@ function ProtectedRoute({ path, component: Component, ownerOnly = false }: { pat
     );
   }
 
-  return <Route path={path} component={Component} />;
+  return (
+    <Route path={path}>
+      <Component />
+    </Route>
+  );
 }
 
 function Router() {
+  const { user, isLoading } = useAuth();
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/">
-        <CustomerView />
+        {user ? <CustomerView /> : <CustomerAuth />}
+      </Route>
+      <Route path="/restaurants">
+        {user ? <CustomerView /> : <CustomerAuth />}
+      </Route>
+      <Route path="/dashboard">
+        {user && user.role === 'owner' ? <RestaurantDashboard /> : <CustomerAuth />}
       </Route>
       <Route path="/restaurants/:id">
         <RestaurantDetails />
@@ -141,16 +163,15 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
   const [location] = useLocation();
+  const { user } = useAuth();
   
   // Don't show navigation tabs on authentication or restaurant details pages
-  const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth';
+  const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth' && user;
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
+    <TooltipProvider>
           <div className="min-h-screen flex flex-col bg-light text-dark">
             <Header />
             
@@ -202,6 +223,14 @@ function App() {
             <Toaster />
           </div>
         </TooltipProvider>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );
