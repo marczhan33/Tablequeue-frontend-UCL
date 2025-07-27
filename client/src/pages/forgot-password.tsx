@@ -23,7 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 // Step 1: Request reset
 const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  phone: z.string().min(10, "Please enter a valid phone number with country code (e.g., +1234567890)"),
 });
 
 // Step 2: Verify SMS code  
@@ -46,8 +46,7 @@ type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
 function ForgotPasswordPage() {
   const [step, setStep] = useState<"request" | "verify" | "reset">("request");
-  const [email, setEmail] = useState("");
-  const [method, setMethod] = useState<"email" | "sms">("email");
+  const [phone, setPhone] = useState("");
   const [resetToken, setResetToken] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -58,7 +57,7 @@ function ForgotPasswordPage() {
   const forgotForm = useForm<ForgotPasswordFormValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
-      email: "",
+      phone: "",
     },
   });
 
@@ -100,8 +99,7 @@ function ForgotPasswordPage() {
         throw new Error(result.error || "Failed to process request");
       }
 
-      setEmail(data.email);
-      setMethod("sms");
+      setPhone(data.phone); // Store phone for verification step
       setMessage(result.message);
 
       // SMS method - go to verification step
@@ -127,7 +125,7 @@ function ForgotPasswordPage() {
         method: "POST",
         url: "/api/verify-reset-code",
         body: {
-          email,
+          phone,
           code: data.code,
         },
       });
@@ -243,14 +241,14 @@ function ForgotPasswordPage() {
               <form onSubmit={forgotForm.handleSubmit(handleForgotPassword)} className="space-y-4">
                 <FormField
                   control={forgotForm.control}
-                  name="email"
+                  name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Email Address</FormLabel>
+                      <FormLabel>Phone Number</FormLabel>
                       <FormControl>
                         <Input 
-                          type="email" 
-                          placeholder="Enter your email address" 
+                          type="tel" 
+                          placeholder="Enter your phone number (e.g., +1234567890)" 
                           {...field} 
                         />
                       </FormControl>
@@ -265,7 +263,7 @@ function ForgotPasswordPage() {
                     <span className="text-sm font-medium">SMS Verification</span>
                   </div>
                   <p className="text-sm text-blue-600 mt-1">
-                    We'll send a 6-digit verification code to the phone number associated with your account.
+                    We'll send a 6-digit verification code to the phone number you enter above.
                   </p>
                 </div>
 

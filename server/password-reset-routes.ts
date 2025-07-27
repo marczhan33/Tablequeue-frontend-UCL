@@ -13,7 +13,7 @@ export function setupPasswordResetRoutes(app: Express) {
   app.post("/api/forgot-password", async (req: Request, res: Response) => {
     try {
       const schema = z.object({
-        email: z.string().email("Please enter a valid email address"),
+        phone: z.string().min(10, "Please enter a valid phone number with country code"),
         method: z.enum(["sms"], {
           required_error: "SMS is the only supported verification method",
         }).optional().default("sms"),
@@ -24,22 +24,15 @@ export function setupPasswordResetRoutes(app: Express) {
         return res.status(400).json({ error: result.error.errors[0].message });
       }
 
-      const { email, method } = result.data;
+      const { phone, method } = result.data;
 
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
+      // Find user by phone number
+      const user = await storage.getUserByPhone(phone);
       if (!user) {
-        // For security, don't reveal if email exists or not
+        // For security, don't reveal if phone exists or not
         return res.status(200).json({ 
-          message: "If an account with that email exists, you will receive a verification code.",
+          message: "If an account with that phone number exists, you will receive a verification code.",
           requiresCode: true
-        });
-      }
-
-      // Validate phone number since we only support SMS now
-      if (!user.phone || user.phone.trim() === "") {
-        return res.status(400).json({ 
-          error: "No phone number associated with this account. Please contact support for assistance." 
         });
       }
 
@@ -50,7 +43,7 @@ export function setupPasswordResetRoutes(app: Express) {
       await storage.updateUserResetToken(user.id, code, expires, "sms");
       
       // Send SMS
-      const smsSent = await sendPasswordResetSMS(user.phone!, code, user.username);
+      const smsSent = await sendPasswordResetSMS(phone, code, user.username);
       
       if (!smsSent) {
         return res.status(500).json({ 
@@ -72,7 +65,7 @@ export function setupPasswordResetRoutes(app: Express) {
   app.post("/api/verify-reset-code", async (req: Request, res: Response) => {
     try {
       const schema = z.object({
-        email: z.string().email(),
+        phone: z.string().min(10, "Please enter a valid phone number"),
         code: z.string().min(6, "Code must be 6 digits").max(6, "Code must be 6 digits"),
       });
 
@@ -81,10 +74,10 @@ export function setupPasswordResetRoutes(app: Express) {
         return res.status(400).json({ error: result.error.errors[0].message });
       }
 
-      const { email, code } = result.data;
+      const { phone, code } = result.data;
 
-      // Find user by email
-      const user = await storage.getUserByEmail(email);
+      // Find user by phone
+      const user = await storage.getUserByPhone(phone);
       if (!user) {
         return res.status(400).json({ error: "Invalid request." });
       }
