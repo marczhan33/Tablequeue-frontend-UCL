@@ -32,6 +32,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const { toast } = useToast();
   const [firebaseUser, setFirebaseUser] = useState<any | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Listen for Firebase auth state changes
   useEffect(() => {
@@ -39,9 +40,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("Firebase auth state changed:", user ? "user signed in" : "no user");
       setFirebaseUser(user);
       
-      // If a user signs in via Firebase, we need to sync with our backend
+      // Only sync with backend if this is a fresh login (no existing user data)
       if (user) {
-        syncUserWithBackend(user);
+        const existingUser = queryClient.getQueryData(["/api/user"]);
+        if (!existingUser) {
+          syncUserWithBackend(user);
+        }
       } else {
         // Only clear if we don't have a session-based authentication
         if (!localStorage.getItem("auth_session_active")) {
@@ -103,20 +107,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Function to sync Firebase user with our backend
   const syncUserWithBackend = async (firebaseUser: any) => {
+    // Prevent multiple simultaneous sync attempts
+    if (isSyncing) {
+      console.log("Sync already in progress, skipping");
+      return;
+    }
+    
     try {
       if (!firebaseUser) {
         console.log("No Firebase user to sync");
         return;
       }
       
-      // Add additional logging to help debug
+      setIsSyncing(true);
+      
+      // Check if user is already synced to prevent unnecessary requests
+      const existingUser = queryClient.getQueryData(["/api/user"]);
+      if (existingUser && existingUser.uid === firebaseUser.uid) {
+        console.log("User already synced, skipping");
+        return;
+      }
+      
       console.log("Attempting to sync user with backend", { 
         uid: firebaseUser.uid,
         email: firebaseUser.email
       });
       
       // Get the ID token
-      const idToken = await firebaseUser.getIdToken(true); // Force refresh token
+      const idToken = await firebaseUser.getIdToken(true);
       console.log("Got ID token successfully");
       
       // Send to our backend
@@ -126,7 +144,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: { idToken } 
       });
       
-      // Handle non-ok responses before trying to parse JSON
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({ error: "Unknown error" }));
         throw new Error(errorData.error || 'Failed to authenticate with server');
@@ -144,18 +161,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.log("User synced with backend successfully", backendUser);
       queryClient.setQueryData(["/api/user"], backendUser);
       
-      // Navigate to home after successful login
-      window.location.href = '/';
+      // Store authentication state
+      localStorage.setItem("auth_session_active", "true");
+      localStorage.setItem("auth_timestamp", Date.now().toString());
       
-      // Show success message
-      toast({
-        title: "Signed in successfully",
-        description: `Welcome${backendUser.username ? ', ' + backendUser.username : ''}!`,
-      });
+      // Only show success message and navigate for fresh logins
+      if (!existingUser) {
+        toast({
+          title: "Signed in successfully",
+          description: `Welcome${backendUser.username ? ', ' + backendUser.username : ''}!`,
+        });
+      }
     } catch (error: any) {
       console.error("Error syncing user with backend:", error);
       
-      // Provide more helpful error message
       toast({
         title: "Authentication Error",
         description: error.message || "There was a problem connecting to the server. Please try again.",
@@ -164,6 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       // Clear Firebase state on failure
       firebaseSignOut().catch(err => console.error("Failed to sign out from Firebase", err));
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -181,45 +202,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loginWithGoogle = async () => {
     try {
       console.log("Google login initiated");
-      const googleUser = await signInWithGoogle();
-      
-      if (googleUser) {
-        console.log("Google authentication successful, getting token...");
-        
-        // Get ID token and explicitly sync with backend
-        const idToken = await googleUser.getIdToken(true);
-        
-        // Use credentials: 'include' to ensure cookies are sent with request
-        const response = await fetch('/api/auth/google', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ idToken }),
-          credentials: 'include' // This is crucial for cookie-based auth
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Authentication failed");
-        }
-        
-        // Process user data and update state
-        const userData = await response.json();
-        queryClient.setQueryData(["/api/user"], userData);
-        
-        // Store authentication state in localStorage as well
-        localStorage.setItem("auth_session_active", "true");
-        localStorage.setItem("auth_timestamp", Date.now().toString());
-        
-        // Force a complete page reload to apply session cookies properly
-        window.location.href = "/";
-        
-        toast({
-          title: "Sign in successful",
-          description: `Welcome${userData.username ? ', ' + userData.username : ''}!`,
-        });
-      }
+      await signInWithGoogle();
+      // Don't handle the result here - let the auth state listener handle it
+      // This prevents duplicate authentication attempts
     } catch (error: any) {
       console.error("Google login error:", error);
       toast({
