@@ -35,6 +35,10 @@ export interface IStorage {
     verificationToken?: string | null,
     verificationExpires?: Date | null
   ): Promise<User | undefined>;
+  updateUserProfile(
+    id: number,
+    data: { username: string; phone: string }
+  ): Promise<User | undefined>;
   
   // Time slot promotion operations
   getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]>;
@@ -252,6 +256,22 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .update(users)
       .set(updateData)
+      .where(eq(users.id, id))
+      .returning();
+      
+    return result[0];
+  }
+
+  async updateUserProfile(
+    id: number,
+    data: { username: string; phone: string }
+  ): Promise<User | undefined> {
+    const result = await db
+      .update(users)
+      .set({ 
+        username: data.username, 
+        phone: data.phone 
+      })
       .where(eq(users.id, id))
       .returning();
       
@@ -1026,6 +1046,26 @@ export class MemStorage implements IStorage {
       isVerified,
       verificationToken: verificationToken !== undefined ? verificationToken : user.verificationToken, 
       verificationExpires: verificationExpires !== undefined ? verificationExpires : user.verificationExpires 
+    };
+    
+    this.users.set(id, updatedUser);
+    return updatedUser;
+  }
+
+  async updateUserProfile(
+    id: number,
+    data: { username: string; phone: string }
+  ): Promise<User | undefined> {
+    const user = this.users.get(id);
+    
+    if (!user) {
+      return undefined;
+    }
+    
+    const updatedUser = { 
+      ...user, 
+      username: data.username,
+      phone: data.phone
     };
     
     this.users.set(id, updatedUser);

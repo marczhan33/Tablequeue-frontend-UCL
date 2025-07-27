@@ -76,6 +76,12 @@ const Header = () => {
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/profile')}
+                    className="cursor-pointer"
+                  >
+                    Profile
+                  </DropdownMenuItem>
                   {user.role === 'owner' && (
                     <DropdownMenuItem 
                       onClick={() => navigate('/restaurant-dashboard')}
@@ -84,6 +90,7 @@ const Header = () => {
                       Dashboard
                     </DropdownMenuItem>
                   )}
+                  <DropdownMenuSeparator />
                   <DropdownMenuItem 
                     onClick={handleLogout}
                     className="cursor-pointer"

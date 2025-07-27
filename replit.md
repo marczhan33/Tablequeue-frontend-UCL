@@ -13,6 +13,9 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-27: Implemented comprehensive user profile management system with secure backend API endpoint and form validation
+- 2025-01-27: Added profile navigation link to user dropdown menu for easy access to profile updates
+- 2025-01-27: Created dedicated profile page with username and phone number editing capabilities
 - 2025-01-27: Made phone number mandatory in registration form - removed "(Optional)" text and added validation requiring minimum 10 characters
 - 2025-01-27: Implemented customer-first authentication flow - Login/Register page now serves as landing page instead of restaurant listings
 - 2025-01-27: Updated post-authentication UX - authenticated users see restaurant listings without Login/Register navigation tab

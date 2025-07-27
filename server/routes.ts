@@ -461,6 +461,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Update user profile
+  apiRouter.put("/user/profile", ensureAuthenticated, async (req: Request, res: Response) => {
+    try {
+      if (!req.user) {
+        return res.status(401).json({ error: "Unauthorized - Please log in" });
+      }
+      
+      const profileUpdateSchema = z.object({
+        username: z.string().min(2, "Username must be at least 2 characters"),
+        phone: z.string().min(10, "Phone number must be at least 10 characters"),
+      });
+      
+      const validatedData = profileUpdateSchema.parse(req.body);
+      const userId = req.user.id;
+      
+      // Check if username is already taken by another user
+      const existingUser = await storage.getUserByUsername(validatedData.username);
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(400).json({ error: "Username is already taken" });
+      }
+      
+      // Update user profile
+      const updatedUser = await storage.updateUserProfile(userId, validatedData);
+      
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+      
+      // Remove password from response
+      const { password, ...userWithoutPassword } = updatedUser;
+      return res.json(userWithoutPassword);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ 
+          error: "Validation error", 
+          details: error.errors 
+        });
+      }
+      
+      console.error("Error updating user profile:", error);
+      return res.status(500).json({ error: "Error updating profile" });
+    }
+  });
+  
   // Get restaurants by owner
   apiRouter.get("/users/:userId/restaurants", async (req: Request, res: Response) => {
     try {

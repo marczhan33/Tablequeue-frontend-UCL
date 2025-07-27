@@ -23,6 +23,7 @@ import JoinWaitlist from "@/pages/join-waitlist";
 import ConfirmArrival from "@/pages/confirm-arrival";
 import AuthPage from "@/pages/auth-page";
 import CustomerAuth from "@/pages/customer-auth";
+import ProfilePage from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function AuthNavItem({ path, label }: { path: string, label: string }) {
@@ -156,6 +157,7 @@ function Router() {
       <Route path="/customer-auth">
         <CustomerAuth />
       </Route>
+      <ProtectedRoute path="/profile" component={ProfilePage} />
       <Route>
         <NotFound />
       </Route>
@@ -197,6 +199,12 @@ function AppContent() {
                       className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
                     >
                       Restaurant Dashboard Demo
+                    </Link>
+                    <Link
+                      href="/profile"
+                      className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
+                    >
+                      My Profile
                     </Link>
 
                   </div>
