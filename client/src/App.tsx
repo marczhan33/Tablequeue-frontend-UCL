@@ -100,27 +100,10 @@ function ProtectedRoute({ path, component: Component, ownerOnly = false }: { pat
 }
 
 function Router() {
-  const { user, isLoading } = useAuth();
-
-  // Show loading state while checking authentication
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
-  }
-
   return (
     <Switch>
       <Route path="/">
-        {user ? <CustomerView /> : <CustomerAuth />}
-      </Route>
-      <Route path="/restaurants">
-        {user ? <CustomerView /> : <CustomerAuth />}
-      </Route>
-      <Route path="/dashboard">
-        {user && user.role === 'owner' ? <RestaurantDashboard /> : <CustomerAuth />}
+        <CustomerView />
       </Route>
       <Route path="/restaurants/:id">
         <RestaurantDetails />
@@ -156,6 +139,9 @@ function Router() {
       <Route path="/auth">
         <AuthPage />
       </Route>
+      <Route path="/customer-auth">
+        <CustomerAuth />
+      </Route>
       <Route>
         <NotFound />
       </Route>
@@ -163,15 +149,16 @@ function Router() {
   );
 }
 
-function AppContent() {
+function App() {
   const [location] = useLocation();
-  const { user } = useAuth();
   
   // Don't show navigation tabs on authentication or restaurant details pages
-  const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth' && user;
+  const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth';
   
   return (
-    <TooltipProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
           <div className="min-h-screen flex flex-col bg-light text-dark">
             <Header />
             
@@ -223,14 +210,6 @@ function AppContent() {
             <Toaster />
           </div>
         </TooltipProvider>
-  );
-}
-
-function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );
