@@ -47,7 +47,7 @@ type ForgotPasswordFormValues = z.infer<typeof forgotPasswordSchema>;
 type VerifyCodeFormValues = z.infer<typeof verifyCodeSchema>;
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
-export default function ForgotPasswordPage() {
+function ForgotPasswordPage() {
   const [step, setStep] = useState<"request" | "verify" | "reset">("request");
   const [email, setEmail] = useState("");
   const [method, setMethod] = useState<"email" | "sms">("email");
@@ -432,3 +432,5 @@ export default function ForgotPasswordPage() {
     </div>
   );
 }
+
+export default ForgotPasswordPage;

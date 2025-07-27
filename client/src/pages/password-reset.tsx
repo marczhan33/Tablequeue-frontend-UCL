@@ -29,7 +29,7 @@ const resetPasswordSchema = z.object({
 
 type ResetPasswordFormValues = z.infer<typeof resetPasswordSchema>;
 
-export default function PasswordResetPage() {
+function PasswordResetPage() {
   const [location] = useLocation();
   const [token, setToken] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
@@ -213,3 +213,5 @@ export default function PasswordResetPage() {
     </div>
   );
 }
+
+export default PasswordResetPage;
