@@ -427,8 +427,9 @@ const RestaurantDashboard = () => {
       
       <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
         <div className="bg-gray-50 p-4 rounded-lg">
-          <TabsList className="w-full grid grid-cols-2 md:grid-cols-6 gap-1 bg-transparent">
+          <TabsList className="w-full grid grid-cols-2 md:grid-cols-7 gap-1 bg-transparent">
             <TabsTrigger value="overview" className="bg-white hover:bg-gray-100">Overview</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="bg-white hover:bg-gray-100">🤖 AI Assistant</TabsTrigger>
             <TabsTrigger value="waitlist" className="bg-white hover:bg-gray-100">Waitlist</TabsTrigger>
             <TabsTrigger value="tables" className="bg-white hover:bg-gray-100">Tables</TabsTrigger>
             <TabsTrigger value="promotions" className="bg-white hover:bg-gray-100">Promotions</TabsTrigger>
@@ -873,6 +874,10 @@ const RestaurantDashboard = () => {
             {/* Remote Waitlist Management Section */}
             {restaurant && <RemoteWaitlistManager restaurant={restaurant} />}
           </div>
+        </TabsContent>
+        
+        <TabsContent value="ai-assistant" className="bg-gray-50 rounded-lg p-6">
+          <AIAssistantPanel restaurantId={RESTAURANT_ID} />
         </TabsContent>
         
         <TabsContent value="tables" className="bg-gray-50 rounded-lg p-6">
