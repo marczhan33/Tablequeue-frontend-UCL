@@ -100,10 +100,24 @@ function ProtectedRoute({ path, component: Component, ownerOnly = false }: { pat
 }
 
 function Router() {
+  const { user, isLoading } = useAuth();
+
+  // Show loading state while checking authentication
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <Switch>
       <Route path="/">
-        <CustomerView />
+        {user ? <CustomerView /> : <AuthPage />}
+      </Route>
+      <Route path="/restaurants">
+        {user ? <CustomerView /> : <AuthPage />}
       </Route>
       <Route path="/restaurants/:id">
         <RestaurantDetails />
@@ -149,16 +163,15 @@ function Router() {
   );
 }
 
-function App() {
+function AppContent() {
   const [location] = useLocation();
+  const { user } = useAuth();
   
-  // Don't show navigation tabs on authentication or restaurant details pages
-  const showNavTabs = !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth';
+  // Only show navigation tabs for authenticated users, and not on specific pages
+  const showNavTabs = user && !location.startsWith('/restaurant/') && !location.startsWith('/restaurants/') && location !== '/auth';
   
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
+    <TooltipProvider>
           <div className="min-h-screen flex flex-col bg-light text-dark">
             <Header />
             
@@ -185,19 +198,14 @@ function App() {
                     >
                       Restaurant Dashboard Demo
                     </Link>
-                    <Link
-                      href="/auth"
-                      className="whitespace-nowrap px-3 py-2 font-medium text-gray-500 hover:text-primary"
-                    >
-                      Login / Register
-                    </Link>
+
                   </div>
                 </div>
               </div>
             )}
             
             <main className="flex-grow py-6 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-              {location !== '/auth' && (
+              {location !== '/auth' && user && (
                 <>
                   <DevModeNotice />
                   <VerificationStatus />
@@ -210,6 +218,14 @@ function App() {
             <Toaster />
           </div>
         </TooltipProvider>
+  );
+}
+
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
       </AuthProvider>
     </QueryClientProvider>
   );
