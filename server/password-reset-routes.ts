@@ -14,9 +14,9 @@ export function setupPasswordResetRoutes(app: Express) {
     try {
       const schema = z.object({
         email: z.string().email("Please enter a valid email address"),
-        method: z.enum(["email", "sms"], {
-          required_error: "Please select a verification method",
-        }),
+        method: z.enum(["sms"], {
+          required_error: "SMS is the only supported verification method",
+        }).optional().default("sms"),
       });
 
       const result = schema.safeParse(req.body);
@@ -31,57 +31,37 @@ export function setupPasswordResetRoutes(app: Express) {
       if (!user) {
         // For security, don't reveal if email exists or not
         return res.status(200).json({ 
-          message: "If an account with that email exists, you will receive a verification code." 
+          message: "If an account with that email exists, you will receive a verification code.",
+          requiresCode: true
         });
       }
 
-      // Validate phone number if SMS method is selected
-      if (method === "sms" && (!user.phone || user.phone.trim() === "")) {
+      // Validate phone number since we only support SMS now
+      if (!user.phone || user.phone.trim() === "") {
         return res.status(400).json({ 
-          error: "No phone number associated with this account. Please use email verification instead." 
+          error: "No phone number associated with this account. Please contact support for assistance." 
         });
       }
 
-      if (method === "email") {
-        // Generate email reset token
-        const { token, expires } = generatePasswordResetToken();
-        
-        // Store token in database
-        await storage.updateUserResetToken(user.id, token, expires, "email");
-        
-        // Send email
-        const emailSent = await sendPasswordResetEmail(user.email, token, user.username);
-        
-        if (!emailSent) {
-          return res.status(500).json({ 
-            error: "Failed to send reset email. Please try again later." 
-          });
-        }
-        
-        return res.status(200).json({ 
-          message: "Password reset link sent to your email address." 
-        });
-      } else {
-        // Generate SMS code
-        const { code, expires } = generateSMSCode();
-        
-        // Store code in database (we use the token field for the SMS code)
-        await storage.updateUserResetToken(user.id, code, expires, "sms");
-        
-        // Send SMS
-        const smsSent = await sendPasswordResetSMS(user.phone!, code, user.username);
-        
-        if (!smsSent) {
-          return res.status(500).json({ 
-            error: "Failed to send SMS. Please try again later or use email verification." 
-          });
-        }
-        
-        return res.status(200).json({ 
-          message: "Verification code sent to your phone number.",
-          requiresCode: true // Frontend will show code input form
+      // Generate SMS code
+      const { code, expires } = generateSMSCode();
+      
+      // Store code in database (we use the token field for the SMS code)
+      await storage.updateUserResetToken(user.id, code, expires, "sms");
+      
+      // Send SMS
+      const smsSent = await sendPasswordResetSMS(user.phone!, code, user.username);
+      
+      if (!smsSent) {
+        return res.status(500).json({ 
+          error: "Failed to send SMS. Please try again later." 
         });
       }
+      
+      return res.status(200).json({ 
+        message: "Verification code sent to your phone number.",
+        requiresCode: true // Frontend will show code input form
+      });
     } catch (error) {
       console.error("Forgot password error:", error);
       return res.status(500).json({ error: "An error occurred. Please try again." });

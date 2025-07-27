@@ -24,9 +24,6 @@ import { apiRequest } from "@/lib/queryClient";
 // Step 1: Request reset
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
-  method: z.enum(["email", "sms"], {
-    required_error: "Please select a verification method",
-  }),
 });
 
 // Step 2: Verify SMS code  
@@ -62,7 +59,6 @@ function ForgotPasswordPage() {
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: {
       email: "",
-      method: "email",
     },
   });
 
@@ -92,7 +88,10 @@ function ForgotPasswordPage() {
       const response = await apiRequest({
         method: "POST",
         url: "/api/forgot-password",
-        body: data,
+        body: {
+          ...data,
+          method: "sms" // Always use SMS method
+        },
       });
 
       const result = await response.json();
@@ -102,19 +101,11 @@ function ForgotPasswordPage() {
       }
 
       setEmail(data.email);
-      setMethod(data.method);
+      setMethod("sms");
       setMessage(result.message);
 
-      if (result.requiresCode) {
-        // SMS method - go to verification step
-        setStep("verify");
-      } else {
-        // Email method - show success message
-        toast({
-          title: "Email sent",
-          description: result.message,
-        });
-      }
+      // SMS method - go to verification step
+      setStep("verify");
     } catch (error: any) {
       setError(error.message);
       toast({
@@ -225,7 +216,7 @@ function ForgotPasswordPage() {
                 {step === "reset" && "Create New Password"}
               </CardTitle>
               <CardDescription>
-                {step === "request" && "Choose how you'd like to reset your password"}
+                {step === "request" && "We'll send a verification code to your phone number"}
                 {step === "verify" && "Enter the 6-digit code sent to your phone"}
                 {step === "reset" && "Enter your new password"}
               </CardDescription>
@@ -268,47 +259,24 @@ function ForgotPasswordPage() {
                   )}
                 />
 
-                <FormField
-                  control={forgotForm.control}
-                  name="method"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Verification Method</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-2"
-                        >
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="email" id="email" />
-                            <Label htmlFor="email" className="flex items-center gap-2">
-                              <Mail className="h-4 w-4" />
-                              Send reset link to email
-                            </Label>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <RadioGroupItem value="sms" id="sms" />
-                            <Label htmlFor="sms" className="flex items-center gap-2">
-                              <Phone className="h-4 w-4" />
-                              Send code to phone number
-                            </Label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2 text-blue-700">
+                    <Phone className="h-4 w-4" />
+                    <span className="text-sm font-medium">SMS Verification</span>
+                  </div>
+                  <p className="text-sm text-blue-600 mt-1">
+                    We'll send a 6-digit verification code to the phone number associated with your account.
+                  </p>
+                </div>
 
                 <Button type="submit" className="w-full" disabled={isLoading}>
                   {isLoading ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
+                      Sending Code...
                     </>
                   ) : (
-                    "Send Reset Code"
+                    "Send SMS Code"
                   )}
                 </Button>
               </form>
