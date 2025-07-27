@@ -8,8 +8,12 @@ import { Loader2 } from "lucide-react";
 import { Redirect } from "wouter";
 import { VerificationStatus } from "@/components/verification-status";
 import { DevModeNotice } from "@/components/dev-mode-notice";
+import { lazy } from "react";
 import Header from "@/components/layout/header";
 import Footer from "@/components/layout/footer";
+
+const ForgotPasswordPage = lazy(() => import("./pages/forgot-password"));
+const PasswordResetPage = lazy(() => import("./pages/password-reset"));
 import CustomerView from "@/pages/customer-view";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import DemoDashboard from "@/pages/demo-dashboard";
@@ -156,6 +160,12 @@ function Router() {
       </Route>
       <Route path="/customer-auth">
         <CustomerAuth />
+      </Route>
+      <Route path="/forgot-password">
+        <ForgotPasswordPage />
+      </Route>
+      <Route path="/reset-password">
+        <PasswordResetPage />
       </Route>
       <ProtectedRoute path="/profile" component={ProfilePage} />
       <Route>

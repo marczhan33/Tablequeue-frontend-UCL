@@ -39,6 +39,14 @@ export interface IStorage {
     id: number,
     data: { username: string; phone: string }
   ): Promise<User | undefined>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  updateUserResetToken(
+    userId: number, 
+    token: string | null, 
+    expires: Date | null, 
+    method: string | null
+  ): Promise<void>;
+  updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
   
   // Time slot promotion operations
   getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]>;
@@ -276,6 +284,41 @@ export class DatabaseStorage implements IStorage {
       .returning();
       
     return result[0];
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const result = await db.select().from(users).where(eq(users.resetPasswordToken, token));
+    return result[0];
+  }
+
+  async updateUserResetToken(
+    userId: number, 
+    token: string | null, 
+    expires: Date | null, 
+    method: string | null
+  ): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        resetPasswordToken: token,
+        resetPasswordExpires: expires,
+        resetPasswordMethod: method,
+      })
+      .where(eq(users.id, userId))
+      .execute();
+  }
+
+  async updateUserPassword(userId: number, hashedPassword: string): Promise<void> {
+    await db
+      .update(users)
+      .set({
+        password: hashedPassword,
+        resetPasswordToken: null,
+        resetPasswordExpires: null,
+        resetPasswordMethod: null,
+      })
+      .where(eq(users.id, userId))
+      .execute();
   }
 
   // Restaurant operations

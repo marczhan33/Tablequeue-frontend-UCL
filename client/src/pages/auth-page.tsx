@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { apiRequest, queryClient } from "../lib/queryClient";
+import { Link } from "wouter";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Loader2 } from "lucide-react";
 
@@ -205,6 +206,12 @@ export default function AuthPage() {
               <GoogleSignInButton 
                 onClick={loginWithGoogle} 
               />
+              
+              <div className="text-center mt-4">
+                <Link href="/forgot-password" className="text-sm text-primary hover:underline">
+                  Forgot your password?
+                </Link>
+              </div>
             </TabsContent>
             
             {/* Registration Form */}

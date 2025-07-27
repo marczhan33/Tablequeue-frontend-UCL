@@ -33,6 +33,21 @@ export function generateVerificationToken(): { token: string; expires: Date } {
 }
 
 /**
+ * Generate a password reset token
+ * @returns An object containing the token and expiration date
+ */
+export function generatePasswordResetToken(): { token: string; expires: Date } {
+  // Generate random token
+  const token = crypto.randomBytes(32).toString('hex');
+  
+  // Set expiration (1 hour from now)
+  const expires = new Date();
+  expires.setHours(expires.getHours() + 1);
+  
+  return { token, expires };
+}
+
+/**
  * Send verification email
  * @param to Recipient email
  * @param token Verification token
@@ -76,7 +91,7 @@ export async function sendVerificationEmail(
 
 Hi ${username},
 
-Thank you for signing up. To complete your registration, please verify your email address by visiting the link below:
+Thank you for signing up. To complete your registration, please verify your email address by clicking the following link:
 
 ${verificationUrl}
 
@@ -89,70 +104,91 @@ The TableQueue Team`
   };
 
   try {
-    // Check if we have a from address
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@tablequeue.com';
-    
-    console.log(`Attempting to send email from ${fromEmail} to ${params.to}`);
-    
     await mailService.send({
       to: params.to,
-      from: {
-        email: fromEmail,
-        name: 'TableQueue'
-      },
+      from: 'noreply@tablequeue.com', // You'll need to configure this domain
       subject: params.subject,
-      text: params.text || '',
-      html: params.html || '',
+      text: params.text,
+      html: params.html,
     });
-    console.log("Email sent successfully");
+    
+    console.log(`Verification email sent to: ${to}`);
     return true;
-  } catch (error: any) {
-    console.error('SendGrid email error:', error);
-    
-    if (error.response && error.response.body && error.response.body.errors) {
-      console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
-    }
-    
+  } catch (error) {
+    console.error('Failed to send verification email:', error);
     return false;
   }
 }
 
 /**
- * Send testing email to verify SendGrid configuration
+ * Send password reset email
  * @param to Recipient email
+ * @param token Reset token
+ * @param username Username for personalization
  * @returns Promise that resolves to true if successful, false otherwise
  */
-export async function sendTestEmail(to: string): Promise<boolean> {
+export async function sendPasswordResetEmail(
+  to: string,
+  token: string,
+  username: string
+): Promise<boolean> {
   if (!process.env.SENDGRID_API_KEY) {
-    console.warn('SendGrid API key not set. Test email skipped.');
+    console.warn('SendGrid API key not set. Password reset email skipped.');
     return false;
   }
   
+  // Construct reset URL with base URL from environment or fallback
+  const baseUrl = process.env.BASE_URL || 'http://localhost:5000';
+  const resetUrl = `${baseUrl}/reset-password?token=${token}`;
+  
+  // Prepare email content
+  const params: EmailParams = {
+    to,
+    subject: 'Reset your TableQueue password',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #4f46e5;">Password Reset Request</h2>
+        <p>Hi ${username},</p>
+        <p>We received a request to reset your password for your TableQueue account. Click the button below to set a new password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold;">Reset Password</a>
+        </div>
+        <p>Alternatively, you can copy and paste the following URL into your browser:</p>
+        <p style="word-break: break-all; color: #4f46e5;">${resetUrl}</p>
+        <p>This link will expire in 1 hour.</p>
+        <p>If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.</p>
+        <p>Best regards,<br>The TableQueue Team</p>
+      </div>
+    `,
+    text: `Password Reset Request
+
+Hi ${username},
+
+We received a request to reset your password for your TableQueue account. To set a new password, visit the following link:
+
+${resetUrl}
+
+This link will expire in 1 hour.
+
+If you didn't request a password reset, you can safely ignore this email. Your password will remain unchanged.
+
+Best regards,
+The TableQueue Team`
+  };
+
   try {
-    // Check if we have a from address
-    const fromEmail = process.env.EMAIL_FROM || 'noreply@tablequeue.com';
-    
-    console.log(`Attempting to send test email from ${fromEmail} to ${to}`);
-    
     await mailService.send({
-      to,
-      from: {
-        email: fromEmail,
-        name: 'TableQueue'
-      },
-      subject: 'TableQueue Email Service Test',
-      text: 'This is a test email to verify that SendGrid integration is working correctly.',
-      html: '<h1>TableQueue Email Test</h1><p>This is a test email to verify that SendGrid integration is working correctly.</p>',
+      to: params.to,
+      from: 'noreply@tablequeue.com', // You'll need to configure this domain
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
     });
-    console.log("Test email sent successfully");
+    
+    console.log(`Password reset email sent to: ${to}`);
     return true;
-  } catch (error: any) {
-    console.error('SendGrid test email error:', error);
-    
-    if (error.response && error.response.body && error.response.body.errors) {
-      console.error('SendGrid error details:', JSON.stringify(error.response.body.errors, null, 2));
-    }
-    
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
     return false;
   }
 }

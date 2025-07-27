@@ -126,6 +126,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   setupAuth(app);
   setupGoogleAuth(app);
   
+  // Setup password reset routes
+  const { setupPasswordResetRoutes } = await import('./password-reset-routes');
+  setupPasswordResetRoutes(app);
+  
   // API Routes - all prefixed with /api
   const apiRouter = express.Router();
   
