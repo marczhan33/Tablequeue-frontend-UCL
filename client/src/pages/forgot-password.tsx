@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, Mail, Phone, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import {
   Form,
   FormControl,
@@ -52,6 +52,7 @@ function ForgotPasswordPage() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   // Step 1 form
   const forgotForm = useForm<ForgotPasswordFormValues>({
@@ -181,9 +182,9 @@ function ForgotPasswordPage() {
         description: result.message,
       });
 
-      // Redirect to login after success
+      // Redirect to auth page after success
       setTimeout(() => {
-        window.location.href = "/login";
+        setLocation("/auth");
       }, 2000);
     } catch (error: any) {
       setError(error.message);
@@ -202,7 +203,7 @@ function ForgotPasswordPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2">
-            <Link href="/login">
+            <Link href="/auth">
               <Button variant="ghost" size="sm" className="p-2">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
