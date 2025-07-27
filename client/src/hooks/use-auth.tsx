@@ -198,18 +198,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryFn: getQueryFn({ on401: "returnNull" }),
   });
 
-  // Login with Google
+  // Continue with Google (handles both login and registration)
   const loginWithGoogle = async () => {
     try {
-      console.log("Google login initiated");
+      console.log("Google authentication initiated");
       await signInWithGoogle();
       // Don't handle the result here - let the auth state listener handle it
       // This prevents duplicate authentication attempts
     } catch (error: any) {
-      console.error("Google login error:", error);
+      console.error("Google authentication error:", error);
       toast({
-        title: "Login failed",
-        description: error.message || "Could not sign in with Google",
+        title: "Authentication failed",
+        description: error.message || "Could not continue with Google",
         variant: "destructive",
       });
     }

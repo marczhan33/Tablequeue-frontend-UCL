@@ -204,7 +204,6 @@ export default function AuthPage() {
               
               <GoogleSignInButton 
                 onClick={loginWithGoogle} 
-                text="Sign in with Google" 
               />
             </TabsContent>
             
@@ -358,7 +357,6 @@ export default function AuthPage() {
               
               <GoogleSignInButton 
                 onClick={loginWithGoogle} 
-                text="Sign up with Google" 
               />
             </TabsContent>
           </Tabs>

@@ -13,6 +13,7 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-27: Updated Google OAuth buttons to use "Continue with Google" for improved UX clarity (single text for both login/signup)
 - 2025-01-27: Removed "My Profile" tab from main navigation - profile page now exclusively accessible via user dropdown menu
 - 2025-01-27: Implemented comprehensive user profile management system with secure backend API endpoint and form validation
 - 2025-01-27: Added profile navigation link to user dropdown menu for easy access to profile updates

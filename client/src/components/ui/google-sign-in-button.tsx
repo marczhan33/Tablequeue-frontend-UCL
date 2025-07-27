@@ -10,7 +10,7 @@ interface GoogleSignInButtonProps {
 
 export function GoogleSignInButton({
   onClick,
-  text = "Sign in with Google",
+  text = "Continue with Google",
   className = "",
 }: GoogleSignInButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
@@ -62,7 +62,7 @@ export function GoogleSignInButton({
           ></path>
         </svg>
       )}
-      <span className="text-base font-medium">{isLoading ? "Signing in..." : text}</span>
+      <span className="text-base font-medium">{isLoading ? "Continuing..." : text}</span>
     </Button>
   );
 }
