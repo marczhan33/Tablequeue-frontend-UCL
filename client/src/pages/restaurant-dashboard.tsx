@@ -12,6 +12,7 @@ import { TurnoverAnalysis } from "@/components/turnover-analysis";
 import { DemandForecastDisplay } from "@/components/restaurant/demand-forecast-display";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RestaurantPromoManager } from "@/components/restaurant-promo-manager";
+import { AIAssistantPanel } from "@/components/ai-assistant-panel";
 
 // Mock restaurant ID for demo - in a real app, this would come from authentication
 const RESTAURANT_ID = 4;
