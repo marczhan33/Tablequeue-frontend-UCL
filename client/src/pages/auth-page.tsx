@@ -38,7 +38,7 @@ const registerSchema = z.object({
   role: z.enum(["customer", "owner"], {
     required_error: "Please select a role",
   }),
-  phone: z.string().optional(),
+  phone: z.string().min(10, "Please enter a valid phone number"),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
@@ -312,7 +312,7 @@ export default function AuthPage() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Phone Number (Optional)</FormLabel>
+                        <FormLabel>Phone Number</FormLabel>
                         <FormControl>
                           <div className="relative">
                             <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">

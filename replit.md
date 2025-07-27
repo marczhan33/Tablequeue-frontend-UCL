@@ -13,6 +13,9 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-27: Made phone number mandatory in registration form - removed "(Optional)" text and added validation requiring minimum 10 characters
+- 2025-01-27: Implemented customer-first authentication flow - Login/Register page now serves as landing page instead of restaurant listings
+- 2025-01-27: Updated post-authentication UX - authenticated users see restaurant listings without Login/Register navigation tab
 - 2025-01-26: Implemented AI-powered table management system with intelligent optimization suggestions
 - 2025-01-26: Added AI demand prediction capabilities and capacity recommendations  
 - 2025-01-26: Created AI Assistant Panel for restaurant dashboard with real-time suggestions
