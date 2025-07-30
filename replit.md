@@ -13,6 +13,7 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-30: Removed backend Google Maps integration code (maps-integration.ts) and related API calls for cleaner codebase
 - 2025-01-30: Removed non-existent feature references (Google Maps wait time tips) from restaurant detail pages for cleaner UI
 - 2025-01-30: Removed redundant "Smart Wait Management" section from restaurant details to streamline interface
 - 2025-01-30: Implemented party size persistence across pages using localStorage - selection on main page carries to restaurant details
