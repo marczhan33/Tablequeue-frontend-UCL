@@ -19,7 +19,11 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
   });
 
   // Format price range to display correct number of $ symbols
-  const getPriceRangeSymbols = (priceRange: string) => priceRange;
+  const getPriceRangeSymbols = (priceRange: string) => {
+    // Count the number of $ symbols in the price range and return just the symbols
+    const dollarCount = (priceRange.match(/\$/g) || []).length;
+    return '$'.repeat(dollarCount);
+  };
   
   // Format distance based on calculated distance (when available)
   const getFormattedDistance = (restaurant: Restaurant) => {
