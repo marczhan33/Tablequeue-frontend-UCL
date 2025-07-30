@@ -120,7 +120,7 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
               <span>{restaurant.rating}</span>
               <span className="ml-1">({restaurant.reviewCount})</span>
               <span className="ml-3">{getPriceRangeSymbols(restaurant.priceRange)}</span>
-              <MapPin className="w-4 h-4 ml-1" />
+              <MapPin className="w-4 h-4 ml-2" />
             </div>
           </div>
         </div>
