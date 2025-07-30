@@ -124,7 +124,19 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
               <span>{restaurant.rating}</span>
               <span className="ml-1">({restaurant.reviewCount})</span>
               <span className="ml-3">{getPriceRangeSymbols(restaurant.priceRange)}</span>
-              <MapPin className="w-4 h-4 ml-2 -mt-0.5" />
+              <span 
+                className="cursor-pointer hover:text-primary transition-colors ml-2 -mt-0.5 inline-block"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  // Open Google Maps directions
+                  const mapsUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(restaurant.address)}`;
+                  window.open(mapsUrl, '_blank');
+                }}
+                title="Get directions"
+              >
+                <MapPin className="w-4 h-4" />
+              </span>
             </div>
           </div>
         </div>
