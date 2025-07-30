@@ -150,10 +150,6 @@ export function GoogleMapsWaitTime({ restaurant }: GoogleMapsWaitTimeProps) {
           <Navigation className="h-4 w-4" />
           Open in Google Maps
         </Button>
-        
-        <div className="text-xs text-center text-muted-foreground">
-          Wait times in Google Maps are updated in real-time by the restaurant
-        </div>
       </CardFooter>
     </Card>
   );

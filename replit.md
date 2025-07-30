@@ -13,6 +13,10 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-30: Removed non-existent feature references (Google Maps wait time tips) from restaurant detail pages for cleaner UI
+- 2025-01-30: Removed redundant "Smart Wait Management" section from restaurant details to streamline interface
+- 2025-01-30: Implemented party size persistence across pages using localStorage - selection on main page carries to restaurant details
+- 2025-01-30: Fixed wait time consistency between restaurant listing and detail pages using real-time capacity prediction API
 - 2025-01-30: Extended login sessions to 7 days for persistent authentication - users stay logged in automatically
 - 2025-01-30: Added prominent party size selection at top of customer view with easy increment/decrement controls
 - 2025-01-30: Implemented real-time wait predictions using Advanced Wait Time Prediction API instead of manual status

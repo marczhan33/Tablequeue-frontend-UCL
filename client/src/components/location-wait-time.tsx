@@ -110,11 +110,7 @@ const LocationWaitTime = ({ restaurant, partySize = 2 }: LocationWaitTimeProps) 
               Last updated: {new Date().toLocaleTimeString()} • Real-time wait prediction for party of {partySize}
             </p>
 
-            <div className="bg-gray-100 p-3 rounded-lg border-l-4 border-secondary text-sm">
-              <p>
-                <span className="font-semibold">Tip:</span> Save this location in Google Maps to check wait times before your visit.
-              </p>
-            </div>
+
           </div>
 
           <div className="mt-5">
