@@ -95,7 +95,6 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
           <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
             <span className="text-green-600 font-medium">{restaurant.cuisine}</span>
             <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
               {getFormattedDistance(restaurant) && (
                 <span>{getFormattedDistance(restaurant)}</span>
               )}
@@ -121,6 +120,7 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
               <span>{restaurant.rating}</span>
               <span className="ml-1">({restaurant.reviewCount})</span>
               <span className="ml-3">{getPriceRangeSymbols(restaurant.priceRange)}</span>
+              <MapPin className="w-4 h-4 ml-1" />
             </div>
           </div>
         </div>
