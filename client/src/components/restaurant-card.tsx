@@ -1,7 +1,7 @@
 import { type Restaurant } from "@shared/schema";
 import { Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { MapPin } from "lucide-react";
+import { MapPin, Map } from "lucide-react";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -73,6 +73,14 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
   };
   
   const { colorClass, displayText } = getWaitTimeDisplay();
+  
+  // Handle map icon click to open Google Maps directly
+  const handleMapClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const query = encodeURIComponent(`${restaurant.name} ${restaurant.address}`);
+    window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, '_blank');
+  };
 
   return (
     <Link href={`/restaurant/${restaurant.id}`}>
@@ -93,13 +101,13 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
           </div>
           
           <div className="flex items-center justify-between text-sm text-gray-600 mb-3">
-            <span className="text-green-600 font-medium">{restaurant.cuisine}</span>
-            <div className="flex items-center">
-              <MapPin className="w-4 h-4 mr-1" />
-              <span>{getPriceRangeSymbols(restaurant.priceRange)}</span>
-              {getFormattedDistance(restaurant) && (
-                <span className="ml-2">{getFormattedDistance(restaurant)}</span>
-              )}
+            <div className="flex items-center space-x-1">
+              <MapPin className="h-4 w-4" />
+              <span>{restaurant.cuisine}</span>
+            </div>
+            <div className="flex items-center space-x-4">
+              <span className="font-medium">{restaurant.priceRange}</span>
+              <span>{partySize} people</span>
             </div>
           </div>
           
@@ -123,9 +131,15 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
               <span className="ml-1">({restaurant.reviewCount})</span>
             </div>
             
-            <div className="flex items-center text-sm text-gray-500">
-              <span>{getPriceRangeSymbols(restaurant.priceRange)}</span>
-              <span className="ml-2">👥 {partySize}</span>
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <span>{partySize} people</span>
+              <button
+                onClick={handleMapClick}
+                className="text-blue-600 hover:text-blue-800 transition-colors p-1 rounded-full hover:bg-blue-50"
+                title="Open in Google Maps"
+              >
+                <Map className="h-4 w-4" />
+              </button>
             </div>
           </div>
         </div>
