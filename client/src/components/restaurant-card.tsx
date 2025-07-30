@@ -124,7 +124,7 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
             </div>
             
             <div className="flex items-center text-sm text-gray-500">
-              <span>{getPriceRangeSymbols(restaurant.priceRange)}</span>
+              {/* Price range already shown above, removed duplicate */}
             </div>
           </div>
         </div>
