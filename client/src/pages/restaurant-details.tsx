@@ -19,7 +19,12 @@ const RestaurantDetails = () => {
   const [_, setLocation] = useLocation();
   const params = useParams<{ id: string }>();
   const restaurantId = params?.id;
-  const [partySize, setPartySize] = useState(2);
+  
+  // Get party size from localStorage or default to 2  
+  const [partySize, setPartySize] = useState(() => {
+    const stored = localStorage.getItem('selectedPartySize');
+    return stored ? parseInt(stored) : 2;
+  });
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -103,33 +108,6 @@ const RestaurantDetails = () => {
           </svg>
           Back to Restaurant List
         </button>
-      </div>
-      
-      {/* Party Size Selector */}
-      <div className="mb-6 bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <span className="text-gray-700 font-medium">Party Size:</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setPartySize(Math.max(1, partySize - 1))}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                disabled={partySize <= 1}
-              >
-                <span className="text-lg font-semibold text-gray-600">−</span>
-              </button>
-              <span className="text-xl font-semibold text-gray-900 min-w-[2rem] text-center">{partySize}</span>
-              <button
-                onClick={() => setPartySize(Math.min(20, partySize + 1))}
-                className="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors"
-                disabled={partySize >= 20}
-              >
-                <span className="text-lg font-semibold text-gray-600">+</span>
-              </button>
-            </div>
-          </div>
-          <span className="text-sm text-gray-500">Wait times personalized for your group</span>
-        </div>
       </div>
       
       <div>

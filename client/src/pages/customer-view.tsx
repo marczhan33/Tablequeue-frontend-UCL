@@ -19,11 +19,21 @@ const CustomerView = () => {
   });
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
-  const [partySize, setPartySize] = useState<number>(2); // Default party size
+  // Load party size from localStorage or default to 2
+  const [partySize, setPartySize] = useState<number>(() => {
+    const stored = localStorage.getItem('selectedPartySize');
+    return stored ? parseInt(stored) : 2;
+  });
   const { toast } = useToast();
   
   // Reference to track if geolocation is already being requested
   const isRequestingLocation = useRef(false);
+  
+  // Save party size to localStorage whenever it changes
+  const handlePartySizeChange = (newSize: number) => {
+    setPartySize(newSize);
+    localStorage.setItem('selectedPartySize', newSize.toString());
+  };
   
   // Fetch all restaurants
   const { data: restaurants, isLoading, error } = useQuery<Restaurant[]>({
@@ -213,7 +223,7 @@ const CustomerView = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => setPartySize(Math.max(1, partySize - 1))}
+              onClick={() => handlePartySizeChange(Math.max(1, partySize - 1))}
               disabled={partySize <= 1}
               className="h-8 w-8 p-0"
             >
@@ -223,7 +233,7 @@ const CustomerView = () => {
             <Button 
               variant="outline" 
               size="sm"
-              onClick={() => setPartySize(partySize + 1)}
+              onClick={() => handlePartySizeChange(partySize + 1)}
               className="h-8 w-8 p-0"
             >
               <Plus className="h-4 w-4" />
