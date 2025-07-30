@@ -96,9 +96,8 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
             <span className="text-green-600 font-medium">{restaurant.cuisine}</span>
             <div className="flex items-center">
               <MapPin className="w-4 h-4 mr-1" />
-              <span>{getPriceRangeSymbols(restaurant.priceRange)}</span>
               {getFormattedDistance(restaurant) && (
-                <span className="ml-2">{getFormattedDistance(restaurant)}</span>
+                <span>{getFormattedDistance(restaurant)}</span>
               )}
             </div>
           </div>
@@ -124,7 +123,7 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
             </div>
             
             <div className="flex items-center text-sm text-gray-500">
-              {/* Price range already shown above, removed duplicate */}
+              <span>{getPriceRangeSymbols(restaurant.priceRange)}</span>
             </div>
           </div>
         </div>
