@@ -10,8 +10,9 @@ if (process.env.SENDGRID_API_KEY) {
 }
 
 // Email parameters interface
-interface EmailParams {
+export interface EmailParams {
   to: string;
+  from: string;
   subject: string;
   text?: string;
   html?: string;
@@ -71,6 +72,7 @@ export async function sendVerificationEmail(
   // Prepare email content
   const params: EmailParams = {
     to,
+    from: 'noreply@tablequeue.com',
     subject: 'Verify your TableQueue account',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -144,6 +146,7 @@ export async function sendPasswordResetEmail(
   // Prepare email content
   const params: EmailParams = {
     to,
+    from: 'noreply@tablequeue.com',
     subject: 'Reset your TableQueue password',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
@@ -175,6 +178,50 @@ If you didn't request a password reset, you can safely ignore this email. Your p
 Best regards,
 The TableQueue Team`
   };
+
+  try {
+    await mailService.send({
+      to: params.to,
+      from: params.from,
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
+    });
+    
+    console.log(`Password reset email sent to: ${to}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send password reset email:', error);
+    return false;
+  }
+}
+
+/**
+ * Send general email notification
+ * @param params Email parameters
+ * @returns Promise that resolves to true if successful, false otherwise
+ */
+export async function sendEmailNotification(params: EmailParams): Promise<boolean> {
+  if (!process.env.SENDGRID_API_KEY) {
+    console.warn('SendGrid API key not set. Email notification skipped.');
+    return false;
+  }
+
+  try {
+    await mailService.send({
+      to: params.to,
+      from: params.from,
+      subject: params.subject,
+      text: params.text,
+      html: params.html,
+    });
+    
+    console.log(`Email notification sent to: ${params.to}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send email notification:', error);
+    return false;
+  }
 
   try {
     await mailService.send({

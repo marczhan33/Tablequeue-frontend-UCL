@@ -27,6 +27,41 @@ export function generateSMSCode(): { code: string; expires: Date } {
 }
 
 /**
+ * Send SMS notification
+ * @param to Phone number in E.164 format (e.g., +1234567890)
+ * @param message Message to send
+ * @returns Promise that resolves to true if successful, false otherwise
+ */
+export async function sendSMSNotification(
+  to: string,
+  message: string
+): Promise<boolean> {
+  if (!twilioClient) {
+    console.warn('Twilio not configured. SMS sending skipped.');
+    return false;
+  }
+
+  if (!process.env.TWILIO_PHONE_NUMBER) {
+    console.warn('Twilio phone number not set. SMS sending skipped.');
+    return false;
+  }
+
+  try {
+    const smsMessage = await twilioClient.messages.create({
+      body: message,
+      from: process.env.TWILIO_PHONE_NUMBER,
+      to: to
+    });
+
+    console.log(`SMS sent successfully: ${smsMessage.sid}`);
+    return true;
+  } catch (error) {
+    console.error('Failed to send SMS:', error);
+    return false;
+  }
+}
+
+/**
  * Send SMS verification code
  * @param to Phone number in E.164 format (e.g., +1234567890)
  * @param code Verification code
