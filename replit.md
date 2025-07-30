@@ -20,6 +20,9 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - 2025-01-30: Added color-coded wait time badges: Green (0-15min), Orange (15-45min), Red (45+ min) with "Available" for 0 wait
 - 2025-01-30: Simplified restaurant cards - removed Details button and eye icon, entire card now clickable for direct access
 - 2025-01-30: Updated card layout with MapPin icon aligned with cuisine, party size indicator, and cleaner visual design
+- 2025-01-30: Cleaned up restaurant card UI - removed duplicate price symbols, human party size icons, and repositioned elements
+- 2025-01-30: Made price range display show only dollar symbols ($$) instead of numerical values ($11-$30) for cleaner look
+- 2025-01-30: Added clickable map pin icon with "Get Directions" functionality - opens Google Maps with turn-by-turn directions
 - 2025-01-29: Implemented comprehensive best practices following industry standards for scalable Replit projects
 - 2025-01-29: Added complete testing infrastructure with Jest, ESLint, Prettier, and automated CI/CD pipeline
 - 2025-01-29: Reorganized codebase with proper MVC architecture, controllers, middleware, and services separation
@@ -57,8 +60,10 @@ A comprehensive restaurant queue management platform that provides intelligent w
 
 ## User Preferences
 - Prefers simplified interfaces over complex multi-option layouts
-- Values data cleanup and fresh starts for testing
+- Values data cleanup and fresh starts for testing  
 - Wants clear status progression in queue management
+- Prefers clean visual design with minimal clutter on restaurant cards
+- Likes functional elements (like map pins) to have interactive capabilities
 
 ## Project Architecture
 - **Frontend**: React with Wouter routing, shadcn/ui components, TypeScript strict mode
