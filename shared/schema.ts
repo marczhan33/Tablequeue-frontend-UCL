@@ -1,9 +1,9 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time, primaryKey, varchar, index } from "drizzle-orm/pg-core";
-import { relations, sql } from "drizzle-orm";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time, primaryKey } from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// User table (keep existing structure - no breaking changes)
+// User table (could be restaurant owners or regular users)
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -18,23 +18,7 @@ export const users = pgTable("users", {
   resetPasswordExpires: timestamp("reset_password_expires"),
   resetPasswordMethod: text("reset_password_method"), // 'email' or 'sms'
   createdAt: timestamp("created_at").defaultNow(),
-  // Add optional Replit Auth fields without breaking existing data
-  replitUserId: text("replit_user_id").unique(), // Link to Replit user
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  profileImageUrl: text("profile_image_url"),
 });
-
-// Session storage table for Replit Auth - separate table
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
 
 // Relations will be defined after all tables
 
