@@ -120,10 +120,7 @@ const RestaurantCard = ({ restaurant, partySize }: RestaurantCardProps) => {
               </svg>
               <span>{restaurant.rating}</span>
               <span className="ml-1">({restaurant.reviewCount})</span>
-            </div>
-            
-            <div className="flex items-center text-sm text-gray-500">
-              <span>{getPriceRangeSymbols(restaurant.priceRange)}</span>
+              <span className="ml-3">{getPriceRangeSymbols(restaurant.priceRange)}</span>
             </div>
           </div>
         </div>
