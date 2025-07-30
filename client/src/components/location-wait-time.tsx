@@ -206,10 +206,6 @@ const LocationWaitTime = ({ restaurant, partySize = 2 }: LocationWaitTimeProps) 
             </a>
           </div>
           
-          <div className="text-red-600 text-sm text-center mt-3">
-            Wait times in Google Maps are updated in real-time by the restaurant
-          </div>
-          
           <div className="mt-4">
             <h3 className="font-semibold text-lg mb-3">Features</h3>
             <div className="flex flex-wrap gap-2">
