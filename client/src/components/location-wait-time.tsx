@@ -1,24 +1,36 @@
 import { type Restaurant, type WaitStatus } from "@shared/schema";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import WaitTimeBadge from "./wait-time-badge";
 import GoogleMap from "./ui/google-map";
 
 interface LocationWaitTimeProps {
   restaurant: Restaurant;
+  partySize?: number;
 }
 
-const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
-  // Set wait time data for Google Maps
+const LocationWaitTime = ({ restaurant, partySize = 2 }: LocationWaitTimeProps) => {
+  // Fetch real-time wait prediction
+  const { data: capacityData } = useQuery({
+    queryKey: [`/api/restaurants/${restaurant.id}/capacity-prediction`, partySize],
+    queryFn: () => fetch(`/api/restaurants/${restaurant.id}/capacity-prediction?partySize=${partySize}`)
+      .then(res => res.json()),
+    enabled: !!restaurant.id && partySize > 0,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  // Set wait time data for Google Maps using real-time data
   useEffect(() => {
     // Initialize or update the global waitTimeData object
     if (!window.waitTimeData) {
       window.waitTimeData = {};
     }
     
-    // Add this restaurant's wait time data
+    // Use real-time wait data if available, otherwise fall back to old system
+    const waitTime = capacityData?.estimatedWaitTime ?? 0;
     window.waitTimeData[restaurant.name] = {
-      status: restaurant.currentWaitStatus as WaitStatus,
-      minutes: typeof restaurant.customWaitTime === 'number' ? restaurant.customWaitTime : undefined
+      status: getWaitStatusFromMinutes(waitTime),
+      minutes: waitTime > 0 ? waitTime : undefined
     };
     
     // Cleanup when component unmounts
@@ -27,46 +39,35 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
         delete window.waitTimeData[restaurant.name];
       }
     };
-  }, [restaurant.name, restaurant.currentWaitStatus, restaurant.customWaitTime]);
+  }, [restaurant.name, capacityData]);
 
-  // Get formatted wait time text
-  const getWaitTimeText = (restaurant: Restaurant) => {
-    if (restaurant.customWaitTime && restaurant.customWaitTime > 0) {
-      return `Approximately ${restaurant.customWaitTime} minutes wait`;
-    }
-    
-    switch (restaurant.currentWaitStatus) {
-      case 'available':
-        return 'Available now - no wait time';
-      case 'short':
-        return 'Short wait (15-30 minutes)';
-      case 'long':
-        return 'Long wait (30-60 minutes)';
-      case 'very_long':
-        return 'Very long wait (60+ minutes)';
-      case 'closed':
-        return 'Restaurant is currently closed';
-      default:
-        return 'Wait time unavailable';
-    }
+  // Convert minutes to wait status for backwards compatibility
+  const getWaitStatusFromMinutes = (minutes: number): WaitStatus => {
+    if (minutes === 0) return 'available';
+    if (minutes <= 15) return 'short';
+    if (minutes <= 45) return 'long';
+    return 'very_long';
   };
 
-  // Get corresponding color class based on status
-  const getStatusColorClass = (status: WaitStatus): string => {
-    switch (status) {
-      case 'available':
-        return 'text-green-600';
-      case 'short':
-        return 'text-status-short';
-      case 'long':
-        return 'text-status-long';
-      case 'very_long':
-        return 'text-purple-600';
-      case 'closed':
-        return 'text-gray-600';
-      default:
-        return 'text-gray-500';
+  // Get formatted wait time text using real-time data
+  const getWaitTimeText = () => {
+    const waitTime = capacityData?.estimatedWaitTime ?? 0;
+    
+    if (waitTime === 0) {
+      return 'Available now - no wait time';
     }
+    
+    return `Approximately ${waitTime} minutes wait`;
+  };
+
+  // Get corresponding color class based on real-time wait time
+  const getStatusColorClass = (): string => {
+    const waitTime = capacityData?.estimatedWaitTime ?? 0;
+    
+    if (waitTime === 0) return 'text-green-600';
+    if (waitTime <= 15) return 'text-green-600';
+    if (waitTime <= 45) return 'text-orange-600';
+    return 'text-red-600';
   };
 
   // Generate directions URL for Google Maps
@@ -92,7 +93,7 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
             <div className="flex items-center mb-3">
               <svg 
                 xmlns="http://www.w3.org/2000/svg" 
-                className={`h-8 w-8 mr-3 ${getStatusColorClass(restaurant.currentWaitStatus as WaitStatus)}`} 
+                className={`h-8 w-8 mr-3 ${getStatusColorClass()}`} 
                 viewBox="0 0 20 20" 
                 fill="currentColor"
               >
@@ -102,11 +103,11 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
                   clipRule="evenodd" 
                 />
               </svg>
-              <span className="text-xl font-semibold">{getWaitTimeText(restaurant)}</span>
+              <span className="text-xl font-semibold">{getWaitTimeText()}</span>
             </div>
             
             <p className="text-sm text-gray-600 mb-4">
-              Last updated: {new Date().toLocaleTimeString()} • This information is provided by the restaurant
+              Last updated: {new Date().toLocaleTimeString()} • Real-time wait prediction for party of {partySize}
             </p>
 
             <div className="bg-gray-100 p-3 rounded-lg border-l-4 border-secondary text-sm">
@@ -159,11 +160,11 @@ const LocationWaitTime = ({ restaurant }: LocationWaitTimeProps) => {
                   {restaurant.operatingHours ? (
                     <div className="text-sm grid grid-cols-2 gap-2 mt-1">
                       {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-                        .filter(day => restaurant.operatingHours?.[day])
+                        .filter(day => (restaurant.operatingHours as any)?.[day])
                         .map((day) => (
                         <div key={day}>
                           <span className="font-medium">{day.charAt(0).toUpperCase() + day.slice(1)}: </span>
-                          <span>{restaurant.operatingHours[day].open} - {restaurant.operatingHours[day].close}</span>
+                          <span>{(restaurant.operatingHours as any)[day].open} - {(restaurant.operatingHours as any)[day].close}</span>
                         </div>
                       ))}
                     </div>
