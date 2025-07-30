@@ -14,6 +14,7 @@ import {
 import { z } from "zod";
 import { setupAuth } from "./auth";
 import { setupGoogleAuth } from "./auth-routes";
+import { setupAuth as setupReplitAuth, isAuthenticated as isReplitAuthenticated } from "./replitAuth";
 import { analyticsRouter } from "./analytics/routes";
 import { processTableTurnover, initializeAnalytics } from "./analytics";
 import { generateRestaurantQrCode, generateConfirmationQrCode, generateConfirmationCode } from "./qr-service";
@@ -24,7 +25,7 @@ import { AIDemandPredictor } from "./ai/demand-predictor";
 
 // Middleware to ensure user is authenticated
 function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
-  // Check standard passport authentication
+  // Check standard passport authentication or Replit auth
   if (req.isAuthenticated()) {
     return next();
   }
@@ -125,6 +126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication
   setupAuth(app);
   setupGoogleAuth(app);
+  await setupReplitAuth(app);
   
   // Setup password reset routes
   const { setupPasswordResetRoutes } = await import('./password-reset-routes');

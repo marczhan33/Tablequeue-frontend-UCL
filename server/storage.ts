@@ -49,6 +49,16 @@ export interface IStorage {
   ): Promise<void>;
   updateUserPassword(userId: number, hashedPassword: string): Promise<void>;
   
+  // Replit Auth specific operations
+  getUserByReplitId(replitUserId: string): Promise<User | undefined>;
+  upsertUserByReplit(replitUser: {
+    id: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string;
+  }): Promise<User>;
+  
   // Time slot promotion operations
   getTimeSlotPromotions(restaurantId: number): Promise<TimeSlotPromotion[]>;
   updateTimeSlotPromotion(restaurantId: number, timeSlot: string, discount: number): Promise<TimeSlotPromotion>;
@@ -337,6 +347,56 @@ export class DatabaseStorage implements IStorage {
       })
       .where(eq(users.id, userId))
       .execute();
+  }
+
+  // Replit Auth specific operations
+  async getUserByReplitId(replitUserId: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.replitUserId, replitUserId));
+    return user;
+  }
+
+  async upsertUserByReplit(replitUser: {
+    id: string;
+    email?: string;
+    firstName?: string;
+    lastName?: string;
+    profileImageUrl?: string;
+  }): Promise<User> {
+    // Check if user already exists
+    const existingUser = await this.getUserByReplitId(replitUser.id);
+    
+    if (existingUser) {
+      // Update existing user with latest Replit data
+      const [updatedUser] = await db
+        .update(users)
+        .set({
+          email: replitUser.email || existingUser.email,
+          firstName: replitUser.firstName || existingUser.firstName,
+          lastName: replitUser.lastName || existingUser.lastName,
+          profileImageUrl: replitUser.profileImageUrl || existingUser.profileImageUrl,
+          isVerified: true, // Replit users are automatically verified
+        })
+        .where(eq(users.replitUserId, replitUser.id))
+        .returning();
+      return updatedUser;
+    } else {
+      // Create new user from Replit data
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          replitUserId: replitUser.id,
+          username: replitUser.email?.split('@')[0] || `replit_user_${replitUser.id.slice(-8)}`,
+          password: '', // No password needed for Replit auth
+          email: replitUser.email || `${replitUser.id}@replit.local`,
+          firstName: replitUser.firstName,
+          lastName: replitUser.lastName,
+          profileImageUrl: replitUser.profileImageUrl,
+          isVerified: true, // Replit users are automatically verified
+          role: 'customer'
+        })
+        .returning();
+      return newUser;
+    }
   }
 
   // Restaurant operations

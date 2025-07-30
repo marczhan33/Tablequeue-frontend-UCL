@@ -1,28 +1,14 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time, primaryKey } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, date, numeric, time, primaryKey, varchar, index } from "drizzle-orm/pg-core";
+import { relations, sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-// Session storage table - required for Replit Auth
-export const sessions = pgTable(
-  "sessions",
-  {
-    sid: varchar("sid").primaryKey(),
-    sess: jsonb("sess").notNull(),
-    expire: timestamp("expire").notNull(),
-  },
-  (table) => [index("IDX_session_expire").on(table.expire)],
-);
-
-// User table - updated for Replit Auth compatibility
+// User table (keep existing structure - no breaking changes)
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  username: text("username").notNull(),
-  password: text("password"), // Made optional for Replit Auth users
-  email: text("email").unique(),
-  firstName: text("first_name"),
-  lastName: text("last_name"),
-  profileImageUrl: text("profile_image_url"),
+  id: serial("id").primaryKey(),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
+  email: text("email").notNull().unique(),
   role: text("role").notNull().default('customer'),
   phone: text("phone"), // For SMS notifications
   isVerified: boolean("is_verified").notNull().default(false),
@@ -32,8 +18,23 @@ export const users = pgTable("users", {
   resetPasswordExpires: timestamp("reset_password_expires"),
   resetPasswordMethod: text("reset_password_method"), // 'email' or 'sms'
   createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
+  // Add optional Replit Auth fields without breaking existing data
+  replitUserId: text("replit_user_id").unique(), // Link to Replit user
+  firstName: text("first_name"),
+  lastName: text("last_name"),
+  profileImageUrl: text("profile_image_url"),
 });
+
+// Session storage table for Replit Auth - separate table
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
 
 // Relations will be defined after all tables
 
