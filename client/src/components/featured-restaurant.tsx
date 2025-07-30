@@ -3,9 +3,10 @@ import WaitTimeBadge from "@/components/wait-time-badge";
 
 interface FeaturedRestaurantProps {
   restaurant: Restaurant;
+  partySize: number;
 }
 
-const FeaturedRestaurant = ({ restaurant }: FeaturedRestaurantProps) => {
+const FeaturedRestaurant = ({ restaurant, partySize }: FeaturedRestaurantProps) => {
   // Get formatted wait time text
   const getWaitTimeText = (restaurant: Restaurant) => {
     switch (restaurant.currentWaitStatus) {

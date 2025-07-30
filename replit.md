@@ -13,6 +13,13 @@ A comprehensive restaurant queue management platform that provides intelligent w
 - Express.js backend
 
 ## Recent Changes
+- 2025-01-30: Extended login sessions to 7 days for persistent authentication - users stay logged in automatically
+- 2025-01-30: Added prominent party size selection at top of customer view with easy increment/decrement controls
+- 2025-01-30: Implemented real-time wait predictions using Advanced Wait Time Prediction API instead of manual status
+- 2025-01-30: Removed manual status system (Available/Short/Long Wait) from restaurant dashboard entirely
+- 2025-01-30: Added color-coded wait time badges: Green (0-15min), Orange (15-45min), Red (45+ min) with "Available" for 0 wait
+- 2025-01-30: Simplified restaurant cards - removed Details button and eye icon, entire card now clickable for direct access
+- 2025-01-30: Updated card layout with MapPin icon aligned with cuisine, party size indicator, and cleaner visual design
 - 2025-01-29: Implemented comprehensive best practices following industry standards for scalable Replit projects
 - 2025-01-29: Added complete testing infrastructure with Jest, ESLint, Prettier, and automated CI/CD pipeline
 - 2025-01-29: Reorganized codebase with proper MVC architecture, controllers, middleware, and services separation

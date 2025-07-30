@@ -7,6 +7,8 @@ import FeaturedRestaurant from "@/components/featured-restaurant";
 import { useToast } from "@/hooks/use-toast";
 import { RestaurantFilters, FilterState } from "@/components/restaurant-filters";
 import { calculateDistance } from "@/utils/geo-utils";
+import { Button } from "@/components/ui/button";
+import { Minus, Plus, Users } from "lucide-react";
 
 const CustomerView = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,6 +19,7 @@ const CustomerView = () => {
   });
   const [userLocation, setUserLocation] = useState<{lat: number, lng: number} | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [partySize, setPartySize] = useState<number>(2); // Default party size
   const { toast } = useToast();
   
   // Reference to track if geolocation is already being requested
@@ -198,18 +201,49 @@ const CustomerView = () => {
   return (
     <section>
       <div className="mb-8">
-        <h2 className="text-3xl font-bold font-heading mb-2">Find available restaurants near you</h2>
-        <p className="text-gray-600 max-w-3xl">See real-time wait times before you arrive. Skip the line and plan your dining experience efficiently.</p>
+        <SearchBar onSearch={handleSearch} />
       </div>
-
-      {/* Search Bar */}
-      <SearchBar onSearch={handleSearch} />
-
-      {/* Filters */}
-      <RestaurantFilters 
-        onFilterChange={handleFilterChange} 
-        availableCuisines={availableCuisines} 
-      />
+      
+      {/* Party Size Selection */}
+      <div className="mb-6 flex items-center justify-between bg-white rounded-lg p-4 shadow-sm border">
+        <div className="flex items-center space-x-4">
+          <Users className="h-5 w-5 text-gray-500" />
+          <span className="font-medium text-gray-700">Party Size:</span>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setPartySize(Math.max(1, partySize - 1))}
+              disabled={partySize <= 1}
+              className="h-8 w-8 p-0"
+            >
+              <Minus className="h-4 w-4" />
+            </Button>
+            <span className="font-semibold text-lg min-w-[2rem] text-center">{partySize}</span>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setPartySize(partySize + 1)}
+              className="h-8 w-8 p-0"
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+          <span className="text-gray-500">people</span>
+        </div>
+        <div className="text-sm text-gray-500">
+          Wait times shown for your party
+        </div>
+      </div>
+      
+      <div className="mb-6">
+        <RestaurantFilters 
+          filters={filters} 
+          onFiltersChange={handleFilterChange}
+          onGetUserLocation={getUserLocation}
+          locationError={locationError}
+        />
+      </div>
 
       {/* Restaurant Listings */}
       {isLoading ? (
@@ -232,7 +266,7 @@ const CustomerView = () => {
       ) : filteredRestaurants && filteredRestaurants.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {filteredRestaurants.map((restaurant) => (
-            <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+            <RestaurantCard key={restaurant.id} restaurant={restaurant} partySize={partySize} />
           ))}
         </div>
       ) : (
@@ -242,7 +276,7 @@ const CustomerView = () => {
       )}
 
       {/* Featured Restaurant Section */}
-      {featuredRestaurant && <FeaturedRestaurant restaurant={featuredRestaurant} />}
+      {featuredRestaurant && <FeaturedRestaurant restaurant={featuredRestaurant} partySize={partySize} />}
     </section>
   );
 };

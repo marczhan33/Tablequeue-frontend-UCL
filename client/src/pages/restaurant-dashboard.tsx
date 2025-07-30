@@ -78,8 +78,8 @@ const RestaurantDashboard = () => {
       });
       
       // Initialize editing hours with current restaurant hours
-      if (restaurant.operatingHours) {
-        setEditingHours(restaurant.operatingHours);
+      if (restaurant.operatingHours && typeof restaurant.operatingHours === 'object') {
+        setEditingHours(restaurant.operatingHours as any);
       } else {
         // Set default hours if none exist
         setEditingHours({
@@ -97,7 +97,7 @@ const RestaurantDashboard = () => {
 
   // Initialize party size wait times when data loads
   useEffect(() => {
-    if (partySizeWaitTimes) {
+    if (partySizeWaitTimes && Array.isArray(partySizeWaitTimes)) {
       const waitTimes1to2 = partySizeWaitTimes.find((wt: any) => wt.partySize === '1-2 people');
       const waitTimes3to4 = partySizeWaitTimes.find((wt: any) => wt.partySize === '3-4 people');
       const waitTimes5plus = partySizeWaitTimes.find((wt: any) => wt.partySize === '5+ people');
@@ -439,65 +439,6 @@ const RestaurantDashboard = () => {
         </div>
         
         <TabsContent value="overview" className="bg-gray-50 rounded-lg p-6">
-          {/* Current Status Card */}
-          <div className="bg-gray-50 rounded-lg p-6 mb-8">
-            <h3 className="text-lg font-semibold mb-4">Current Wait Status</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {/* Available Status */}
-              <div 
-                className={`bg-white rounded-lg p-4 ${
-                  restaurant.currentWaitStatus === 'available' 
-                    ? 'border-2 border-secondary shadow-sm'
-                    : 'border border-gray-200 hover:shadow-sm cursor-pointer'
-                } flex flex-col items-center`}
-                onClick={() => handleWaitStatusChange('available')}
-              >
-                <div className="w-16 h-16 rounded-full bg-status-available flex items-center justify-center mb-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <span className="font-medium">Available</span>
-                <span className="text-xs text-gray-500">No wait time</span>
-              </div>
-              
-              {/* Short Wait Status */}
-              <div 
-                className={`bg-white rounded-lg p-4 ${
-                  restaurant.currentWaitStatus === 'short' 
-                    ? 'border-2 border-secondary shadow-sm'
-                    : 'border border-gray-200 hover:shadow-sm cursor-pointer'
-                } flex flex-col items-center`}
-                onClick={() => handleWaitStatusChange('short')}
-              >
-                <div className="w-16 h-16 rounded-full bg-status-short flex items-center justify-center mb-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <span className="font-medium">Short Wait</span>
-                <span className="text-xs text-gray-500">15-30 minutes</span>
-              </div>
-              
-              {/* Long Wait Status */}
-              <div 
-                className={`bg-white rounded-lg p-4 ${
-                  restaurant.currentWaitStatus === 'long' 
-                    ? 'border-2 border-secondary shadow-sm'
-                    : 'border border-gray-200 hover:shadow-sm cursor-pointer'
-                } flex flex-col items-center`}
-                onClick={() => handleWaitStatusChange('long')}
-              >
-                <div className="w-16 h-16 rounded-full bg-status-long flex items-center justify-center mb-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.736 6.979C9.208 6.193 9.696 6 10 6c.304 0 .792.193 1.264.979a1 1 0 001.715-1.029C12.279 4.784 11.232 4 10 4s-2.279.784-2.979 1.95c-.285.475-.507 1-.67 1.55H6a1 1 0 000 2h.013a9.358 9.358 0 000 1H6a1 1 0 100 2h.351c.163.55.385 1.075.67 1.55C7.721 15.216 8.768 16 10 16s2.279-.784 2.979-1.95a1 1 0 10-1.715-1.029c-.472.786-.96.979-1.264.979-.304 0-.792-.193-1.264-.979a4.265 4.265 0 01-.264-.521H10a1 1 0 100-2H8.017a7.36 7.36 0 01-.043-1H10a1 1 0 100-2H8.472c.08-.185.167-.36.264-.521z" clipRule="evenodd" />
-                  </svg>
-                </div>
-                <span className="font-medium">Long Wait</span>
-                <span className="text-xs text-gray-500">30+ minutes</span>
-              </div>
-            </div>
-          </div>
 
           {/* Party Size Wait Times */}
           <div className="bg-gray-50 rounded-lg p-6 mb-8">
