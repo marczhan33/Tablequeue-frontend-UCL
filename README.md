@@ -1,1 +1,3 @@
-# TableQueue Frontend\n\nThis is the frontend portion of TableQueue. Backend is private.
+# TableQueue Frontend
+This is the frontend code for TableQueue.
+Backend is private.
